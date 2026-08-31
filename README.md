@@ -1,4 +1,4 @@
-# Arkalon Labs
+# Arkalon Laboratories
 
 📋 Planned for a future Arkalon release
 
