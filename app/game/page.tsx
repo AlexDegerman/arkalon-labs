@@ -2,6 +2,8 @@ import LeftColumn from '@/components/layout/LeftColumn'
 import CenterColumn from '@/components/layout/CenterColumn'
 import RightColumn from '@/components/layout/RightColumn'
 import FooterBar from '@/components/layout/FooterBar'
+import MobileScreen from '@/components/layout/MobileScreen'
+import MobileNav from '@/components/layout/MobileNav'
 
 export default function GamePage() {
   return (
@@ -34,12 +36,8 @@ export default function GamePage() {
         <RightColumn />
       </div>
 
-      {/* Mobile layout placeholder - replaced in Commit 1.4 */}
-      <div className="lg:hidden flex-1 flex items-center justify-center">
-        <p className="font-mono text-xs text-(--text-secondary)">
-          Mobile layout initializing...
-        </p>
-      </div>
+      <MobileScreen />
+      <MobileNav />
 
       <FooterBar />
     </div>
