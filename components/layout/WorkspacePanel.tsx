@@ -8,6 +8,7 @@ import ResearchWorkspace from '@/components/research/ResearchWorkspace'
 import ModulesWorkspace from '../modules/ModulesWorkspace'
 import RelicsTab from '../relics/RelicsTab'
 import PrestigeWorkspace from '../prestige/PrestigeWorkspace'
+import ExcavationWorkspace from '../excavation/ExcavationWorkspace'
 
 // Placeholder panels - replaced by real implementations in later commits
 function PlaceholderPanel({ label }: { label: string }) {
@@ -46,7 +47,7 @@ export default function WorkspacePanel() {
     ),
     excavation: (
       <FeatureLockOverlay feature={FEATURE_MAP.excavation}>
-        <PlaceholderPanel label="Excavation" />
+        <ExcavationWorkspace />
       </FeatureLockOverlay>
     ),
     megaprojects: (
