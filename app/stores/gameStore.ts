@@ -12,11 +12,11 @@ import type {
   UnlockFlags,
   StatsState,
   TutorialState,
-  SettingsState,
-  ChallengeRestrictions
+  SettingsState
 } from '@/types/game'
 import type { FeatureKey } from '@/lib/featureRegistry'
 import { STARTING_RP, RELIC_SLOT_COUNT_BASE } from '@/constants/game'
+import { recalculatePPS } from '@/lib/productionEngine'
 
 // Default generator state for all 20 generators
 function makeDefaultGenerators(): GeneratorState[] {
@@ -188,16 +188,16 @@ export function makeInitialState(): GameState {
 
 // Store type with actions appended in gameActions.ts via immer-style merges
 export type GameStore = GameState & {
-  // Actions are added by gameActions.ts; typed here for reference
-  // Each action calls useGameStore.setState(...)
   _initialized: boolean
   setInitialized: (v: boolean) => void
   setUnlock: (key: FeatureKey, value: boolean) => void
   setCachedPPS: (pps: bigint) => void
+  // Triggers a full PPS recalculation and updates cachedPointsPerSecond
+  recalcPPS: () => void
   applyState: (partial: Partial<GameState>) => void
 }
 
-export const useGameStore = create<GameStore>((set) => ({
+export const useGameStore = create<GameStore>((set, get) => ({
   ...makeInitialState(),
   _initialized: false,
 
@@ -208,6 +208,18 @@ export const useGameStore = create<GameStore>((set) => ({
 
   setCachedPPS: (pps) => set({ cachedPointsPerSecond: pps }),
 
+  recalcPPS: () => {
+    const state = get()
+    const pps = recalculatePPS(state)
+    set({ cachedPointsPerSecond: pps })
+  },
+
   // Bulk state replacement used by save/load and prestige resets
-  applyState: (partial) => set((s) => ({ ...s, ...partial }))
+  applyState: (partial) =>
+    set((s) => {
+      const next = { ...s, ...partial }
+      // Recalculate PPS whenever state is bulk-replaced
+      next.cachedPointsPerSecond = recalculatePPS(next)
+      return next
+    })
 }))
