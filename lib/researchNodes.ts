@@ -126,6 +126,9 @@ export function hasThirdResearchSlot(state: GameState): boolean {
 
 // Returns the number of active research slots available
 export function getActiveSlotCount(state: GameState): number {
+  // SC10 challenge: force single slot regardless of R3 or CF upgrades
+  if (state.activeChallengeRestrictions?.singleResearchSlot) return 1
+
   let count = 1
   if (hasParallelResearch(state)) count = 2
   if (hasThirdResearchSlot(state)) count = 3

@@ -28,8 +28,7 @@ import {
 // integer numerators over SCALE_DENOM to avoid floating-point in the hot path
 const SCALE_DENOM = 1_000_000n // 6 decimal places of precision
 
-// Returns the effective milestone interval for a given generator index,
-// accounting for Milestone Sharpener AR upgrade and Superrecursive Core relic
+// Returns the effective milestone interval for a given generator index
 function getMilestoneInterval(
   generatorIndex: number,
   quantity: bigint,
@@ -38,7 +37,7 @@ function getMilestoneInterval(
 ): number {
   // Research Desk uses smaller intervals up to 50
   if (generatorIndex === 0 && quantity <= BigInt(RESEARCH_DESK_MILESTONE_CAP)) {
-    return RESEARCH_DESK_MILESTONE_INTERVAL
+    return RESEARCH_DESK_MILESTONE_INTERVAL;
   }
 
   let interval = MILESTONE_INTERVAL
@@ -153,24 +152,36 @@ function computeGeneratorOutput(
   const def = GENERATORS[index]
   if (!def) return 0n
 
-  // Challenge restriction: no base output
+  // AC6: only relics provide production
   if (state.activeChallengeRestrictions?.noBaseGeneratorOutput) {
-    // Only relics provide production in this mode base = 0
-    // Relic effects are applied as a separate pass (Phase 9)
     return 0n
   }
 
-  // Challenge restriction: generator tier limit
+  // SC1/AC4/EC1: generator tier limit
   const maxTier = state.activeChallengeRestrictions?.maxGeneratorTier
   if (maxTier !== null && maxTier !== undefined && index >= maxTier) return 0n
 
-  // Challenge restriction: only one generator type
+  // EC2: only one generator type
   const onlyType = state.activeChallengeRestrictions?.onlyGeneratorType
   if (onlyType !== null && onlyType !== undefined && index !== onlyType)
     return 0n
 
-  // Base output in milliRP/sec (stored as baseOutput / 1000 RP/sec)
+  // Base output in milliRP/sec
   let baseOutput = def.baseOutput * gen.quantity
+
+  // SC8: milestone multipliers disabled
+  const milestonesDisabled =
+    state.activeChallengeRestrictions?.milestonesDisabled ?? false
+  if (!milestonesDisabled) {
+    const interval = getMilestoneInterval(
+      index,
+      gen.quantity,
+      milestoneSharpenerLevel,
+      superrecursiveCoreLevel
+    )
+    const milestoneScale = milestoneMultiplier(gen.quantity, interval)
+    baseOutput = (baseOutput * milestoneScale) / SCALE_DENOM
+  }
 
   // Milestone multiplier
   const interval = getMilestoneInterval(

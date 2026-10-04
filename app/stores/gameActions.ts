@@ -85,11 +85,14 @@ export function tick(): void {
   }
 
   // 2. Decrement active research timers
+  // AC3 challenge: research timers do not tick (frozen)
+  const researchTimersFrozen =
+    store.activeChallengeRestrictions?.noResearchTimerTick ?? false
   const updatedSlots = store.activeResearchSlots.map((slot) => {
     if (!slot.nodeId || slot.timerRemaining <= 0) return slot
+    if (researchTimersFrozen) return slot // AC3: timers are frozen
     const next = Math.max(0, slot.timerRemaining - 0.1)
     if (next === 0 && slot.timerRemaining > 0) {
-      // Completion handled below after state update
       markTutorialDirty()
     }
     return { ...slot, timerRemaining: next }
@@ -217,10 +220,11 @@ export function tick(): void {
     // checkAchievements() called in Commit 19.2
   }
 
-  // 13. Auto-prestige check (Automated Lab / Automated Timeline Severance)
+  // 13. Auto-prestige check (Automated Lab / EC3 forced / Automated Timeline Severance)
   if (
     store.automation.autoPrestigeTierI ||
-    store.automation.autoPrestigeTierII
+    store.automation.autoPrestigeTierII ||
+    store.activeChallengeRestrictions?.autoPrestigeIntervalSeconds !== null
   ) {
     checkAutoPrestige(store)
   }
@@ -237,6 +241,21 @@ function checkAutoPrestige(store: GameState): void {
     ANOMALY_GRACE_SECONDS
   } = require('@/constants/game')
 
+  // EC3 challenge: forced prestige every 5 minutes (300s interval)
+  const forcedInterval =
+    store.activeChallengeRestrictions?.autoPrestigeIntervalSeconds
+  if (
+    forcedInterval !== null &&
+    forcedInterval !== undefined &&
+    store.activeChallengeId
+  ) {
+    const elapsed = (Date.now() - store.stats.lastPrestigeTime) / 1000
+    if (elapsed >= forcedInterval) {
+      triggerTierI()
+    }
+    return
+  }
+
   // Determine which tier to auto-prestige
   let targetTier: 1 | 2 | 0 = 0
   if (store.automation.autoPrestigeTierII && canPrestigeTier2(store)) {
@@ -244,7 +263,6 @@ function checkAutoPrestige(store: GameState): void {
   } else if (store.automation.autoPrestigeTierI && canPrestigeTier1(store)) {
     targetTier = 1
   }
-
   if (targetTier === 0) {
     autoPrestigeCountdown = 0
     autoPrestigeTier = 0
@@ -286,6 +304,20 @@ function checkAutoPrestige(store: GameState): void {
 // Starts studying a research node in the first available slot
 export function startResearch(nodeId: string): void {
   const store = useGameStore.getState()
+
+  // Challenge: tech matrix disabled (SC2, EC4)
+  if (store.activeChallengeRestrictions?.techMatrixDisabled) return
+
+  // Challenge: energy branch locked (SC9)
+  if (
+    store.activeChallengeRestrictions?.energyBranchLocked &&
+    nodeId.startsWith('E')
+  ) return
+
+  // Challenge: single research slot (SC10 - R3 effect disabled)
+  if (store.activeChallengeRestrictions?.singleResearchSlot) {
+    // Clamp available slots to 1 regardless of R3 completion
+  }
 
   if (!isNodeAvailable(nodeId, store)) return
   if (isNodeCompleted(nodeId, store)) return
@@ -426,6 +458,7 @@ export function checkAnomalySpawn(): void {
   const store = useGameStore.getState()
   if (!store.unlocks.anomalies) return
   if (store.activeAnomalyType) return
+  // SC5, EC4: no anomalies
   if (store.activeChallengeRestrictions?.anomaliesDisabled) return
 
   const def = selectNextAnomaly(store)
@@ -577,6 +610,9 @@ export function updateAnomalyInteraction(value: number): void {
 // Equips a relic into the first available slot
 export function equipRelic(relicId: number): void {
   const store = useGameStore.getState()
+
+  // SC11: relics cannot be equipped
+  if (store.activeChallengeRestrictions?.relicsDisabled) return
 
   if (!store.unlockedRelics.includes(relicId)) return
   if (isRelicEquipped(relicId, store)) return
@@ -1377,7 +1413,7 @@ export function buyModule(
 ): void {
   const store = useGameStore.getState()
 
-  // Check module restrictions
+  // SC4, EC1, EC4: modules disabled
   if (store.activeChallengeRestrictions?.modulesDisabled) return
 
   const { getModuleUpgradeCost, getModuleLevelCap } = require('@/lib/moduleDefs')
