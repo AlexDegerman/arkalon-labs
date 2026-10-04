@@ -10,7 +10,8 @@ import {
   checkUnlocks,
   checkEraTransition,
   checkResearchSlotExpansion,
-  checkTutorialBeats
+  checkTutorialBeats,
+  checkAchievements
 } from '@/lib/unlockWatcher'
 import {
   selectNextAnomaly,
@@ -217,9 +218,9 @@ export function tick(): void {
     checkTutorialBeats(useGameStore.getState())
   }
 
-  // 12. Deferred: achievements check - wired in Commit 19.2
+  // 12. Deferred: achievements check
   if (consumeAchievementsDirty()) {
-    // checkAchievements() called in Commit 19.2
+    checkAchievements(useGameStore.getState())
   }
 
   // 13. Auto-prestige check (Automated Lab / EC3 forced / Automated Timeline Severance)

@@ -416,7 +416,30 @@ export function checkTutorialBeats(state: GameState): void {
   }
 }
 
-// Extended in Commit 19.2 with full achievement list
-export function checkAchievements(_state: GameState): void {
-  // Implemented in Commit 19.2
+// Tracks which achievements have already fired this session
+const awardedThisSession = new Set<string>()
+
+export function checkAchievements(state: GameState): void {
+  const { ACHIEVEMENTS } = require('@/lib/achievementDefs')
+  const pushAlert = useUIStore.getState().pushAlert
+
+  for (const achievement of ACHIEVEMENTS) {
+    if (state.achievements.includes(achievement.id)) continue
+    if (awardedThisSession.has(achievement.id)) continue
+    if (!achievement.condition(state)) continue
+
+    awardedThisSession.add(achievement.id)
+
+    useGameStore.setState((s) => ({
+      achievements: [...s.achievements, achievement.id],
+    }))
+
+    pushAlert({
+      priority: 3,
+      variant: 'achievement',
+      title: `Achievement: ${achievement.name}`,
+      message: achievement.description,
+      autoDismissMs: 5000,
+    })
+  }
 }

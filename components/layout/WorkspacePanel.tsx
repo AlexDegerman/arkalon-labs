@@ -12,6 +12,8 @@ import ExcavationWorkspace from '../excavation/ExcavationWorkspace'
 import MegaprojectsWorkspace from '../megaprojects/MegaprojectsWorkspace'
 import OperationsWorkspace from '../operations/OperationsWorkspace'
 import ChallengeWorkspace from '../challenges/ChallengeWorkspace'
+import StatsWorkspace from '../stats/StatsWorkspace'
+import AchievementsWorkspace from '../achievements/AchievementsWorkspace'
 
 // Placeholder panels - replaced by real implementations in later commits
 function PlaceholderPanel({ label }: { label: string }) {
@@ -70,12 +72,12 @@ export default function WorkspacePanel() {
     ),
     stats: (
       <FeatureLockOverlay feature={FEATURE_MAP.statistics}>
-        <PlaceholderPanel label="Statistics" />
+        <StatsWorkspace />
       </FeatureLockOverlay>
     ),
     achievements: (
       <FeatureLockOverlay feature={FEATURE_MAP.achievements}>
-        <PlaceholderPanel label="Achievements" />
+        <AchievementsWorkspace />
       </FeatureLockOverlay>
     )
   }
