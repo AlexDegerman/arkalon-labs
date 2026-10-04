@@ -26,7 +26,7 @@ import {
 } from '@/lib/researchNodes'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import { RESEARCH_QUEUE_MAX_BASE } from '@/constants/game'
-import type { GameState } from '@/types/game'
+import type { GameState, ModuleType } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
 import { useUIStore } from './uiStore'
 
@@ -292,6 +292,50 @@ export function applyArkalonClickBoost(): void {
       }
     }),
   }))
+}
+
+// Module purchase action
+export function buyModule(
+  generatorIndex: number,
+  moduleType: ModuleType,
+  currentLevel: number
+): void {
+  const store = useGameStore.getState();
+
+  // Check module restrictions
+  if (store.activeChallengeRestrictions?.modulesDisabled) return;
+
+  const { getModuleUpgradeCost, getModuleLevelCap } = require('@/lib/moduleDefs');
+  const cap = getModuleLevelCap(store);
+
+  if (currentLevel >= cap) return;
+
+  const cost = getModuleUpgradeCost(generatorIndex, moduleType, currentLevel);
+  if (store.researchPoints < cost) return;
+
+  useGameStore.setState((s) => {
+    const newGenerators = s.generators.map((g, i) => {
+      if (i !== generatorIndex) return g;
+      switch (moduleType) {
+        case 'efficiency':
+          return { ...g, efficiencyLevel: g.efficiencyLevel + 1 };
+        case 'cost_reduction':
+          return { ...g, costReductionLevel: g.costReductionLevel + 1 };
+        case 'synergy':
+          return { ...g, synergyLevel: g.synergyLevel + 1 };
+        default:
+          return g;
+      }
+    });
+    return {
+      researchPoints: s.researchPoints - cost,
+      generators: newGenerators,
+    };
+  });
+
+  // Modules affect production
+  useGameStore.getState().recalcPPS();
+  markUnlocksDirty();
 }
 
 // Generator purchase action
