@@ -25,17 +25,22 @@ function getMaxOfflineSeconds(state: GameState): number {
 
 // Returns the offline efficiency multiplier (0.0 - 1.0)
 function getOfflineEfficiency(state: GameState): number {
-  const completed = state.completedResearchNodes
+  const completed = state.completedResearchNodes;
 
   // E2: 100% efficiency
-  if (completed.includes('E2')) return 1.0
+  if (completed.includes('E2')) return 1.0;
 
-  // E1: 75% efficiency
-  if (completed.includes('E1')) return 0.75
+  // E1: 75%
+  if (completed.includes('E1')) {
+    const { getRelicOfflineEfficiencyBonus } = require('@/lib/relicEffects');
+    const relicBonus = getRelicOfflineEfficiencyBonus(state);
+    return Math.min(1.0, 0.75 + relicBonus);
+  }
 
-  // Entropic Anchor relic adds 1% per level (handled in Phase 9)
-  // Base: 70%
-  return DEFAULT_OFFLINE_EFFICIENCY
+  // Base + Entropic Anchor relic
+  const { getRelicOfflineEfficiencyBonus } = require('@/lib/relicEffects');
+  const relicBonus = getRelicOfflineEfficiencyBonus(state);
+  return Math.min(1.0, DEFAULT_OFFLINE_EFFICIENCY + relicBonus);
 }
 
 // Calculates offline RP accumulation between lastSavedTime and now

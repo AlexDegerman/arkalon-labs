@@ -203,6 +203,13 @@ function computeGeneratorOutput(
     baseOutput = BigInt(Math.round(Number(baseOutput) * techMultiplier))
   }
 
+  // Per-generator relic multiplier
+  const { getRelicPerGeneratorMultiplier } = require('@/lib/relicEffects')
+  const relicGenMult = getRelicPerGeneratorMultiplier(index, state)
+  if (relicGenMult !== 1) {
+    baseOutput = BigInt(Math.round(Number(baseOutput) * relicGenMult))
+  }
+
   return baseOutput
 }
 
@@ -260,10 +267,10 @@ function computeARBonus(state: GameState): number {
   return arBonus
 }
 
-// Computes relic passive multipliers
-// Full relic effect integration in Commit 9.2 stub returns 1 until then
-function computeRelicMultiplier(_state: GameState): number {
-  return 1
+// Computes relic passive multipliers via relicEffects.ts
+function computeRelicMultiplier(state: GameState): number {
+  const { computeRelicProductionMultiplier } = require('@/lib/relicEffects');
+  return computeRelicProductionMultiplier(state);
 }
 
 // Computes the Lambda prestige scaling factor from CF and OS upgrades
@@ -327,8 +334,10 @@ export function recalculatePPS(state: GameState): bigint {
   totalFloat *= primingBonus
 
   // Apply production exponent bonus: output ^ (1 + bonus)
-  // Only applied when bonus > 0 to avoid unnecessary Math.pow call
-  const exponentBonus = getProductionExponentBonus(state)
+  // Includes research node bonus and relic (Tachyon Prism) bonus
+  const { getRelicExponentBonus } = require('@/lib/relicEffects')
+  const exponentBonus =
+    getProductionExponentBonus(state) + getRelicExponentBonus(state)
   if (exponentBonus > 0 && totalFloat > 1) {
     totalFloat = Math.pow(totalFloat, 1 + exponentBonus)
   }
