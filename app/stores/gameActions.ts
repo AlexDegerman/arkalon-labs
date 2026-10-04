@@ -179,6 +179,69 @@ export function tick(): void {
   if (consumeAchievementsDirty()) {
     // checkAchievements() called in Commit 19.2
   }
+
+  // 13. Auto-prestige check (Automated Lab / Automated Timeline Severance)
+  if (
+    store.automation.autoPrestigeTierI ||
+    store.automation.autoPrestigeTierII
+  ) {
+    checkAutoPrestige(store)
+  }
+}
+
+// Auto-prestige countdown state
+let autoPrestigeCountdown = 0
+let autoPrestigeTier: 1 | 2 | 0 = 0
+
+function checkAutoPrestige(store: GameState): void {
+  const { canPrestigeTier1, canPrestigeTier2 } = require('@/lib/prestigeCalc')
+  const {
+    AUTO_PRESTIGE_COUNTDOWN_SECONDS,
+    ANOMALY_GRACE_SECONDS
+  } = require('@/constants/game')
+
+  // Determine which tier to auto-prestige
+  let targetTier: 1 | 2 | 0 = 0
+  if (store.automation.autoPrestigeTierII && canPrestigeTier2(store)) {
+    targetTier = 2
+  } else if (store.automation.autoPrestigeTierI && canPrestigeTier1(store)) {
+    targetTier = 1
+  }
+
+  if (targetTier === 0) {
+    autoPrestigeCountdown = 0
+    autoPrestigeTier = 0
+    return
+  }
+
+  // Don't fire if a manual prestige dialog is open (no way to detect from tick;
+  // user must dismiss dialog first - the automation simply won't count down)
+
+  // Give active anomaly grace period
+  if (store.activeAnomalyType && store.anomalyTimeRemaining > 0) {
+    if (store.anomalyTimeRemaining > ANOMALY_GRACE_SECONDS) {
+      autoPrestigeCountdown = AUTO_PRESTIGE_COUNTDOWN_SECONDS
+      return
+    }
+  }
+
+  if (autoPrestigeTier !== targetTier) {
+    autoPrestigeCountdown = AUTO_PRESTIGE_COUNTDOWN_SECONDS
+    autoPrestigeTier = targetTier
+  }
+
+  autoPrestigeCountdown = Math.max(0, autoPrestigeCountdown - 0.1)
+
+  if (autoPrestigeCountdown <= 0) {
+    autoPrestigeTier = 0
+    autoPrestigeCountdown = AUTO_PRESTIGE_COUNTDOWN_SECONDS
+
+    if (targetTier === 2) {
+      triggerTierII()
+    } else {
+      triggerTierI()
+    }
+  }
 }
 
 // Research actions

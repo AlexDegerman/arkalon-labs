@@ -23,6 +23,8 @@ import {
   PRESTIGE_TIER2_THRESHOLD,
   PRESTIGE_TIER3_THRESHOLD
 } from '@/constants/game'
+import ExpandedCFShop from './ExpandedCFShop'
+import OSUpgradeShop from './OSUpgradeShop'
 
 type PrestigeSubTab = 'tier1' | 'tier2' | 'tier3'
 
@@ -269,9 +271,8 @@ export default function PrestigeWorkspace() {
           >
             Timeline Severance {canT2 ? `(+${cfGain} CF)` : ''}
           </button>
-          <p className="text-xs text-(--text-secondary) text-center">
-            CF upgrade shop unlocked after first Timeline Severance
-          </p>
+          <div className="section-divider" />
+          <ExpandedCFShop />
         </div>
       )}
 
@@ -319,9 +320,8 @@ export default function PrestigeWorkspace() {
           >
             Singular Synthesis {canT3 ? `(+${osGain} OS)` : ''}
           </button>
-          <p className="text-xs text-(--text-secondary) text-center">
-            OS upgrade shop unlocked after first Singular Synthesis
-          </p>
+          <div className="section-divider" />
+          <OSUpgradeShop />
         </div>
       )}
     </div>
