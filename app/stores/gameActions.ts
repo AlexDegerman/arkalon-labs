@@ -65,13 +65,15 @@ import { marginalPPS } from '@/lib/productionEngine'
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
 // Single 100ms tick dispatched by useGameLoop
-// CRITICAL: reads only cachedPointsPerSecond, never calls recalculatePPS
+// CRITICAL: reads only cachedPointsPerSecond - never calls recalculatePPS
+// All production formula computation happens only when inputs change
 export function tick(): void {
   const store = useGameStore.getState()
 
   // Skip tick if game is paused
   if (store.settings.gamePaused) return
 
+  // Read the cached PPS - this is the ONLY production read in the tick
   const pps = store.cachedPointsPerSecond
   const tickRP = pps / 10n // 100ms = 1/10 of a second
 
@@ -176,14 +178,10 @@ export function tick(): void {
     }
   }
 
-  // 8. Session playtime
+  // 8. Session playtime (peak PPS now updated in recalcPPS, not here)
   const updatedStats = {
     ...store.stats,
     totalSessionPlaytime: store.stats.totalSessionPlaytime + 0.1
-  }
-  // Update peak PPS if current exceeds recorded peak
-  if (pps > store.stats.peakRPPerSec) {
-    updatedStats.peakRPPerSec = pps
   }
   nextState.stats = updatedStats
 

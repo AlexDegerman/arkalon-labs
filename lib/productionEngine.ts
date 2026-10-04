@@ -23,6 +23,12 @@ import {
   getChallengeProductionMultiplier,
   getChallengeExponentBonus
 } from '@/lib/challengeDefs'
+import {
+  computeRelicProductionMultiplier as computeRelicProductionMultiplierFn,
+  getRelicExponentBonus,
+  getRelicPerGeneratorMultiplier,
+  getRelicPerGeneratorMultiplier as getRelicPerGeneratorMultiplierFn
+} from '@/lib/relicEffects'
 
 // Precision scale factor: all intermediate multipliers are computed as
 // integer numerators over SCALE_DENOM to avoid floating-point in the hot path
@@ -222,7 +228,6 @@ function computeGeneratorOutput(
   }
 
   // Per-generator relic multiplier
-  const { getRelicPerGeneratorMultiplier } = require('@/lib/relicEffects')
   const relicGenMult = getRelicPerGeneratorMultiplier(index, state)
   if (relicGenMult !== 1) {
     baseOutput = BigInt(Math.round(Number(baseOutput) * relicGenMult))
@@ -231,13 +236,14 @@ function computeGeneratorOutput(
   return baseOutput
 }
 
-// Per-generator tech multiplier - delegates to researchEffects.ts
-function computeTechMultiplierForGenerator(
-  generatorIndex: number,
-  state: GameState
-): number {
-  return getTechMultiplierForGenerator(generatorIndex, state)
-}
+  // Per-generator tech multiplier - delegates to researchEffects.ts
+  // Static import at top of file ensures no dynamic require() in hot path
+  function computeTechMultiplierForGenerator(
+    generatorIndex: number,
+    state: GameState
+  ): number {
+    return getTechMultiplierForGenerator(generatorIndex, state);
+  }
 
 // Computes the AR production bonus
 // Super-Symmetry: +10% per unspent AR held (capped at AR_PRODUCTION_CAP)
@@ -287,8 +293,7 @@ function computeARBonus(state: GameState): number {
 
 // Computes relic passive multipliers via relicEffects.ts
 function computeRelicMultiplier(state: GameState): number {
-  const { computeRelicProductionMultiplier } = require('@/lib/relicEffects');
-  return computeRelicProductionMultiplier(state);
+  return computeRelicProductionMultiplierFn(state)
 }
 
 // Computes the Lambda prestige scaling factor from CF and OS upgrades

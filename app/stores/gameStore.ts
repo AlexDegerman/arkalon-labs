@@ -211,9 +211,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setCachedPPS: (pps) => set({ cachedPointsPerSecond: pps }),
 
   recalcPPS: () => {
+    // This must never be called from inside the 100ms tick loop.
+    // It is only triggered by user actions that change production inputs.
     const state = get()
     const pps = recalculatePPS(state)
-    set({ cachedPointsPerSecond: pps })
+
+    // Update peak PPS stat if new PPS exceeds recorded peak
+    const newPeakPPS =
+      pps > state.stats.peakRPPerSec ? pps : state.stats.peakRPPerSec
+
+    set({
+      cachedPointsPerSecond: pps,
+      stats: { ...state.stats, peakRPPerSec: newPeakPPS }
+    })
   },
 
   // Bulk state replacement used by save/load and prestige resets
