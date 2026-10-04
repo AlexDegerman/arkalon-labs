@@ -71,24 +71,65 @@ function computeModuleEfficiencyMultiplier(
 }
 
 // Computes synergy bonus multiplier for a target generator
-// Returns a float additive bonus (1.0 + sum of bonuses)
+// Returns a float multiplicative bonus (1.0 + sum of bonuses)
+// Synergy only applies when the source generator has synergyLevel >= 1
 function computeSynergyMultiplier(
   targetIndex: number,
   state: GameState
 ): number {
-  let bonus = 0
+  let bonus = 0;
 
   for (const synergy of MODULE_SYNERGIES) {
-    if (synergy.targetIndex !== targetIndex) continue
+    if (synergy.targetIndex !== targetIndex) continue;
 
-    const sourceGen = state.generators[synergy.sourceIndex]
-    if (!sourceGen || sourceGen.synergyLevel === 0) continue
+    const sourceGen = state.generators[synergy.sourceIndex];
+    if (!sourceGen || sourceGen.synergyLevel === 0) continue;
 
-    const sourceQty = Number(sourceGen.quantity)
-    bonus += sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel
+    const sourceQty = Number(sourceGen.quantity);
+    // bonusPerSourcePerLevel * synergyLevel * sourceQuantity
+    let synergyBonus =
+      sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel;
+
+    // Matter-Data Bridge relic (ID 13): +5% cross-generator synergy per level
+    // Applied in Phase 9; stub here
+    const bridgeLevel = 0;
+    if (bridgeLevel > 0) {
+      synergyBonus *= 1 + 0.05 * bridgeLevel;
+    }
+
+    bonus += synergyBonus;
   }
 
-  return 1 + bonus
+  return 1 + bonus;
+}
+
+// Returns a summary of active synergy bonuses affecting a generator
+// Used by the modules UI tooltip
+export function getSynergyBonusSummary(
+  targetIndex: number,
+  state: GameState
+): Array<{ sourceName: string; bonus: number; synergyName: string }> {
+  const { GENERATORS: gens } = require('@/constants/generators');
+  const results: Array<{ sourceName: string; bonus: number; synergyName: string }> = [];
+
+  for (const synergy of MODULE_SYNERGIES) {
+    if (synergy.targetIndex !== targetIndex) continue;
+
+    const sourceGen = state.generators[synergy.sourceIndex];
+    if (!sourceGen || sourceGen.synergyLevel === 0) continue;
+
+    const sourceQty = Number(sourceGen.quantity);
+    const bonus =
+      sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel * 100;
+
+    results.push({
+      sourceName: gens[synergy.sourceIndex]?.name ?? `Gen ${synergy.sourceIndex}`,
+      bonus,
+      synergyName: synergy.name,
+    });
+  }
+
+  return results;
 }
 
 // Computes the effective output of a single generator type in milliRP/sec * SCALE_DENOM
@@ -265,7 +306,7 @@ export function recalculatePPS(state: GameState): bigint {
 
   let totalMilliRP = 0n
 
-  for (let i = 0 i < 20 i++) {
+  for (let i = 0; i < 20; i++) {
     // Per-generator tech multiplier (replaces global multiplier)
     const techMult = computeTechMultiplierForGenerator(i, state)
     const output = computeGeneratorOutput(
