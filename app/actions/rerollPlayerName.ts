@@ -13,6 +13,7 @@ export async function rerollPlayerName() {
   }
 
   try {
+    // 1. Ask Network Hub to reroll master identity
     const networkUrl =
       process.env.INTERNAL_NETWORK_URL ?? 'http://arkalon-network:3000'
     const res = await fetch(`${networkUrl}/api/identity/reroll`, {
@@ -31,17 +32,16 @@ export async function rerollPlayerName() {
     const data = await res.json()
     const newNickname: string = data.nickname
 
+    // 2. Sync to Labs's local database
+    const client = await pool.connect()
     try {
-      const client = await pool.connect()
-      try {
-        await client.query(
-          'UPDATE players SET display_name = $1, last_seen_at = now() WHERE id = $2',
-          [newNickname, coreId]
-        )
-      } finally {
-        client.release()
-      }
-    } catch {}
+      await client.query(
+        'UPDATE players SET display_name = $1, last_seen_at = now() WHERE id = $2',
+        [newNickname, coreId]
+      )
+    } finally {
+      client.release()
+    }
 
     return { success: true, nickname: newNickname }
   } catch (err) {

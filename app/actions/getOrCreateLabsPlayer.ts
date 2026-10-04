@@ -21,15 +21,17 @@ export async function getOrCreateLabsPlayer() {
   let nickname: string | undefined
   let networkShortId: string | undefined
 
+  // Local development: use a mock player because Arkalon Network is not running
   if (
     process.env.NODE_ENV === 'development' &&
     !process.env.INTERNAL_NETWORK_URL
   ) {
     coreId = '11111111-1111-4111-8111-111111111111'
     sessionToken = 'mock-dev-session-token'
-    nickname = 'ChiefResearcher'
+    nickname = 'AncientGoldTurtle'
   }
 
+  // 1. If no root cookie, request identity from Network Hub API
   const networkUrl =
     process.env.INTERNAL_NETWORK_URL ?? 'http://arkalon-network:3000'
 
@@ -51,6 +53,7 @@ export async function getOrCreateLabsPlayer() {
     nickname = data.nickname
     networkShortId = data.shortId
 
+    // Set root cookies across .rpsleague.fi
     const domain = cookieDomain()
     cookieStore.set(CORE_ID_COOKIE, coreId!, {
       httpOnly: true,
@@ -86,38 +89,32 @@ export async function getOrCreateLabsPlayer() {
     } catch {}
   }
 
+  // 2. Ensure player exists in Labs's local database
+  const client = await pool.connect()
   try {
-    const client = await pool.connect()
-    try {
-      const existing = await client.query(
-        'SELECT id, display_name FROM players WHERE id = $1',
-        [coreId]
+    const existing = await client.query(
+      'SELECT id, display_name FROM players WHERE id = $1',
+      [coreId]
+    )
+
+    if (existing.rows.length === 0) {
+      const fallbackShortId = Math.random().toString(36).substring(2, 10)
+      const assignedShortId = networkShortId ?? fallbackShortId
+
+      await client.query(
+        `INSERT INTO players (id, short_id, display_name, created_at, last_seen_at)
+          VALUES ($1, $2, $3, now(), now())
+          ON CONFLICT (id) DO UPDATE SET
+            short_id = COALESCE(players.short_id, EXCLUDED.short_id)`,
+        [coreId, assignedShortId, nickname ?? 'Director']
       )
-
-      if (existing.rows.length === 0) {
-        const fallbackShortId = Math.random().toString(36).substring(2, 10)
-        const assignedShortId = networkShortId ?? fallbackShortId
-
-        await client.query(
-          `INSERT INTO players (id, short_id, display_name, created_at, last_seen_at)
-            VALUES ($1, $2, $3, now(), now())
-            ON CONFLICT (id) DO UPDATE SET
-              short_id = COALESCE(players.short_id, EXCLUDED.short_id)`,
-          [coreId, assignedShortId, nickname ?? 'Director']
-        )
-      }
-
-      return {
-        coreId: coreId!,
-        displayName: existing.rows[0]?.display_name ?? nickname ?? 'Director'
-      }
-    } finally {
-      client.release()
     }
-  } catch {
+
     return {
       coreId: coreId!,
-      displayName: nickname ?? 'Director'
+      displayName: existing.rows[0]?.display_name ?? nickname ?? 'Director'
     }
+  } finally {
+    client.release()
   }
 }
