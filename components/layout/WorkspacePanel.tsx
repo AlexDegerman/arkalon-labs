@@ -11,6 +11,7 @@ import PrestigeWorkspace from '../prestige/PrestigeWorkspace'
 import ExcavationWorkspace from '../excavation/ExcavationWorkspace'
 import MegaprojectsWorkspace from '../megaprojects/MegaprojectsWorkspace'
 import OperationsWorkspace from '../operations/OperationsWorkspace'
+import ChallengeWorkspace from '../challenges/ChallengeWorkspace'
 
 // Placeholder panels - replaced by real implementations in later commits
 function PlaceholderPanel({ label }: { label: string }) {
@@ -64,7 +65,7 @@ export default function WorkspacePanel() {
     ),
     challenges: (
       <FeatureLockOverlay feature={FEATURE_MAP.prestige}>
-        <PlaceholderPanel label="Challenges" />
+        <ChallengeWorkspace />
       </FeatureLockOverlay>
     ),
     stats: (
