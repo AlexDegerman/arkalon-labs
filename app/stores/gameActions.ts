@@ -323,27 +323,27 @@ export function applyArkalonClickBoost(): void {
 
 // Called by the tick loop when the spawn check timer reaches 0
 export function checkAnomalySpawn(): void {
-  const store = useGameStore.getState();
-  if (!store.unlocks.anomalies) return;
-  if (store.activeAnomalyType) return;
-  if (store.activeChallengeRestrictions?.anomaliesDisabled) return;
+  const store = useGameStore.getState()
+  if (!store.unlocks.anomalies) return
+  if (store.activeAnomalyType) return
+  if (store.activeChallengeRestrictions?.anomaliesDisabled) return
 
-  const def = selectNextAnomaly(store);
-  const duration = getEffectiveDuration(def, store);
-  const nextCheck = getNextSpawnInterval(store);
+  const def = selectNextAnomaly(store)
+  const duration = getEffectiveDuration(def, store)
+  const nextCheck = getNextSpawnInterval(store)
 
   useGameStore.setState({
     activeAnomalyType: def.type,
     anomalyTimeRemaining: duration,
     anomalyInteractionValue: 0,
     timeToNextAnomalyCheck: nextCheck,
-  });
+  })
 
   // Transition BGM to anomaly context
-  useMusicStore.getState().setContext('anomaly');
+  useMusicStore.getState().setContext('anomaly')
 
   // Fire tutorial beat for first anomaly
-  markTutorialDirty();
+  markTutorialDirty()
 
   // Push anomaly alert
   useUIStore.getState().pushAlert({
@@ -352,34 +352,34 @@ export function checkAnomalySpawn(): void {
     title: def.label,
     message: def.description,
     autoDismissMs: 5000,
-  });
+  })
 }
 
 // Called when the player successfully resolves an anomaly
 // interactionScore: 0.0-1.0
 export function resolveAnomaly(interactionScore: number): void {
-  const store = useGameStore.getState();
-  if (!store.activeAnomalyType) return;
+  const store = useGameStore.getState()
+  if (!store.activeAnomalyType) return
 
   const { ANOMALY_DEFINITIONS, OPERATION_ANOMALY_DEFINITIONS } =
-    require('@/lib/anomalyDefs');
-  const allDefs = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS];
-  const def = allDefs.find((d: any) => d.type === store.activeAnomalyType);
-  if (!def) return;
+    require('@/lib/anomalyDefs')
+  const allDefs = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS]
+  const def = allDefs.find((d: any) => d.type === store.activeAnomalyType)
+  if (!def) return
 
-  const reward = buildAnomalyReward(def, interactionScore, store);
+  const reward = buildAnomalyReward(def, interactionScore, store)
 
   // Apply instant RP payout
-  let rpGain = reward.instantRPPayout + reward.rpReward;
+  let rpGain = reward.instantRPPayout + reward.rpReward
 
   // Apply dust
-  const newDust = store.artifactDust + reward.dustDropped;
+  const newDust = store.artifactDust + reward.dustDropped
 
   // Unlock relic if dropped
   const newUnlocked = reward.relicDropped > 0 &&
     !store.unlockedRelics.includes(reward.relicDropped)
     ? [...store.unlockedRelics, reward.relicDropped]
-    : store.unlockedRelics;
+    : store.unlockedRelics
 
   if (reward.relicDropped > 0 && !store.unlockedRelics.includes(reward.relicDropped)) {
     useUIStore.getState().pushAlert({
@@ -388,19 +388,19 @@ export function resolveAnomaly(interactionScore: number): void {
       title: 'Relic Discovered',
       message: `A new relic has been added to your collection.`,
       autoDismissMs: 5000,
-    });
+    })
   }
 
   // Apply R4: reduce running research timers
-  let updatedSlots = store.activeResearchSlots;
+  let updatedSlots = store.activeResearchSlots
   if (reward.researchTimeReduction > 0) {
     updatedSlots = store.activeResearchSlots.map((slot) => {
-      if (!slot.nodeId || slot.timerRemaining <= 0) return slot;
+      if (!slot.nodeId || slot.timerRemaining <= 0) return slot
       return {
         ...slot,
         timerRemaining: Math.max(0, slot.timerRemaining - reward.researchTimeReduction),
-      };
-    });
+      }
+    })
   }
 
   useGameStore.setState((s) => ({
@@ -416,125 +416,125 @@ export function resolveAnomaly(interactionScore: number): void {
       ...s.stats,
       totalAnomaliesResolved: s.stats.totalAnomaliesResolved + 1,
     },
-  }));
+  }))
 
   // Return to idle BGM
-  useMusicStore.getState().setContext('idle');
+  useMusicStore.getState().setContext('idle')
 
-  markUnlocksDirty();
-  markAchievementsDirty();
+  markUnlocksDirty()
+  markAchievementsDirty()
 
   if (rpGain > 0n) {
-    useGameStore.getState().recalcPPS();
+    useGameStore.getState().recalcPPS()
   }
 }
 
 // Dismisses the active anomaly without reward (timer expired or skipped)
 export function dismissAnomaly(): void {
-  const store = useGameStore.getState();
-  if (!store.activeAnomalyType) return;
+  const store = useGameStore.getState()
+  if (!store.activeAnomalyType) return
 
-  const nextCheck = getNextSpawnInterval(store);
+  const nextCheck = getNextSpawnInterval(store)
 
   useGameStore.setState({
     activeAnomalyType: null,
     anomalyTimeRemaining: 0,
     anomalyInteractionValue: 0,
     timeToNextAnomalyCheck: nextCheck,
-  });
+  })
 
-  useMusicStore.getState().setContext('idle');
+  useMusicStore.getState().setContext('idle')
 }
 
 // Updates the anomaly interaction value (used by interaction widgets)
 export function updateAnomalyInteraction(value: number): void {
-  useGameStore.setState({ anomalyInteractionValue: value });
+  useGameStore.setState({ anomalyInteractionValue: value })
 }
 
 // Relic actions
 
 // Equips a relic into the first available slot
 export function equipRelic(relicId: number): void {
-  const store = useGameStore.getState();
+  const store = useGameStore.getState()
 
-  if (!store.unlockedRelics.includes(relicId)) return;
-  if (isRelicEquipped(relicId, store)) return;
+  if (!store.unlockedRelics.includes(relicId)) return
+  if (isRelicEquipped(relicId, store)) return
 
-  const slotCount = getRelicSlotCount(store);
+  const slotCount = getRelicSlotCount(store)
   const availableSlotIndex = store.relicSlots
     .slice(0, slotCount)
-    .findIndex((s) => canEquipToSlot(s));
+    .findIndex((s) => canEquipToSlot(s))
 
-  if (availableSlotIndex === -1) return;
+  if (availableSlotIndex === -1) return
 
   useGameStore.setState((s) => {
-    const newSlots = [...s.relicSlots];
+    const newSlots = [...s.relicSlots]
     newSlots[availableSlotIndex] = {
       relicId,
       cooldownRemaining: 0,
-    };
-    return { relicSlots: newSlots };
-  });
+    }
+    return { relicSlots: newSlots }
+  })
 
-  useGameStore.getState().recalcPPS();
+  useGameStore.getState().recalcPPS()
 }
 
 // Unequips a relic from its slot, starting the swap cooldown
 export function unequipRelic(relicId: number): void {
-  const store = useGameStore.getState();
-  const slotIndex = getRelicSlotIndex(relicId, store);
-  if (slotIndex === -1) return;
+  const store = useGameStore.getState()
+  const slotIndex = getRelicSlotIndex(relicId, store)
+  if (slotIndex === -1) return
 
-  const cooldown = getSwapCooldownSeconds(store);
+  const cooldown = getSwapCooldownSeconds(store)
 
   useGameStore.setState((s) => {
-    const newSlots = [...s.relicSlots];
+    const newSlots = [...s.relicSlots]
     newSlots[slotIndex] = {
       relicId: null,
       cooldownRemaining: cooldown,
-    };
-    return { relicSlots: newSlots };
-  });
+    }
+    return { relicSlots: newSlots }
+  })
 
-  useGameStore.getState().recalcPPS();
+  useGameStore.getState().recalcPPS()
 }
 
 // Swaps a relic in a specific slot with a new relic
 export function swapRelic(slotIndex: number, newRelicId: number): void {
-  const store = useGameStore.getState();
-  const slot = store.relicSlots[slotIndex];
-  if (!slot) return;
-  if (slot.cooldownRemaining > 0) return;
-  if (!store.unlockedRelics.includes(newRelicId)) return;
-  if (isRelicEquipped(newRelicId, store)) return;
+  const store = useGameStore.getState()
+  const slot = store.relicSlots[slotIndex]
+  if (!slot) return
+  if (slot.cooldownRemaining > 0) return
+  if (!store.unlockedRelics.includes(newRelicId)) return
+  if (isRelicEquipped(newRelicId, store)) return
 
-  const cooldown = getSwapCooldownSeconds(store);
+  const cooldown = getSwapCooldownSeconds(store)
 
   useGameStore.setState((s) => {
-    const newSlots = [...s.relicSlots];
+    const newSlots = [...s.relicSlots]
     newSlots[slotIndex] = {
       relicId: newRelicId,
       cooldownRemaining: 0,
-    };
+    }
     // Start cooldown on this slot for next swap
     // The cooldown applies to the NEXT swap, not the current equip
-    return { relicSlots: newSlots };
-  });
+    return { relicSlots: newSlots }
+  })
 
-  useGameStore.getState().recalcPPS();
+  useGameStore.getState().recalcPPS()
 }
 
 // Upgrades a relic using artifact dust
 export function upgradeRelic(relicId: number): void {
-  const store = useGameStore.getState();
+  const store = useGameStore.getState()
 
-  if (!store.unlockedRelics.includes(relicId)) return;
+  if (!store.unlockedRelics.includes(relicId)) return
 
-  const currentLevel = store.relicLevels[relicId] ?? 0;
-  if (currentLevel >= RELIC_LEVEL_CAP) return;
+  const currentLevel = store.relicLevels[relicId] ?? 0
+  if (currentLevel >= RELIC_LEVEL_CAP) return
 
-  const cost = getRelicUpgradeCost(relicId, currentLevel);
-  if (store.artifactDust < cost) return;
+  const cost = getRelicUpgradeCost(relicId, currentLevel)
+  if (store.artifactDust < cost) return
 
   useGameStore.setState((s) => ({
     artifactDust: s.artifactDust - cost,
@@ -542,25 +542,25 @@ export function upgradeRelic(relicId: number): void {
       ...s.relicLevels,
       [relicId]: (s.relicLevels[relicId] ?? 0) + 1,
     },
-  }));
+  }))
 
   // Relic level changes affect production
-  useGameStore.getState().recalcPPS();
-  markAchievementsDirty();
+  useGameStore.getState().recalcPPS()
+  markAchievementsDirty()
 }
 
 // Prestige actions
 
 // Performs a Tier I Reality Recalibration prestige
 export function triggerTierI(): void {
-  const store = useGameStore.getState();
-  if (!canPrestigeTier1(store)) return;
+  const store = useGameStore.getState()
+  if (!canPrestigeTier1(store)) return
 
-  const arGained = calculateARGain(store);
-  const resetPatch = buildTier1ResetState(store, arGained);
+  const arGained = calculateARGain(store)
+  const resetPatch = buildTier1ResetState(store, arGained)
 
   // Anomalous Operations unlock on first prestige
-  const firstPrestige = store.stats.totalPrestigesTier1 === 0;
+  const firstPrestige = store.stats.totalPrestigesTier1 === 0
 
   useGameStore.setState((s) => ({
     ...resetPatch,
@@ -592,13 +592,13 @@ export function triggerTierI(): void {
     arUpgrades: s.arUpgrades,
     challengeRecords: s.challengeRecords,
     completedMegaprojects: s.completedMegaprojects,
-  }));
+  }))
 
-  useGameStore.getState().recalcPPS();
-  markUnlocksDirty();
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
 
-  useMusicStore.getState().setContext('prestige');
-  setTimeout(() => useMusicStore.getState().setContext('idle'), 3000);
+  useMusicStore.getState().setContext('prestige')
+  setTimeout(() => useMusicStore.getState().setContext('idle'), 3000)
 
   useUIStore.getState().pushAlert({
     priority: 0,
@@ -606,7 +606,7 @@ export function triggerTierI(): void {
     title: 'Reality Recalibrated',
     message: `Earned ${arGained} Arkalon Resonance. Rebuilding in parallel dimension.`,
     autoDismissMs: 6000,
-  });
+  })
 
   if (firstPrestige) {
     useUIStore.getState().pushAlert({
@@ -615,17 +615,17 @@ export function triggerTierI(): void {
       title: 'Anomalous Operations Active',
       message: 'Global 90-day operation cycle has begun.',
       autoDismissMs: 5000,
-    });
+    })
   }
 }
 
 // Performs a Tier II Timeline Severance prestige
 export function triggerTierII(): void {
-  const store = useGameStore.getState();
-  if (!canPrestigeTier2(store)) return;
+  const store = useGameStore.getState()
+  if (!canPrestigeTier2(store)) return
 
-  const cfGained = calculateCFGain(store);
-  const resetPatch = buildTier2ResetState(store, cfGained);
+  const cfGained = calculateCFGain(store)
+  const resetPatch = buildTier2ResetState(store, cfGained)
 
   useGameStore.setState((s) => ({
     ...resetPatch,
@@ -650,13 +650,13 @@ export function triggerTierII(): void {
       totalPrestigesTier2: s.stats.totalPrestigesTier2 + 1,
       lastPrestigeTime: Date.now(),
     },
-  }));
+  }))
 
-  useGameStore.getState().recalcPPS();
-  markUnlocksDirty();
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
 
-  useMusicStore.getState().setContext('prestige');
-  setTimeout(() => useMusicStore.getState().setContext('idle'), 3000);
+  useMusicStore.getState().setContext('prestige')
+  setTimeout(() => useMusicStore.getState().setContext('idle'), 3000)
 
   useUIStore.getState().pushAlert({
     priority: 0,
@@ -664,16 +664,16 @@ export function triggerTierII(): void {
     title: 'Timeline Severed',
     message: `Earned ${cfGained} Chronal Fractures. New timeline initializing.`,
     autoDismissMs: 6000,
-  });
+  })
 }
 
 // Performs a Tier III Singular Synthesis prestige
 export function triggerTierIII(): void {
-  const store = useGameStore.getState();
-  if (!canPrestigeTier3(store)) return;
+  const store = useGameStore.getState()
+  if (!canPrestigeTier3(store)) return
 
-  const osGained = calculateOSGain(store);
-  const resetPatch = buildTier3ResetState(store, osGained);
+  const osGained = calculateOSGain(store)
+  const resetPatch = buildTier3ResetState(store, osGained)
 
   useGameStore.setState((s) => ({
     ...resetPatch,
@@ -696,13 +696,13 @@ export function triggerTierIII(): void {
       totalPrestigesTier3: s.stats.totalPrestigesTier3 + 1,
       lastPrestigeTime: Date.now(),
     },
-  }));
+  }))
 
-  useGameStore.getState().recalcPPS();
-  markUnlocksDirty();
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
 
-  useMusicStore.getState().setContext('prestige');
-  setTimeout(() => useMusicStore.getState().setContext('idle'), 4000);
+  useMusicStore.getState().setContext('prestige')
+  setTimeout(() => useMusicStore.getState().setContext('idle'), 4000)
 
   useUIStore.getState().pushAlert({
     priority: 0,
@@ -710,7 +710,83 @@ export function triggerTierIII(): void {
     title: 'Singular Synthesis Complete',
     message: `Earned ${osGained} Omni-Spars. The Omega Construct begins.`,
     autoDismissMs: 6000,
-  });
+  })
+}
+
+// Prestige upgrade purchase action
+export function buyPrestigeUpgrade(
+  upgradeId: string,
+  currency: 'ar' | 'cf' | 'os'
+): void {
+  const store = useGameStore.getState()
+  const { AR_UPGRADES, CF_UPGRADES, OS_UPGRADES, getUpgradeCost } =
+    require('@/lib/prestigeUpgradeDefs')
+
+  const allDefs = [...AR_UPGRADES, ...CF_UPGRADES, ...OS_UPGRADES]
+  const def = allDefs.find((d: any) => d.id === upgradeId)
+  if (!def) return
+
+  // Get current level from appropriate slice
+  let currentLevel = 0
+  if (currency === 'ar') {
+    currentLevel = (store.arUpgrades as any)[upgradeId] ?? 0
+  } else if (currency === 'cf') {
+    currentLevel = (store.cfUpgrades as any)[upgradeId] ?? 0
+  } else {
+    currentLevel = (store.osUpgrades as any)[upgradeId] ?? 0
+  }
+
+  if (currentLevel >= def.maxLevel) return
+
+  const cost = getUpgradeCost(def, currentLevel)
+
+  // Check currency
+  if (currency === 'ar' && store.arkalonResonance < cost) return
+  if (currency === 'cf' && store.chronalFractures < cost) return
+  if (currency === 'os' && store.omniSpars < cost) return
+
+  // Deduct currency and increment level
+  useGameStore.setState((s) => {
+    const newLevel = currentLevel + 1
+    if (currency === 'ar') {
+      return {
+        arkalonResonance: s.arkalonResonance - cost,
+        arUpgrades: { ...s.arUpgrades, [upgradeId]: newLevel },
+        // Activate automation if relevant upgrade purchased
+        automation: upgradeId === 'auto_buy_basic'
+          ? { ...s.automation, autoBuyBasic: true }
+          : upgradeId === 'auto_research_queue'
+          ? { ...s.automation, autoResearchQueue: true }
+          : s.automation,
+      }
+    } else if (currency === 'cf') {
+      return {
+        chronalFractures: s.chronalFractures - cost,
+        cfUpgrades: { ...s.cfUpgrades, [upgradeId]: newLevel },
+        automation: upgradeId === 'auto_module_buyer'
+          ? { ...s.automation, autoModuleBuy: true }
+          : s.automation,
+      }
+    } else {
+      return {
+        omniSpars: s.omniSpars - cost,
+        osUpgrades: { ...s.osUpgrades, [upgradeId]: newLevel },
+        automation: upgradeId === 'the_automated_lab'
+          ? { ...s.automation, autoPrestigeTierI: true }
+          : upgradeId === 'automated_timeline_severance'
+          ? { ...s.automation, autoPrestigeTierII: true }
+          : s.automation,
+      }
+    }
+  })
+
+  // Research slot expansion check for deep_research_slots
+  if (upgradeId === 'deep_research_slots') {
+    checkResearchSlotExpansion(useGameStore.getState())
+  }
+
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
 }
 
 // Module purchase action
@@ -719,42 +795,42 @@ export function buyModule(
   moduleType: ModuleType,
   currentLevel: number
 ): void {
-  const store = useGameStore.getState();
+  const store = useGameStore.getState()
 
   // Check module restrictions
-  if (store.activeChallengeRestrictions?.modulesDisabled) return;
+  if (store.activeChallengeRestrictions?.modulesDisabled) return
 
-  const { getModuleUpgradeCost, getModuleLevelCap } = require('@/lib/moduleDefs');
-  const cap = getModuleLevelCap(store);
+  const { getModuleUpgradeCost, getModuleLevelCap } = require('@/lib/moduleDefs')
+  const cap = getModuleLevelCap(store)
 
-  if (currentLevel >= cap) return;
+  if (currentLevel >= cap) return
 
-  const cost = getModuleUpgradeCost(generatorIndex, moduleType, currentLevel);
-  if (store.researchPoints < cost) return;
+  const cost = getModuleUpgradeCost(generatorIndex, moduleType, currentLevel)
+  if (store.researchPoints < cost) return
 
   useGameStore.setState((s) => {
     const newGenerators = s.generators.map((g, i) => {
-      if (i !== generatorIndex) return g;
+      if (i !== generatorIndex) return g
       switch (moduleType) {
         case 'efficiency':
-          return { ...g, efficiencyLevel: g.efficiencyLevel + 1 };
+          return { ...g, efficiencyLevel: g.efficiencyLevel + 1 }
         case 'cost_reduction':
-          return { ...g, costReductionLevel: g.costReductionLevel + 1 };
+          return { ...g, costReductionLevel: g.costReductionLevel + 1 }
         case 'synergy':
-          return { ...g, synergyLevel: g.synergyLevel + 1 };
+          return { ...g, synergyLevel: g.synergyLevel + 1 }
         default:
-          return g;
+          return g
       }
-    });
+    })
     return {
       researchPoints: s.researchPoints - cost,
       generators: newGenerators,
-    };
-  });
+    }
+  })
 
   // Modules affect production
-  useGameStore.getState().recalcPPS();
-  markUnlocksDirty();
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
 }
 
 // Generator purchase action

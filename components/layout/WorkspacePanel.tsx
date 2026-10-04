@@ -7,6 +7,7 @@ import { FEATURE_MAP } from '@/lib/featureRegistry'
 import ResearchWorkspace from '@/components/research/ResearchWorkspace'
 import ModulesWorkspace from '../modules/ModulesWorkspace'
 import RelicsTab from '../relics/RelicsTab'
+import PrestigeWorkspace from '../prestige/PrestigeWorkspace'
 
 // Placeholder panels - replaced by real implementations in later commits
 function PlaceholderPanel({ label }: { label: string }) {
@@ -30,7 +31,7 @@ export default function WorkspacePanel() {
     ),
     prestige: (
       <FeatureLockOverlay feature={FEATURE_MAP.prestige}>
-        <PlaceholderPanel label="Prestige" />
+        <PrestigeWorkspace />
       </FeatureLockOverlay>
     ),
     modules: (
