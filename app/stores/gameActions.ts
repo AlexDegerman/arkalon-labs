@@ -54,8 +54,10 @@ import type { BulkBuyAmount } from '@/constants/game'
 import { canPrestigeTier1, calculateARGain, buildTier1ResetState, canPrestigeTier2, calculateCFGain, buildTier2ResetState, canPrestigeTier3, calculateOSGain, buildTier3ResetState } from '@/lib/prestigeCalc'
 import { meetsProbeGateRequirements, canBuildProbe, nextProbeId, getScanDuration, rollProbeResult, ZONE_MAP } from '@/lib/excavationDefs'
 import { applyMegaprojectReward, getEffectiveConstructionCost, meetsMegaprojectRequirements, MEGAPROJECT_MAP } from '@/lib/megaprojectDefs'
-import { dispatchAnomalyResolved, dispatchGeneratorUnlock, dispatchMegaprojectComplete, dispatchPrestigeComplete, dispatchRelicDiscovered, dispatchResearchComplete } from '@/lib/dialogueDispatcher'
+import { dispatchAnomalyResolved, dispatchChallengeComplete, dispatchChallengeEnter, dispatchGeneratorUnlock, dispatchMegaprojectComplete, dispatchPrestigeComplete, dispatchRelicDiscovered, dispatchResearchComplete } from '@/lib/dialogueDispatcher'
 import { calculateOperationPoints, OPERATION_ARTIFACT_MAP, getCurrentCycle } from '@/lib/operationDefs'
+import { CHALLENGE_BALANCE_MAP, getEffectiveTarget } from '@/lib/challengeDefs'
+import { CHALLENGE_MAP } from '@/constants/challenges'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -196,9 +198,13 @@ export function tick(): void {
 
   // 10. Deferred: unlock check (dirty flag)
   if (consumeUnlocksDirty()) {
-    const currentState = useGameStore.getState()
-    checkUnlocks(currentState)
-    checkEraTransition(currentState)
+    const cs = useGameStore.getState()
+    checkUnlocks(cs)
+    checkEraTransition(cs)
+    // Check active challenge completion
+    if (cs.activeChallengeId) {
+      checkChallengeCompletion()
+    }
   }
 
   // 11. Deferred: tutorial beats
@@ -1133,7 +1139,172 @@ export function checkMegaprojectCompletion(): void {
   })
 }
 
+// Challenge actions
+
+// Enters a challenge run - starts a fresh Tier I prestige with restrictions
+export function enterChallenge(challengeId: string): void {
+  const store = useGameStore.getState()
+
+  const def = CHALLENGE_BALANCE_MAP[challengeId]
+  if (!def) return
+
+  // Must have done at least one prestige
+  if (store.stats.totalPrestigesTier1 === 0) return
+
+  // AC/EC challenges require Tier II/III
+  if (challengeId.startsWith('AC') && store.stats.totalPrestigesTier2 === 0) return
+  if (challengeId.startsWith('EC') && store.stats.totalPrestigesTier3 === 0) return
+
+  const currentTier = store.challengeRecords[challengeId]?.completedTiers ?? 0
+  const maxTiers = CHALLENGE_MAP[challengeId]?.maxTiers ?? 5
+  if (currentTier >= maxTiers) return
+
+  const restrictions = def.buildRestrictions()
+
+  // Apply same reset as Tier I prestige
+  const { buildTier1ResetState } = require('@/lib/prestigeCalc')
+  const resetPatch = buildTier1ResetState(store, 0)
+
+  useGameStore.setState((s) => ({
+    ...resetPatch,
+    settings: s.settings,
+    achievements: s.achievements,
+    unlockedRelics: s.unlockedRelics,
+    relicLevels: s.relicLevels,
+    artifactDust: s.artifactDust,
+    automation: s.automation,
+    cfUpgrades: s.cfUpgrades,
+    osUpgrades: s.osUpgrades,
+    chronalFractures: s.chronalFractures,
+    omniSpars: s.omniSpars,
+    arUpgrades: s.arUpgrades,
+    challengeRecords: s.challengeRecords,
+    completedMegaprojects: s.completedMegaprojects,
+    unlocks: s.unlocks,
+    stats: { ...s.stats, lastPrestigeTime: Date.now() },
+    // Challenge state
+    activeChallengeId: challengeId,
+    activeChallengeRestrictions: restrictions,
+  }))
+
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
+
+  dispatchChallengeEnter(challengeId)
+
+  useUIStore.getState().pushAlert({
+    priority: 1,
+    variant: 'anomaly',
+    title: `Challenge: ${CHALLENGE_MAP[challengeId]?.name ?? challengeId}`,
+    message: CHALLENGE_MAP[challengeId]?.restrictionSummary ?? 'Restrictions active.',
+    autoDismissMs: 6000,
+  })
+}
+
+// Exits a challenge run (completes or abandons)
+export function exitChallenge(targetMet: boolean): void {
+  const store = useGameStore.getState()
+  if (!store.activeChallengeId) return
+
+  const challengeId = store.activeChallengeId
+  const currentRecord = store.challengeRecords[challengeId]
+  const currentTier = currentRecord?.completedTiers ?? 0
+  const currentBest = currentRecord?.bestRP ?? 0n
+
+  const newTiers = targetMet ? currentTier + 1 : currentTier
+  const newBest = store.lifetimePoints > currentBest
+    ? store.lifetimePoints
+    : currentBest
+
+  useGameStore.setState((s) => ({
+    activeChallengeId: null,
+    activeChallengeRestrictions: null,
+    challengeRecords: {
+      ...s.challengeRecords,
+      [challengeId]: {
+        completedTiers: newTiers,
+        bestRP: newBest,
+      },
+    },
+  }))
+
+  if (targetMet) {
+    dispatchChallengeComplete()
+    applyChallengePermanentReward(challengeId, newTiers)
+    useUIStore.getState().pushAlert({
+      priority: 1,
+      variant: 'unlock',
+      title: 'Challenge Complete',
+      message: `${CHALLENGE_MAP[challengeId]?.name} - Tier ${newTiers} completed. Reward applied.`,
+      autoDismissMs: 6000,
+    })
+  }
+
+  // Reset to normal prestige state
+  const { buildTier1ResetState } = require('@/lib/prestigeCalc')
+  const resetPatch = buildTier1ResetState(store, 0)
+  useGameStore.setState((s) => ({
+    ...resetPatch,
+    settings: s.settings,
+    achievements: s.achievements,
+    unlockedRelics: s.unlockedRelics,
+    relicLevels: s.relicLevels,
+    artifactDust: s.artifactDust,
+    automation: s.automation,
+    cfUpgrades: s.cfUpgrades,
+    osUpgrades: s.osUpgrades,
+    chronalFractures: s.chronalFractures,
+    omniSpars: s.omniSpars,
+    arUpgrades: s.arUpgrades,
+  }))
+
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
+  markAchievementsDirty()
+}
+
+// Checks if the current challenge target has been met (called from tick)
+export function checkChallengeCompletion(): void {
+  const store = useGameStore.getState()
+  if (!store.activeChallengeId) return
+
+  const challengeId = store.activeChallengeId
+  const def = CHALLENGE_BALANCE_MAP[challengeId]
+  if (!def) return
+
+  const currentTier = store.challengeRecords[challengeId]?.completedTiers ?? 0
+  const hasAccelerant = store.arUpgrades.challenge_accelerant > 0
+  const target = getEffectiveTarget(challengeId, currentTier + 1, hasAccelerant)
+
+  if (store.lifetimePoints >= target) {
+    exitChallenge(true)
+  }
+}
+
+// Applies the permanent reward for completing a challenge tier
+function applyChallengePermanentReward(challengeId: string, _tier: number): void {
+  // Rewards are encoded in the store's challenge records and read by
+  // productionEngine.ts via getChallengeMultiplier. The records are
+  // the source of truth - no separate permanent state needed.
+  // Specific rewards like relic slots and queue slots are applied here:
+
+  const store = useGameStore.getState()
+
+  if (challengeId === 'SC11') {
+    // +1 relic slot - grow relicSlots array
+    if (store.relicSlots.length < 6) {
+      useGameStore.setState((s) => ({
+        relicSlots: [
+          ...s.relicSlots,
+          { relicId: null, cooldownRemaining: 0 },
+        ],
+      }))
+    }
+  }
+}
+
 // Operations actions
+
 // Awards operation points from a resolved operation anomaly
 export function earnOperationPoints(
   anomalyType: string,

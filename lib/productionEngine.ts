@@ -15,7 +15,14 @@ import {
   AR_PRODUCTION_CAP,
   PHI_AR_PRODUCTION
 } from '@/constants/game'
-import { getProductionExponentBonus, getTechMultiplierForGenerator } from './researchEffects'
+import {
+  getTechMultiplierForGenerator,
+  getProductionExponentBonus
+} from '@/lib/researchEffects'
+import {
+  getChallengeProductionMultiplier,
+  getChallengeExponentBonus
+} from '@/lib/challengeDefs'
 
 // Precision scale factor: all intermediate multipliers are computed as
 // integer numerators over SCALE_DENOM to avoid floating-point in the hot path
@@ -333,11 +340,17 @@ export function recalculatePPS(state: GameState): bigint {
   totalFloat *= lambda
   totalFloat *= primingBonus
 
+  // Challenge completion permanent multipliers
+  const challengeMult = getChallengeProductionMultiplier(state)
+  if (challengeMult !== 1) totalFloat *= challengeMult
+
   // Apply production exponent bonus: output ^ (1 + bonus)
   // Includes research node bonus and relic (Tachyon Prism) bonus
   const { getRelicExponentBonus } = require('@/lib/relicEffects')
   const exponentBonus =
-    getProductionExponentBonus(state) + getRelicExponentBonus(state)
+    getProductionExponentBonus(state) +
+    getRelicExponentBonus(state) +
+    getChallengeExponentBonus(state)
   if (exponentBonus > 0 && totalFloat > 1) {
     totalFloat = Math.pow(totalFloat, 1 + exponentBonus)
   }
