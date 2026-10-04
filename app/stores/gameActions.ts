@@ -26,7 +26,7 @@ import {
   isRelicEquipped,
   getRelicSlotIndex
 } from '@/lib/relicDefs'
-import { RELIC_LEVEL_CAP } from '@/constants/game'
+import { PROBE_COST_RP, RELIC_LEVEL_CAP, UNSTABLE_RIFT_REPAIR_SECONDS } from '@/constants/game'
 import { costToBuyN, maxAffordable, nextCost } from '@/lib/generatorCosts'
 import {
   markUnlocksDirty,
@@ -48,9 +48,10 @@ import {
 } from '@/lib/researchNodes'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import { RESEARCH_QUEUE_MAX_BASE } from '@/constants/game'
-import type { GameState, ModuleType } from '@/types/game'
+import type { ExcavationZone, GameState, ModuleType } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
 import { canPrestigeTier1, calculateARGain, buildTier1ResetState, canPrestigeTier2, calculateCFGain, buildTier2ResetState, canPrestigeTier3, calculateOSGain, buildTier3ResetState } from '@/lib/prestigeCalc'
+import { meetsProbeGateRequirements, canBuildProbe, nextProbeId, getScanDuration, rollProbeResult, ZONE_MAP } from '@/lib/excavationDefs'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -119,7 +120,7 @@ export function tick(): void {
     }
   }
 
-  // 6. Decrement probe timers (full logic in Commit 11.1)
+  // 6. Decrement probe timers and process completions
   if (store.probes.length > 0) {
     const updatedProbes = store.probes.map((probe) => {
       if (probe.status === 'scanning' && probe.timerRemaining > 0) {
@@ -137,6 +138,16 @@ export function tick(): void {
       return probe
     })
     nextState.probes = updatedProbes
+
+    // Check for newly completed scans after timer update
+    const hasCompletions = updatedProbes.some(
+      (p) =>
+        (p.status === 'scanning' && p.timerRemaining <= 0) ||
+        (p.status === 'repairing' && p.repairTimerRemaining <= 0)
+    )
+    if (hasCompletions) {
+      setTimeout(() => processProbeCompletions(), 0)
+    }
   }
 
   // 7. Megaproject RP absorption (full logic in Commit 12.1)
@@ -214,7 +225,7 @@ function checkAutoPrestige(store: GameState): void {
     return
   }
 
-  // Don't fire if a manual prestige dialog is open (no way to detect from tick;
+  // Don't fire if a manual prestige dialog is open (no way to detect from tick
   // user must dismiss dialog first - the automation simply won't count down)
 
   // Give active anomaly grace period
@@ -850,6 +861,158 @@ export function buyPrestigeUpgrade(
 
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
+}
+
+// Excavation actions
+
+// Builds a new probe, deducting RP
+export function buildProbe(): void {
+  const store = useGameStore.getState()
+
+  if (!meetsProbeGateRequirements(store)) return
+  if (!canBuildProbe(store)) return
+
+  const id = nextProbeId()
+
+  useGameStore.setState((s) => ({
+    researchPoints: s.researchPoints - PROBE_COST_RP,
+    probes: [
+      ...s.probes,
+      {
+        id,
+        status: 'idle' as const,
+        zone: null,
+        timerRemaining: 0,
+        repairTimerRemaining: 0,
+      },
+    ],
+  }))
+}
+
+// Launches a probe to a specific zone
+export function launchProbe(probeId: number, zone: ExcavationZone): void {
+  const store = useGameStore.getState()
+  const probe = store.probes.find((p) => p.id === probeId)
+  if (!probe || probe.status !== 'idle') return
+
+  const duration = getScanDuration(zone, store)
+
+  useGameStore.setState((s) => ({
+    probes: s.probes.map((p) =>
+      p.id === probeId
+        ? { ...p, status: 'scanning' as const, zone, timerRemaining: duration }
+        : p
+    ),
+  }))
+}
+
+// Processes probe completions - called from tick when timerRemaining hits 0
+export function processProbeCompletions(): void {
+  const store = useGameStore.getState()
+  const completedProbes = store.probes.filter(
+    (p) => p.status === 'scanning' && p.timerRemaining <= 0
+  )
+
+  if (completedProbes.length === 0) {
+    // Check repairs
+    const repairsComplete = store.probes.filter(
+      (p) => p.status === 'repairing' && p.repairTimerRemaining <= 0
+    )
+    if (repairsComplete.length > 0) {
+      useGameStore.setState((s) => ({
+        probes: s.probes.map((p) =>
+          p.status === 'repairing' && p.repairTimerRemaining <= 0
+            ? { ...p, status: 'idle' as const, zone: null, repairTimerRemaining: 0 }
+            : p
+        ),
+      }))
+    }
+    return
+  }
+
+  let totalDust = 0
+  const newRelics: number[] = []
+  const updatedProbes = [...store.probes]
+
+  for (const probe of completedProbes) {
+    const result = rollProbeResult(probe, store)
+    const idx = updatedProbes.findIndex((p) => p.id === probe.id)
+    if (idx === -1) continue
+
+    totalDust += result.dustEarned
+
+    if (result.relicDropped > 0 && !store.unlockedRelics.includes(result.relicDropped)) {
+      newRelics.push(result.relicDropped)
+    }
+
+    if (result.probeDestroyed) {
+      updatedProbes.splice(idx, 1)
+    } else if (result.needsRepair) {
+      updatedProbes[idx] = {
+        ...updatedProbes[idx],
+        status: 'repairing',
+        zone: null,
+        timerRemaining: 0,
+        repairTimerRemaining: UNSTABLE_RIFT_REPAIR_SECONDS,
+      }
+    } else {
+      updatedProbes[idx] = {
+        ...updatedProbes[idx],
+        status: 'idle',
+        zone: null,
+        timerRemaining: 0,
+        repairTimerRemaining: 0,
+      }
+    }
+
+    // Alert per probe
+    if (result.success) {
+      useUIStore.getState().pushAlert({
+        priority: 2,
+        variant: 'info',
+        title: 'Probe Returned',
+        message: `${ZONE_MAP[probe.zone!].label} scan complete. +${result.dustEarned} Artifact Dust.`,
+        autoDismissMs: 4000,
+      })
+    } else if (result.probeDestroyed) {
+      useUIStore.getState().pushAlert({
+        priority: 2,
+        variant: 'anomaly',
+        title: 'Probe Destroyed',
+        message: 'Void Depth scan failed. The probe has been lost.',
+        autoDismissMs: 5000,
+      })
+    } else if (result.needsRepair) {
+      useUIStore.getState().pushAlert({
+        priority: 2,
+        variant: 'info',
+        title: 'Probe Damaged',
+        message: 'Unstable Rift scan failed. Probe entering repair cycle (10 min).',
+        autoDismissMs: 4000,
+      })
+    }
+  }
+
+  useGameStore.setState((s) => ({
+    probes: updatedProbes,
+    artifactDust: s.artifactDust + totalDust,
+    unlockedRelics:
+      newRelics.length > 0
+        ? [...new Set([...s.unlockedRelics, ...newRelics])]
+        : s.unlockedRelics,
+  }))
+
+  if (newRelics.length > 0) {
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'unlock',
+      title: 'Relic Recovered',
+      message: 'A relic has been recovered from the excavation scan.',
+      autoDismissMs: 5000,
+    })
+  }
+
+  markAchievementsDirty()
 }
 
 // Module purchase action
