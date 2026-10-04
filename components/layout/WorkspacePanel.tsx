@@ -4,12 +4,13 @@ import { useActiveTab } from '@/hooks/useActiveTab'
 import { useGameStore } from '@/app/stores/gameStore'
 import FeatureLockOverlay from '@/components/ui/FeatureLockOverlay'
 import { FEATURE_MAP } from '@/lib/featureRegistry'
+import ResearchWorkspace from '@/components/research/ResearchWorkspace'
 
 // Placeholder panels - replaced by real implementations in later commits
 function PlaceholderPanel({ label }: { label: string }) {
   return (
     <div className="flex items-center justify-center h-32 p-4">
-      <p className="terminal text-(--text-secondary) text-xs text-center">
+      <p className="terminal text-[var(--text-secondary)] text-xs text-center">
         {label} panel - implemented in later phase
       </p>
     </div>
@@ -22,7 +23,7 @@ export default function WorkspacePanel() {
   const panels: Record<string, React.ReactNode> = {
     research: (
       <FeatureLockOverlay feature={FEATURE_MAP.techMatrix}>
-        <PlaceholderPanel label="Research" />
+        <ResearchWorkspace />
       </FeatureLockOverlay>
     ),
     prestige: (

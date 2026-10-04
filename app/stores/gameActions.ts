@@ -4,7 +4,7 @@
 // Additional action groups appended in subsequent commits
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { checkUnlocks, checkEraTransition } from '@/lib/unlockWatcher'
+import { checkUnlocks, checkEraTransition, checkResearchSlotExpansion } from '@/lib/unlockWatcher'
 import { costToBuyN, maxAffordable, nextCost } from '@/lib/generatorCosts'
 import {
   markUnlocksDirty,
@@ -338,76 +338,76 @@ export function buyGenerator(
 function handleResearchCompletions(
   slots: GameState['activeResearchSlots']
 ): void {
-  const store = useGameStore.getState();
-  let changed = false;
-  let newCompleted = [...store.completedResearchNodes];
-  let newQueue = [...store.researchQueue];
-  const newSlots = [...store.activeResearchSlots];
-  const autoResearchEnabled = store.arUpgrades.auto_research_queue > 0;
-  const pushAlert = (useUIStore as any).getState().pushAlert;
+  const store = useGameStore.getState()
+  let changed = false
+  let newCompleted = [...store.completedResearchNodes]
+  let newQueue = [...store.researchQueue]
+  const newSlots = [...store.activeResearchSlots]
+  const autoResearchEnabled = store.arUpgrades.auto_research_queue > 0
+  const pushAlert = (useUIStore as any).getState().pushAlert
 
   slots.forEach((slot, idx) => {
-    if (!slot.nodeId || slot.timerRemaining > 0) return;
+    if (!slot.nodeId || slot.timerRemaining > 0) return
 
-    const completedNodeId = slot.nodeId;
+    const completedNodeId = slot.nodeId
 
     // Mark as completed
     if (!newCompleted.includes(completedNodeId)) {
-      newCompleted.push(completedNodeId);
+      newCompleted.push(completedNodeId)
     }
 
     // Auto-advance: try to pull the next node from the queue
-    let nextNodeId: string | null = null;
+    let nextNodeId: string | null = null
 
     if (newQueue.length > 0) {
       // Find next queue item that can start in this slot
       // Constraint: must be different branch from other active slots
       const otherActiveSlots = newSlots.filter(
         (s, i) => i !== idx && s.nodeId !== null
-      );
+      )
       const activeBranches = new Set(
         otherActiveSlots
           .map((s) => {
-            if (!s.nodeId) return null;
-            const { RESEARCH_NODE_MAP: map } = require('@/constants/research');
-            return map[s.nodeId]?.branch ?? null;
+            if (!s.nodeId) return null
+            const { RESEARCH_NODE_MAP: map } = require('@/constants/research')
+            return map[s.nodeId]?.branch ?? null
           })
           .filter(Boolean)
-      );
+      )
 
       const queueIndex = newQueue.findIndex((id) => {
-        const { RESEARCH_NODE_MAP: map } = require('@/constants/research');
-        const node = map[id];
-        if (!node) return false;
+        const { RESEARCH_NODE_MAP: map } = require('@/constants/research')
+        const node = map[id]
+        if (!node) return false
         // Check branch conflict for parallel slots
-        if (activeBranches.has(node.branch)) return false;
-        return true;
-      });
+        if (activeBranches.has(node.branch)) return false
+        return true
+      })
 
       if (queueIndex !== -1) {
-        const candidateId = newQueue[queueIndex];
-        const { RESEARCH_NODE_MAP: map } = require('@/constants/research');
-        const candidateNode = map[candidateId];
+        const candidateId = newQueue[queueIndex]
+        const { RESEARCH_NODE_MAP: map } = require('@/constants/research')
+        const candidateNode = map[candidateId]
 
         if (candidateNode) {
           // Check affordability for auto-start
-          const currentStore = useGameStore.getState();
-          const cost = getNodeCost(candidateId, currentStore);
+          const currentStore = useGameStore.getState()
+          const cost = getNodeCost(candidateId, currentStore)
 
           if (currentStore.researchPoints >= cost || !autoResearchEnabled) {
             // Start the node
-            nextNodeId = candidateId;
-            newQueue.splice(queueIndex, 1);
+            nextNodeId = candidateId
+            newQueue.splice(queueIndex, 1)
 
             // Compute study time from updated state
             const studyTime = getEffectiveStudyTime(candidateId, {
               ...currentStore,
-              completedResearchNodes: newCompleted,
-            });
+              completedResearchNodes: newCompleted
+            })
             newSlots[idx] = {
               nodeId: nextNodeId,
-              timerRemaining: studyTime,
-            };
+              timerRemaining: studyTime
+            }
           } else {
             // Unaffordable - fire alert if auto-research is enabled
             if (autoResearchEnabled) {
@@ -416,28 +416,28 @@ function handleResearchCompletions(
                 variant: 'info',
                 title: 'Research Queue Paused',
                 message: `Cannot afford ${candidateNode.label}. Queue will resume when affordable.`,
-                autoDismissMs: 4000,
-              });
+                autoDismissMs: 4000
+              })
             }
-            newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+            newSlots[idx] = { nodeId: null, timerRemaining: 0 }
           }
         } else {
-          newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+          newSlots[idx] = { nodeId: null, timerRemaining: 0 }
         }
       } else {
-        newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+        newSlots[idx] = { nodeId: null, timerRemaining: 0 }
       }
     } else {
-      newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+      newSlots[idx] = { nodeId: null, timerRemaining: 0 }
     }
 
-    changed = true;
-    markUnlocksDirty();
-    markTutorialDirty();
-    markAchievementsDirty();
-  });
+    changed = true
+    markUnlocksDirty()
+    markTutorialDirty()
+    markAchievementsDirty()
+  })
 
-  if (!changed) return;
+  if (!changed) return
 
   useGameStore.setState((s) => ({
     completedResearchNodes: newCompleted,
@@ -445,10 +445,13 @@ function handleResearchCompletions(
     activeResearchSlots: newSlots,
     stats: {
       ...s.stats,
-      totalResearchNodesCompleted: newCompleted.length,
-    },
-  }));
+      totalResearchNodesCompleted: newCompleted.length
+    }
+  }))
 
   // Recalculate PPS since research nodes affect production
-  useGameStore.getState().recalcPPS();
+  useGameStore.getState().recalcPPS()
+
+  // Check if slot array needs to grow (R3 or CF Deep Research Slots)
+  checkResearchSlotExpansion(useGameStore.getState())
 }
