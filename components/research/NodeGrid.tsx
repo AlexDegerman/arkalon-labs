@@ -11,11 +11,13 @@ import {
   isNodeActive,
   isNodeQueued,
   getNodeCost,
-  getEffectiveStudyTime
+  getEffectiveStudyTime,
+  getBranchNodes
 } from '@/lib/researchNodes'
 import { formatPoints, formatCountdown, infNodeCostAtLevel } from '@/lib/format'
 import { INF_NODE_COST_SCALING } from '@/constants/research'
 import type { ResearchBranch } from '@/types/game'
+import InfNodePanel from './InfNodePanel'
 
 interface NodeCardProps {
   nodeId: string
@@ -160,29 +162,20 @@ interface Props {
 }
 
 function NodeGrid({ branch }: Props) {
-  const nodes = getBranchNodesAll(branch)
-  const standardNodes = nodes.filter((n) => !n.isInfinite)
-  const infiniteNode = nodes.find((n) => n.isInfinite)
+  // Only show standard (non-infinite) nodes in the grid
+  const standardNodes = getBranchNodes(branch, false)
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Standard nodes grid */}
+      {/* Standard nodes 2-column grid */}
       <div className="grid grid-cols-2 gap-2">
         {standardNodes.map((node) => (
           <NodeCard key={node.id} nodeId={node.id} />
         ))}
       </div>
 
-      {/* Infinite node at bottom */}
-      {infiniteNode && (
-        <div className="flex flex-col gap-1">
-          <div className="section-divider" />
-          <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-            Infinite Node
-          </p>
-          <NodeCard nodeId={infiniteNode.id} />
-        </div>
-      )}
+      {/* Infinite node rendered by dedicated panel after tier 8 */}
+      <InfNodePanel branch={branch} />
     </div>
   )
 }
