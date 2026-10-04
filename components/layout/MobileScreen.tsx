@@ -3,6 +3,7 @@
 import { useActiveTab } from '@/hooks/useActiveTab'
 import MobileMoreDrawer from '@/components/layout/MobileMoreDrawer'
 import ArkalonSphere from '../arkalon/ArkalonSphere'
+import ArkalonTerminal from '../arkalon/ArkalonTerminal'
 
 export default function MobileScreen() {
   const { mobileTab, moreDrawerOpen, setMoreDrawerOpen } = useActiveTab()
@@ -24,11 +25,11 @@ export default function MobileScreen() {
           <div className="mt-6">
             <ArkalonSphere state="idle" interactive={false} size={140} />
           </div>
-          {/* Terminal console renders here in Commit 2.3 */}
-          <div className="w-full glass rounded p-3">
-            <p className="terminal text-(--text-secondary) text-xs">
-              &gt; System standby...
-            </p>
+          <div className="w-full">
+            <ArkalonTerminal
+              lines={['System check... complete. Core online.']}
+              maxLines={3}
+            />
           </div>
         </div>
       )}

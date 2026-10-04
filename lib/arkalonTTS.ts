@@ -1,4 +1,4 @@
-// Browser SpeechSynthesis wrapper for Oracle voice synthesis
+// Browser SpeechSynthesis wrapper for Arkalon voice synthesis
 // Client-side only; execution guarded against SSR
 
 let lastSpeakTime = 0
@@ -13,7 +13,7 @@ function loadVoices(): SpeechSynthesisVoice[] {
   return cachedVoices
 }
 
-function getOracleVoice(): SpeechSynthesisVoice | null {
+function getArkalonVoice(): SpeechSynthesisVoice | null {
   const voices = loadVoices()
   if (!voices.length) return null
 
@@ -38,10 +38,22 @@ function getOracleVoice(): SpeechSynthesisVoice | null {
   )
 }
 
-function formatOracleSpeech(text: string): string {
+function formatArkalonSpeech(text: string): string {
   return text
     .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
-    .replace(/[^\w\s.,!?'-]/g, '')
+    .replace(/[^\w\s.,!?;:'-]/g, '')
+    .trim()
+}
+
+function prepareSpeechCadence(text: string): string {
+  const cleaned = formatArkalonSpeech(text)
+  if (!cleaned) return ''
+
+  const normalized = cleaned.replace(/\.{2,}/g, '... ')
+
+  return normalized
+    .replace(/([.!?])\s+/g, '... ')
+    .replace(/([;:])\s+/g, '... ')
     .trim()
 }
 
@@ -71,32 +83,21 @@ export function speakArkalon(text: string, volume = 0.88): void {
   if (now - lastSpeakTime < COOLDOWN_MS) return
   lastSpeakTime = now
 
-  const cleaned = formatOracleSpeech(text)
-  if (!cleaned) return
-
-  const words = cleaned.split(' ')
-  const cadenceText =
-    words.length <= 6
-      ? `... ${words.join('... ')} ...`
-      : `... ${cleaned.replace(/[.,!?]/g, '...')} ...`
+  const cadenceText = prepareSpeechCadence(text)
+  if (!cadenceText) return
 
   window.speechSynthesis.cancel()
 
-  // 50ms delay avoids cancellation race condition in Chromium/WebKit engines
   setTimeout(() => {
     const utterance = new SpeechSynthesisUtterance(cadenceText)
 
-    utterance.rate = 0.75
-    utterance.pitch = 0.25
+    utterance.rate = 0.8
+    utterance.pitch = 0.3
     utterance.volume = volume
 
-    const voice = getOracleVoice()
+    const voice = getArkalonVoice()
     if (voice) utterance.voice = voice
 
     window.speechSynthesis.speak(utterance)
   }, 50)
 }
-
-export const unlockOracle = unlockArkalon
-export const primeOracleVoices = primeArkalonVoices
-export const speakOracle = speakArkalon
