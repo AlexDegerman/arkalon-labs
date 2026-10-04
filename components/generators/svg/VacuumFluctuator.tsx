@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import EnergyCore from './EnergyCore'
 import type { GeneratorStage } from '@/hooks/useGeneratorStage'
 
@@ -105,25 +106,29 @@ export default function VacuumFluctuator({ stage, color, size }: Props) {
         />
       )}
 
-      {/* Stage 6: Quantum foam texture */}
+      {/* Stage 6: Quantum foam texture - deterministic positions */}
       {stage >= 6 &&
-        Array.from({ length: 6 }, (_, i) => (
-          <circle
-            key={i}
-            cx={cx + (Math.random() > 0.5 ? 1 : -1) * (4 + i) * 1.5 * s}
-            cy={cy + (Math.random() > 0.5 ? 1 : -1) * (3 + i) * 1.5 * s}
-            r={0.8 * s}
-            fill={color}
-            opacity={0.2}
-          >
-            <animate
-              attributeName="opacity"
-              values="0.2;0.6;0.2"
-              dur={`${0.5 + i * 0.2}s`}
-              repeatCount="indefinite"
-            />
-          </circle>
-        ))}
+        Array.from({ length: 6 }, (_, i) => {
+          const dirX = i % 2 === 0 ? 1 : -1
+          const dirY = i % 3 === 0 ? 1 : -1
+          return (
+            <circle
+              key={i}
+              cx={cx + dirX * (4 + i) * 1.5 * s}
+              cy={cy + dirY * (3 + i) * 1.5 * s}
+              r={0.8 * s}
+              fill={color}
+              opacity={0.2}
+            >
+              <animate
+                attributeName="opacity"
+                values="0.2;0.6;0.2"
+                dur={`${0.5 + i * 0.2}s`}
+                repeatCount="indefinite"
+              />
+            </circle>
+          )
+        })}
     </svg>
   )
 }

@@ -41,9 +41,9 @@ function getMilestoneInterval(
   milestoneSharpenerLevel: number,
   superrecursiveCoreLevel: number
 ): number {
-  // Research Desk uses smaller intervals up to 50
-  if (generatorIndex === 0 && quantity <= BigInt(RESEARCH_DESK_MILESTONE_CAP)) {
-    return RESEARCH_DESK_MILESTONE_INTERVAL;
+  // Research Desk uses smaller intervals below 50 (at 50+ uses standard interval)
+  if (generatorIndex === 0 && quantity < BigInt(RESEARCH_DESK_MILESTONE_CAP)) {
+    return RESEARCH_DESK_MILESTONE_INTERVAL
   }
 
   let interval = MILESTONE_INTERVAL

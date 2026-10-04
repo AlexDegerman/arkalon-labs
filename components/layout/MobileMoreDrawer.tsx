@@ -89,7 +89,7 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                 aria-label={`${item.label}${isLocked ? ' (locked)' : ''}`}
               >
                 <span className="text-lg leading-none" aria-hidden="true">
-                  {isLocked ? '&#x1F512;' : item.icon}
+                  {isLocked ? '\u{1F512}' : item.icon}
                 </span>
                 <span className="text-xs text-center leading-tight">
                   {item.label}

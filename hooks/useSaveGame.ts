@@ -87,16 +87,19 @@ export function useSaveGame() {
       }
 
       // 2. Fall back to localStorage
+      let localSaveTime: number | null = null
       if (!loadedState) {
         loadedState = loadFromLocalStorage()
+        // Get lastSavedTime from localStorage save
+        if (loadedState) {
+          const { getLastSaveTime } = await import('@/lib/saveGame')
+          localSaveTime = getLastSaveTime()
+        }
       }
 
       // 3. Apply loaded state and offline progress
       if (loadedState) {
-        const lastSaveTime =
-          loadedState.stats.lastPrestigeTime > 0
-            ? loadedState.stats.lastPrestigeTime
-            : Date.now() - 5000
+        const lastSaveTime = localSaveTime ?? Date.now() - 5000
 
         const offlinePayload = calculateOfflineProgress(
           loadedState,

@@ -60,22 +60,20 @@ export function getModuleUpgradeCost(
 // Returns the effective level cap for modules
 // AC5 challenge completion raises cap to 8
 export function getModuleLevelCap(state: {
-  activeChallengeRestrictions: { moduleLevelCapOverride: number | null } | null
-  challengeRecords: Record<string, { completedTiers: number }>
+  activeChallengeRestrictions: { moduleLevelCapOverride: number | null } | null;
+  challengeRecords: Record<string, { completedTiers: number }>;
 }): number {
   // Challenge override (during AC5 run: doubled levels)
-  if (
-    state.activeChallengeRestrictions?.moduleLevelCapOverride !== null &&
-    state.activeChallengeRestrictions?.moduleLevelCapOverride !== undefined
-  ) {
-    return state.activeChallengeRestrictions.moduleLevelCapOverride
+  const override = state.activeChallengeRestrictions?.moduleLevelCapOverride;
+  if (override !== null && override !== undefined) {
+    return override;
   }
 
   // AC5 permanent reward: cap raised to 8
-  const ac5Tiers = state.challengeRecords['AC5']?.completedTiers ?? 0
-  if (ac5Tiers > 0) return 8
+  const ac5Tiers = state.challengeRecords['AC5']?.completedTiers ?? 0;
+  if (ac5Tiers > 0) return 8;
 
-  return MODULE_LEVEL_CAP
+  return MODULE_LEVEL_CAP;
 }
 
 // Returns the effect description for a module at a given level

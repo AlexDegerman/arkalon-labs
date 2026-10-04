@@ -114,9 +114,9 @@ export default function AnomalyOverlay() {
 
 // Mobile anomaly bar - shown in the Lab tab when anomaly is active
 export function MobileAnomalyBar() {
+  const [expanded, setExpanded] = useState(false)
   const activeType = useGameStore((s) => s.activeAnomalyType)
   const timeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
-  const [expanded, setExpanded] = useState(false)
 
   if (!activeType) return null
 

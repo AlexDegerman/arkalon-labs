@@ -20,15 +20,13 @@ export function useInactiveTabDetection() {
         ) {
           dispatchedRef.current = true
           dispatchTabInactive(elapsed)
-          // Reset after dispatch
           setTimeout(() => {
             dispatchedRef.current = false
           }, 5000)
         }
         lastActiveRef.current = Date.now()
-      } else {
-        lastActiveRef.current = Date.now()
       }
+      // Do not update lastActiveRef on hidden - it should reflect last active time
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)

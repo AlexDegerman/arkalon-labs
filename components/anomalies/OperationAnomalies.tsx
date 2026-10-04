@@ -189,9 +189,21 @@ export function SolarFlareOverload() {
 }
 
 // Gravity Sink Collapse: Enter 3 terminal sequences
+function generateSequence(): string {
+  const digits = Array.from(
+    { length: 3 },
+    () => Math.floor(Math.random() * 9) + 1
+  )
+  return digits.join('-')
+}
+
 export function GravitySinkCollapse() {
   const timeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
-  const SEQUENCES = ['7-3-1', '4-9-2', '6-1-8']
+  const [SEQUENCES] = useState(() => [
+    generateSequence(),
+    generateSequence(),
+    generateSequence()
+  ])
   const [currentSeq, setCurrentSeq] = useState(0)
   const [input, setInput] = useState('')
   const [results, setResults] = useState<boolean[]>([])

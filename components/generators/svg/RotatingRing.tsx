@@ -25,8 +25,8 @@ export default function RotatingRing({
   opacity = 0.8
 }: Props) {
   const dur = speed === 'slow' ? '6s' : speed === 'fast' ? '1.5s' : '3s'
-  const from = direction === 'cw' ? '0 0 0' : '360 0 0'
-  const to = direction === 'cw' ? '360 0 0' : '0 0 0'
+  const fromAngle = direction === 'cw' ? 0 : 360
+  const toAngle = direction === 'cw' ? 360 : 0
 
   return (
     <circle
@@ -42,16 +42,8 @@ export default function RotatingRing({
       <animateTransform
         attributeName="transform"
         type="rotate"
-        from={`${from} ${cx} ${cy}`
-          .replace('0 0 0', `0 ${cx} ${cy}`)
-          .split(' ')
-          .slice(0, 3)
-          .join(' ')}
-        to={`${to} ${cx} ${cy}`
-          .replace('0 0 0', `0 ${cx} ${cy}`)
-          .split(' ')
-          .slice(0, 3)
-          .join(' ')}
+        from={`${fromAngle} ${cx} ${cy}`}
+        to={`${toAngle} ${cx} ${cy}`}
         dur={dur}
         repeatCount="indefinite"
       />

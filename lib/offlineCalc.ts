@@ -6,6 +6,7 @@ import {
   CHRONOS_LOOM_OFFLINE_SECONDS,
   MAX_OFFLINE_SECONDS_HARD_CAP
 } from '@/constants/game'
+import { getRelicOfflineEfficiencyBonus } from './relicEffects'
 
 // Returns the player's current max offline window in seconds
 // based on which upgrades and research nodes are active
@@ -32,15 +33,13 @@ function getOfflineEfficiency(state: GameState): number {
 
   // E1: 75%
   if (completed.includes('E1')) {
-    const { getRelicOfflineEfficiencyBonus } = require('@/lib/relicEffects');
-    const relicBonus = getRelicOfflineEfficiencyBonus(state);
-    return Math.min(1.0, 0.75 + relicBonus);
+    const relicBonus = getRelicOfflineEfficiencyBonus(state)
+    return Math.min(1.0, 0.75 + relicBonus)
   }
 
   // Base + Entropic Anchor relic
-  const { getRelicOfflineEfficiencyBonus } = require('@/lib/relicEffects');
-  const relicBonus = getRelicOfflineEfficiencyBonus(state);
-  return Math.min(1.0, DEFAULT_OFFLINE_EFFICIENCY + relicBonus);
+  const relicBonus = getRelicOfflineEfficiencyBonus(state)
+  return Math.min(1.0, DEFAULT_OFFLINE_EFFICIENCY + relicBonus)
 }
 
 // Calculates offline RP accumulation between lastSavedTime and now

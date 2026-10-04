@@ -74,6 +74,22 @@ export async function saveState(payload: SavePayload): Promise<{
 
   const serverNow = Date.now()
 
+  // Basic shape validation
+  if (!save || typeof save !== 'object') {
+    return { success: false, error: 'Invalid save payload' }
+  }
+  if (typeof lastSavedTime !== 'number' || lastSavedTime <= 0) {
+    return { success: false, error: 'Invalid save timestamp' }
+  }
+  if (
+    typeof lifetimePoints !== 'string' ||
+    typeof currentPoints !== 'string' ||
+    typeof cachedPPS !== 'string'
+  ) {
+    return { success: false, error: 'Invalid point value types' }
+  }
+
+  // Parse bigint values for sanity check
   let lpBigInt: bigint
   let cpBigInt: bigint
   let ppsBigInt: bigint
@@ -83,6 +99,11 @@ export async function saveState(payload: SavePayload): Promise<{
     ppsBigInt = BigInt(cachedPPS)
   } catch {
     return { success: false, error: 'Invalid point values' }
+  }
+
+  // Reject negative values
+  if (lpBigInt < 0n || cpBigInt < 0n || ppsBigInt < 0n) {
+    return { success: false, error: 'Negative point values rejected' }
   }
 
   if (!sanityCheckPoints(lpBigInt, ppsBigInt, lastSavedTime, serverNow)) {

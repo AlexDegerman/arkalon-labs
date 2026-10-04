@@ -17,7 +17,9 @@ import {
   selectNextAnomaly,
   getEffectiveDuration,
   getNextSpawnInterval,
-  buildAnomalyReward
+  buildAnomalyReward,
+  ANOMALY_DEFINITIONS,
+  OPERATION_ANOMALY_DEFINITIONS
 } from '@/lib/anomalyDefs'
 import type { AnomalyResultPayload } from '@/types/anomalies'
 import {
@@ -28,7 +30,13 @@ import {
   isRelicEquipped,
   getRelicSlotIndex
 } from '@/lib/relicDefs'
-import { PROBE_COST_RP, RELIC_LEVEL_CAP, UNSTABLE_RIFT_REPAIR_SECONDS } from '@/constants/game'
+import {
+  PROBE_COST_RP,
+  UNSTABLE_RIFT_REPAIR_SECONDS,
+  AUTO_PRESTIGE_COUNTDOWN_SECONDS,
+  ANOMALY_GRACE_SECONDS,
+  RELIC_LEVEL_CAP
+} from '@/constants/game'
 import { costToBuyN, maxAffordable, nextCost } from '@/lib/generatorCosts'
 import {
   markUnlocksDirty,
@@ -61,7 +69,19 @@ import { CHALLENGE_BALANCE_MAP, getEffectiveTarget } from '@/lib/challengeDefs'
 import { CHALLENGE_MAP } from '@/constants/challenges'
 import { AUTO_BUY_BASIC_INTERVAL_TICKS, AUTO_BUY_OPTIMAL_INTERVAL_TICKS } from '@/lib/automationDefs'
 import { marginalPPS } from '@/lib/productionEngine'
-
+import {
+  getModuleUpgradeCost as getModuleUpgradeCostFn,
+  getModuleLevelCap as getModuleLevelCapFn,
+  getModuleUpgradeCost
+} from '@/lib/moduleDefs'
+import type { FeatureKey } from '@/lib/featureRegistry'
+import { ERA_THRESHOLDS } from '@/constants/game'
+import {
+  dispatchEraTransition,
+  dispatchTutorialBeat
+} from '@/lib/dialogueDispatcher'
+import { ANOMALY_DIALOGUE_MAP } from '@/lib/arkalonDialogue'
+import { ACHIEVEMENTS } from '@/lib/achievementDefs'
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
 // Single 100ms tick dispatched by useGameLoop
@@ -239,12 +259,6 @@ let autoPrestigeCountdown = 0
 let autoPrestigeTier: 1 | 2 | 0 = 0
 
 function checkAutoPrestige(store: GameState): void {
-  const { canPrestigeTier1, canPrestigeTier2 } = require('@/lib/prestigeCalc')
-  const {
-    AUTO_PRESTIGE_COUNTDOWN_SECONDS,
-    ANOMALY_GRACE_SECONDS
-  } = require('@/constants/game')
-
   // EC3 challenge: forced prestige every 5 minutes (300s interval)
   const forcedInterval =
     store.activeChallengeRestrictions?.autoPrestigeIntervalSeconds
@@ -498,10 +512,6 @@ export function resolveAnomaly(interactionScore: number): void {
   const store = useGameStore.getState()
   if (!store.activeAnomalyType) return
 
-  const {
-    ANOMALY_DEFINITIONS,
-    OPERATION_ANOMALY_DEFINITIONS
-  } = require('@/lib/anomalyDefs')
   const allDefs = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS]
   const def = allDefs.find((d: any) => d.type === store.activeAnomalyType)
   if (!def) return
@@ -1202,7 +1212,6 @@ export function enterChallenge(challengeId: string): void {
   const restrictions = def.buildRestrictions()
 
   // Apply same reset as Tier I prestige
-  const { buildTier1ResetState } = require('@/lib/prestigeCalc')
   const resetPatch = buildTier1ResetState(store, 0)
 
   useGameStore.setState((s) => ({
@@ -1281,7 +1290,6 @@ export function exitChallenge(targetMet: boolean): void {
   }
 
   // Reset to normal prestige state
-  const { buildTier1ResetState } = require('@/lib/prestigeCalc')
   const resetPatch = buildTier1ResetState(store, 0)
   useGameStore.setState((s) => ({
     ...resetPatch,
@@ -1475,7 +1483,9 @@ function runAutoBuyOptimal(store: ReturnType<typeof useGameStore.getState>): voi
 }
 
 // Auto-starts the next queued research if a slot is free and node is affordable
-function runAutoResearch(store: ReturnType<typeof useGameStore.getState>): void {
+function runAutoResearch(
+  store: ReturnType<typeof useGameStore.getState>
+): void {
   if (!store.unlocks.techMatrix) return
   if (store.activeChallengeRestrictions?.techMatrixDisabled) return
 
@@ -1484,7 +1494,6 @@ function runAutoResearch(store: ReturnType<typeof useGameStore.getState>): void 
   if (store.researchQueue.length === 0) return
 
   const nextNodeId = store.researchQueue[0]
-  const { getNodeCost } = require('@/lib/researchNodes')
   const cost = getNodeCost(nextNodeId, store)
   if (store.researchPoints >= cost) {
     startResearch(nextNodeId)
@@ -1500,12 +1509,12 @@ function runAutoStabilize(store: ReturnType<typeof useGameStore.getState>): void
 }
 
 // Auto-equips highest-level available relic to empty slots
-function runAutoEquipRelic(store: ReturnType<typeof useGameStore.getState>): void {
+function runAutoEquipRelic(
+  store: ReturnType<typeof useGameStore.getState>
+): void {
   if (store.activeChallengeRestrictions?.relicsDisabled) return
   if (!store.unlocks.relics) return
 
-  const { getRelicSlotCount, canEquipToSlot, isRelicEquipped } =
-    require('@/lib/relicDefs')
   const slotCount = getRelicSlotCount(store)
 
   // Find empty slots
@@ -1520,7 +1529,10 @@ function runAutoEquipRelic(store: ReturnType<typeof useGameStore.getState>): voi
   // Find highest-level unequipped relic
   const unequipped = store.unlockedRelics
     .filter((id: number) => !isRelicEquipped(id, store))
-    .sort((a: number, b: number) => (store.relicLevels[b] ?? 0) - (store.relicLevels[a] ?? 0))
+    .sort(
+      (a: number, b: number) =>
+        (store.relicLevels[b] ?? 0) - (store.relicLevels[a] ?? 0)
+    )
 
   if (unequipped.length === 0) return
 
@@ -1542,8 +1554,7 @@ function runAutoModuleBuy(store: ReturnType<typeof useGameStore.getState>): void
   if (store.activeChallengeRestrictions?.modulesDisabled) return
   if (!store.unlocks.modules) return
 
-  const { getModuleUpgradeCost, getModuleLevelCap } = require('@/lib/moduleDefs')
-  const cap = getModuleLevelCap(store)
+  const cap = getModuleLevelCapFn(store)
   const types = ['efficiency', 'cost_reduction', 'synergy'] as const
 
   let cheapestCost = store.researchPoints + 1n
@@ -1561,7 +1572,7 @@ function runAutoModuleBuy(store: ReturnType<typeof useGameStore.getState>): void
 
       if (currentLevel >= cap) continue
 
-      const cost = BigInt(getModuleUpgradeCost(i, type, currentLevel))
+      const cost = BigInt(getModuleUpgradeCostFn(i, type, currentLevel))
       if (cost <= store.researchPoints && cost < cheapestCost) {
         cheapestCost = cost
         const capturedI = i
@@ -1652,8 +1663,7 @@ export function buyModule(
   // SC4, EC1, EC4: modules disabled
   if (store.activeChallengeRestrictions?.modulesDisabled) return
 
-  const { getModuleUpgradeCost, getModuleLevelCap } = require('@/lib/moduleDefs')
-  const cap = getModuleLevelCap(store)
+  const cap = getModuleLevelCapFn(store)
 
   if (currentLevel >= cap) return
 
@@ -1766,25 +1776,21 @@ function handleResearchCompletions(
         otherActiveSlots
           .map((s) => {
             if (!s.nodeId) return null
-            const { RESEARCH_NODE_MAP: map } = require('@/constants/research')
-            return map[s.nodeId]?.branch ?? null
+            return RESEARCH_NODE_MAP[s.nodeId]?.branch ?? null
           })
           .filter(Boolean)
       )
 
       const queueIndex = newQueue.findIndex((id) => {
-        const { RESEARCH_NODE_MAP: map } = require('@/constants/research')
-        const node = map[id]
+        const node = RESEARCH_NODE_MAP[id]
         if (!node) return false
-        // Check branch conflict for parallel slots
         if (activeBranches.has(node.branch)) return false
         return true
       })
 
       if (queueIndex !== -1) {
         const candidateId = newQueue[queueIndex]
-        const { RESEARCH_NODE_MAP: map } = require('@/constants/research')
-        const candidateNode = map[candidateId]
+        const candidateNode = RESEARCH_NODE_MAP[candidateId]
 
         if (candidateNode) {
           // Check affordability for auto-start

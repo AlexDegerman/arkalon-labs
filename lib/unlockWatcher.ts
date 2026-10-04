@@ -2,6 +2,11 @@ import type { GameState } from '@/types/game'
 import type { FeatureKey } from '@/lib/featureRegistry'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
+import { getActiveSlotCount } from './researchNodes'
+import { ERA_THRESHOLDS } from '@/constants/game'
+import { dispatchEraTransition, dispatchTutorialBeat } from './dialogueDispatcher'
+import { ANOMALY_DIALOGUE_MAP } from './arkalonDialogue'
+import { ACHIEVEMENTS } from './achievementDefs'
 
 // Unlock condition evaluators - each returns true when the feature should unlock
 const UNLOCK_CONDITIONS: Record<FeatureKey, (s: GameState) => boolean> = {
@@ -173,7 +178,6 @@ function handleUnlockSideEffects(key: FeatureKey, state: GameState): void {
 // Checks if research slot array needs expanding due to R3 or CF Deep Research Slots
 // Called from checkResearchSlotExpansion after each research completion
 export function checkResearchSlotExpansion(state: GameState): void {
-  const { getActiveSlotCount } = require('@/lib/researchNodes')
   const needed = getActiveSlotCount(state)
   const current = state.activeResearchSlots.length
 
@@ -194,26 +198,26 @@ export function checkResearchSlotExpansion(state: GameState): void {
       priority: 2,
       variant: 'unlock',
       title: 'Parallel Research Unlocked',
-      message: 'Node R3 complete. Two research projects can now run simultaneously from different branches.',
-      autoDismissMs: 5000,
+      message:
+        'Node R3 complete. Two research projects can now run simultaneously from different branches.',
+      autoDismissMs: 5000
     })
   } else if (needed === 3) {
     useUIStore.getState().pushAlert({
       priority: 2,
       variant: 'unlock',
       title: 'Third Research Slot Unlocked',
-      message: 'Deep Research Slots active. A third parallel research project is now available.',
-      autoDismissMs: 5000,
+      message:
+        'Deep Research Slots active. A third parallel research project is now available.',
+      autoDismissMs: 5000
     })
   }
 }
 // Tracks which era dialogue has already been announced this session
 const announcedEras = new Set<number>()
 
-// Called by era progression checks (wired from tick in Commit 3.4 extension)
+// Called by era progression checks
 export function checkEraTransition(state: GameState): void {
-  const { ERA_THRESHOLDS } = require('@/constants/game')
-  const { dispatchEraTransition } = require('@/lib/dialogueDispatcher')
   const pushAlert = useUIStore.getState().pushAlert
 
   for (const era of ERA_THRESHOLDS) {
@@ -230,7 +234,7 @@ export function checkEraTransition(state: GameState): void {
       variant: 'unlock',
       title: `Era ${era.era}: ${era.name}`,
       message: `Research output has reached a new dimensional threshold.`,
-      autoDismissMs: 6000,
+      autoDismissMs: 6000
     })
   }
 }
@@ -347,7 +351,6 @@ const firedBeats = new Set<string>()
 export function checkTutorialBeats(state: GameState): void {
   if (state.tutorial.tutorialCompleted) return
 
-  const { dispatchTutorialBeat } = require('@/lib/dialogueDispatcher')
   const completedBeats = state.tutorial.tutorialBeatsCompleted
 
   let newBeat: string | null = null
@@ -367,7 +370,6 @@ export function checkTutorialBeats(state: GameState): void {
 
     // For first_anomaly, use the active anomaly type's dialogue
     if (beat.id === 'first_anomaly' && state.activeAnomalyType) {
-      const { ANOMALY_DIALOGUE_MAP } = require('@/lib/arkalonDialogue')
       newDialogueTrigger =
         ANOMALY_DIALOGUE_MAP[state.activeAnomalyType] ??
         beat.dialogueTriggerId
@@ -420,7 +422,6 @@ export function checkTutorialBeats(state: GameState): void {
 const awardedThisSession = new Set<string>()
 
 export function checkAchievements(state: GameState): void {
-  const { ACHIEVEMENTS } = require('@/lib/achievementDefs')
   const pushAlert = useUIStore.getState().pushAlert
 
   for (const achievement of ACHIEVEMENTS) {
