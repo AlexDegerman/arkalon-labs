@@ -58,6 +58,8 @@ import { dispatchAnomalyResolved, dispatchChallengeComplete, dispatchChallengeEn
 import { calculateOperationPoints, OPERATION_ARTIFACT_MAP, getCurrentCycle } from '@/lib/operationDefs'
 import { CHALLENGE_BALANCE_MAP, getEffectiveTarget } from '@/lib/challengeDefs'
 import { CHALLENGE_MAP } from '@/constants/challenges'
+import { AUTO_BUY_BASIC_INTERVAL_TICKS, AUTO_BUY_OPTIMAL_INTERVAL_TICKS } from '@/lib/automationDefs'
+import { marginalPPS } from '@/lib/productionEngine'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -228,6 +230,9 @@ export function tick(): void {
   ) {
     checkAutoPrestige(store)
   }
+
+  // 14. Automation tick (runs on sub-intervals within the main 100ms tick)
+  tickAutomation()
 }
 
 // Auto-prestige countdown state
@@ -1318,16 +1323,11 @@ export function checkChallengeCompletion(): void {
 }
 
 // Applies the permanent reward for completing a challenge tier
-function applyChallengePermanentReward(challengeId: string, _tier: number): void {
-  // Rewards are encoded in the store's challenge records and read by
-  // productionEngine.ts via getChallengeMultiplier. The records are
-  // the source of truth - no separate permanent state needed.
-  // Specific rewards like relic slots and queue slots are applied here:
-
+function applyChallengePermanentReward(challengeId: string, tier: number): void {
   const store = useGameStore.getState()
 
   if (challengeId === 'SC11') {
-    // +1 relic slot - grow relicSlots array
+    // +1 relic slot per tier (max 6)
     if (store.relicSlots.length < 6) {
       useGameStore.setState((s) => ({
         relicSlots: [
@@ -1337,6 +1337,243 @@ function applyChallengePermanentReward(challengeId: string, _tier: number): void
       }))
     }
   }
+
+  if (challengeId === 'SC5' && tier >= 5) {
+    // SC5 Tier 5: unlock Auto-Stabilize Anomaly
+    useGameStore.setState((s) => ({
+      automation: { ...s.automation, autoStabilizeAnomaly: false }, // unlocked but off by default
+    }))
+  }
+
+  if (challengeId === 'SC6' && tier >= 3) {
+    // SC6 Tier 3: unlock Auto-Buy Optimal
+    useGameStore.setState((s) => ({
+      automation: { ...s.automation, autoBuyOptimal: false }, // unlocked but off by default
+    }))
+  }
+
+  if (challengeId === 'SC12' && tier >= 3) {
+    // SC12 Tier 3: unlock Auto-Launch Probe
+    useGameStore.setState((s) => ({
+      automation: { ...s.automation, autoLaunchProbe: false },
+    }))
+  }
+
+  if (challengeId === 'AC6') {
+    // AC6 completion: unlock Auto-Equip Relic + free relic level
+    useGameStore.setState((s) => ({
+      automation: { ...s.automation, autoEquipRelic: false },
+    }))
+  }
+
+  if (challengeId === 'AC6' && tier > 0) {
+    // AC6: +1 free relic level to all unlocked relics
+    useGameStore.setState((s) => {
+      const newLevels = { ...s.relicLevels }
+      for (const relicId of s.unlockedRelics) {
+        newLevels[relicId] = Math.min(100, (newLevels[relicId] ?? 0) + 1)
+      }
+      return { relicLevels: newLevels }
+    })
+  }
+}
+
+// Automation tick actions
+
+let autoBuyBasicTick = 0
+let autoBuyOptimalTick = 0
+let autoOtherTick = 0
+
+// Called from tick() every 100ms automation runs on slower intervals
+export function tickAutomation(): void {
+  const store = useGameStore.getState()
+  const auto = store.automation
+
+  // Auto-buy basic: every 5 seconds - buy cheapest affordable generator
+  if (auto.autoBuyBasic) {
+    autoBuyBasicTick++
+    if (autoBuyBasicTick >= AUTO_BUY_BASIC_INTERVAL_TICKS) {
+      autoBuyBasicTick = 0
+      runAutoBuyBasic(store)
+    }
+  } else {
+    autoBuyBasicTick = 0
+  }
+
+  // Auto-buy optimal: every 2 seconds - buy highest marginal PPS generator
+  if (auto.autoBuyOptimal) {
+    autoBuyOptimalTick++
+    if (autoBuyOptimalTick >= AUTO_BUY_OPTIMAL_INTERVAL_TICKS) {
+      autoBuyOptimalTick = 0
+      runAutoBuyOptimal(store)
+    }
+  } else {
+    autoBuyOptimalTick = 0
+  }
+
+  // Other automation: every 1 second
+  autoOtherTick++
+  if (autoOtherTick >= 10) {
+    autoOtherTick = 0
+
+    if (auto.autoResearchQueue) runAutoResearch(store)
+    if (auto.autoStabilizeAnomaly) runAutoStabilize(store)
+    if (auto.autoEquipRelic) runAutoEquipRelic(store)
+    if (auto.autoLaunchProbe) runAutoLaunchProbe(store)
+    if (auto.autoModuleBuy) runAutoModuleBuy(store)
+  }
+}
+
+// Buys the cheapest affordable generator
+function runAutoBuyBasic(store: ReturnType<typeof useGameStore.getState>): void {
+  if (store.activeChallengeRestrictions?.modulesDisabled) return
+
+  let cheapestIndex = -1
+  let cheapestCost = store.researchPoints + 1n
+
+  for (let i = 0; i < 20; i++) {
+    // Respect challenge tier limits
+    const maxTier = store.activeChallengeRestrictions?.maxGeneratorTier
+    if (maxTier !== null && maxTier !== undefined && i >= maxTier) continue
+
+    const cost = genNextCost(i, store)
+    if (cost <= store.researchPoints && cost < cheapestCost) {
+      cheapestCost = cost
+      cheapestIndex = i
+    }
+  }
+
+  if (cheapestIndex !== -1) {
+    buyGenerator(cheapestIndex, 1)
+  }
+}
+
+// Buys the generator with highest marginal PPS per RP
+function runAutoBuyOptimal(store: ReturnType<typeof useGameStore.getState>): void {
+  let bestIndex = -1
+  let bestEfficiency = -1
+
+  for (let i = 0; i < 20; i++) {
+    const maxTier = store.activeChallengeRestrictions?.maxGeneratorTier
+    if (maxTier !== null && maxTier !== undefined && i >= maxTier) continue
+
+    if (!canAffordGen(i, store)) continue
+
+    const cost = genNextCost(i, store)
+    if (cost <= 0n) continue
+
+    const marginal = marginalPPS(i, store)
+    const efficiency = Number(marginal) / Number(cost)
+    if (efficiency > bestEfficiency) {
+      bestEfficiency = efficiency
+      bestIndex = i
+    }
+  }
+
+  if (bestIndex !== -1) {
+    buyGenerator(bestIndex, 1)
+  }
+}
+
+// Auto-starts the next queued research if a slot is free and node is affordable
+function runAutoResearch(store: ReturnType<typeof useGameStore.getState>): void {
+  if (!store.unlocks.techMatrix) return
+  if (store.activeChallengeRestrictions?.techMatrixDisabled) return
+
+  const emptySlot = store.activeResearchSlots.findIndex((s) => !s.nodeId)
+  if (emptySlot === -1) return
+  if (store.researchQueue.length === 0) return
+
+  const nextNodeId = store.researchQueue[0]
+  const { getNodeCost } = require('@/lib/researchNodes')
+  const cost = getNodeCost(nextNodeId, store)
+  if (store.researchPoints >= cost) {
+    startResearch(nextNodeId)
+  }
+}
+
+// Auto-stabilizes active anomaly at 50% reward
+function runAutoStabilize(store: ReturnType<typeof useGameStore.getState>): void {
+  if (!store.activeAnomalyType) return
+  // Only trigger if anomaly has been active for at least 3 seconds
+  // (avoid immediately resolving newly spawned anomalies)
+  resolveAnomaly(0.5)
+}
+
+// Auto-equips highest-level available relic to empty slots
+function runAutoEquipRelic(store: ReturnType<typeof useGameStore.getState>): void {
+  if (store.activeChallengeRestrictions?.relicsDisabled) return
+  if (!store.unlocks.relics) return
+
+  const { getRelicSlotCount, canEquipToSlot, isRelicEquipped } =
+    require('@/lib/relicDefs')
+  const slotCount = getRelicSlotCount(store)
+
+  // Find empty slots
+  const emptySlotIndices = store.relicSlots
+    .slice(0, slotCount)
+    .map((s: any, i: number) => ({ slot: s, i }))
+    .filter(({ slot }: any) => canEquipToSlot(slot))
+    .map(({ i }: any) => i)
+
+  if (emptySlotIndices.length === 0) return
+
+  // Find highest-level unequipped relic
+  const unequipped = store.unlockedRelics
+    .filter((id: number) => !isRelicEquipped(id, store))
+    .sort((a: number, b: number) => (store.relicLevels[b] ?? 0) - (store.relicLevels[a] ?? 0))
+
+  if (unequipped.length === 0) return
+
+  equipRelic(unequipped[0])
+}
+
+// Auto-launches idle probes to safe sectors
+function runAutoLaunchProbe(store: ReturnType<typeof useGameStore.getState>): void {
+  if (!store.unlocks.excavation) return
+
+  const idleProbes = store.probes.filter((p: any) => p.status === 'idle')
+  for (const probe of idleProbes) {
+    launchProbe(probe.id, 'safe')
+  }
+}
+
+// Auto-buys cheapest affordable module upgrade
+function runAutoModuleBuy(store: ReturnType<typeof useGameStore.getState>): void {
+  if (store.activeChallengeRestrictions?.modulesDisabled) return
+  if (!store.unlocks.modules) return
+
+  const { getModuleUpgradeCost, getModuleLevelCap } = require('@/lib/moduleDefs')
+  const cap = getModuleLevelCap(store)
+  const types = ['efficiency', 'cost_reduction', 'synergy'] as const
+
+  let cheapestCost = store.researchPoints + 1n
+  let cheapestAction: (() => void) | null = null
+
+  for (let i = 0; i < 20; i++) {
+    const gen = store.generators[i]
+    if (!gen || gen.quantity === 0n) continue
+
+    for (const type of types) {
+      const currentLevel =
+        type === 'efficiency' ? gen.efficiencyLevel :
+        type === 'cost_reduction' ? gen.costReductionLevel :
+        gen.synergyLevel
+
+      if (currentLevel >= cap) continue
+
+      const cost = BigInt(getModuleUpgradeCost(i, type, currentLevel))
+      if (cost <= store.researchPoints && cost < cheapestCost) {
+        cheapestCost = cost
+        const capturedI = i
+        const capturedType = type
+        const capturedLevel = currentLevel
+        cheapestAction = () => buyModule(capturedI, capturedType, capturedLevel)
+      }
+    }
+  }
+
+  if (cheapestAction) cheapestAction()
 }
 
 // Operations actions
