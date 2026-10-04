@@ -41,7 +41,6 @@ import { RESEARCH_NODE_MAP } from '@/constants/research'
 import { RESEARCH_QUEUE_MAX_BASE } from '@/constants/game'
 import type { GameState, ModuleType } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
-import { useUIStore } from './uiStore'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 

@@ -9,6 +9,7 @@ import MiniStatStrip from './MiniStatStrip'
 import RPBanner from './RPBanner'
 import WorkspaceTabBar from './WorkspaceTabBar'
 import WorkspacePanel from './WorkspacePanel'
+import { MobileAnomalyBar } from '../anomalies/AnomalyOverlay'
 
 export default function MobileScreen() {
   const { mobileTab, moreDrawerOpen, setMoreDrawerOpen } = useActiveTab()
@@ -18,6 +19,9 @@ export default function MobileScreen() {
       {/* Mobile RP banner - always visible */}
       <RPBanner />
       <MiniStatStrip />
+
+      {/* Mobile anomaly bar - shown above tab content when active */}
+      <MobileAnomalyBar />
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden relative min-h-0">

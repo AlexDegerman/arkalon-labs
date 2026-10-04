@@ -10,6 +10,7 @@ import RPBanner from '@/components/layout/RPBanner'
 import UpdateModal from '@/components/modals/UpdateModal'
 import WelcomeModal from '@/components/modals/WelcomeModal'
 import GameBootstrap from '@/components/layout/GameBootstrap'
+import AnomalyOverlay from '@/components/anomalies/AnomalyOverlay'
 
 export default function GamePage() {
   return (
@@ -18,6 +19,7 @@ export default function GamePage() {
       <WelcomeModal />
       <UpdateModal />
       <GameBootstrap />
+      <AnomalyOverlay />
 
       {/* PC header */}
       <header className="hidden lg:flex items-center justify-between px-4 py-2 border-b border-(--border-default) bg-(--bg-surface) shrink-0">
