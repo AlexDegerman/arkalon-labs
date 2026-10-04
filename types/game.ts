@@ -330,3 +330,9 @@ export interface SavePayload {
   clientSettings: SettingsState
   lastSavedTime: number
 }
+
+export interface TierThreshold {
+  readonly label: string
+  readonly cls: string
+  readonly min: bigint
+}

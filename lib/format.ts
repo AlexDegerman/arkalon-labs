@@ -1,5 +1,6 @@
-import { TIER_THRESHOLDS } from '@/constants/tiers'
-import type { NotationMode, DecimalPrecision } from '@/types/tiers'
+import { TIER_THRESHOLDS } from "@/constants/tiers"
+import { NotationMode } from "@/types/game"
+import { DecimalPrecision } from "@/types/tiers"
 
 let currentNotation: NotationMode = 'suffix'
 let currentPrecision: DecimalPrecision = 2
@@ -132,6 +133,7 @@ export function getFullNumberName(value: bigint): string {
   return ''
 }
 
+// Formats a Unix ms timestamp to a locale time string
 export function formatDateTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString(undefined, {
     hour: '2-digit',
@@ -139,14 +141,104 @@ export function formatDateTime(timestamp: number): string {
   })
 }
 
+// Formats a Unix ms timestamp to a locale clock time for "completes at" display
+export function formatCompletionTime(nowMs: number, remainingSeconds: number): string {
+  if (!isFinite(remainingSeconds) || remainingSeconds < 0) return '--'
+  return new Date(nowMs + remainingSeconds * 1000).toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// Formats seconds into a human-readable duration string
 export function formatDuration(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return '--'
   if (seconds < 60) return `${Math.ceil(seconds)}s`
   if (seconds < 3600) {
     const m = Math.floor(seconds / 60)
     const s = Math.ceil(seconds % 60)
     return s > 0 ? `${m}m ${s}s` : `${m}m`
   }
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
+  if (seconds < 86400) {
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    return m > 0 ? `${h}h ${m}m` : `${h}h`
+  }
+  const d = Math.floor(seconds / 86400)
+  const h = Math.floor((seconds % 86400) / 3600)
+  return h > 0 ? `${d}d ${h}h` : `${d}d`
+}
+
+// Formats seconds as a real-wall-clock countdown string HH:MM:SS
+export function formatCountdown(totalSeconds: number): string {
+  if (!isFinite(totalSeconds) || totalSeconds < 0) return '00:00'
+  const s = Math.ceil(totalSeconds)
+  const hh = Math.floor(s / 3600)
+  const mm = Math.floor((s % 3600) / 60)
+  const ss = s % 60
+  if (hh > 0) {
+    return `${hh}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`
+  }
+  return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`
+}
+
+// Returns seconds until a bigint cost is affordable at the given PPS
+// Returns 0 if already affordable
+export function secondsToAfford(cost: bigint, current: bigint, pps: bigint): number {
+  if (current >= cost) return 0
+  if (pps <= 0n) return Infinity
+  const needed = cost - current
+  const secondsBn = (needed + pps - 1n) / pps
+  if (secondsBn > BigInt(Number.MAX_SAFE_INTEGER)) return Infinity
+  return Number(secondsBn)
+}
+
+// Formats time-to-afford as a compact string for generator cards
+// Returns empty string if already affordable
+export function formatTimeToAfford(
+  cost: bigint,
+  current: bigint,
+  pps: bigint
+): string {
+  const seconds = secondsToAfford(cost, current, pps)
+  if (seconds === 0) return ''
+  if (!isFinite(seconds)) return '--'
+  return formatDuration(seconds)
+}
+
+// Computes the cost of an infinite research node at a given level
+// cost = baseCost * (scalingFactor ^ level)
+export function infNodeCostAtLevel(
+  baseCost: bigint,
+  scalingFactor: number,
+  level: number
+): bigint {
+  if (level <= 0) return baseCost
+  const multiplierNumerator = BigInt(Math.round(scalingFactor * 1000))
+  const multiplierDenominator = 1000n
+
+  let cost = baseCost
+  for (let i = 0; i < level; i++) {
+    cost = (cost * multiplierNumerator) / multiplierDenominator
+  }
+  return cost
+}
+
+// Formats a rate per second with appropriate suffix
+export function formatRate(pps: bigint): string {
+  return `${formatPoints(pps)}/sec`
+}
+
+// Formats a percentage value to fixed decimal places
+export function formatPercent(value: number, decimals = 1): string {
+  return `${value.toFixed(decimals)}%`
+}
+
+// Returns a short human-readable label for a bigint magnitude
+// Used in generator "next milestone" displays
+export function formatMilestoneTarget(quantity: bigint, interval: number): string {
+  if (interval <= 0) return `${quantity.toString()}/0`
+  const intervalBn = BigInt(interval)
+  const next = ((quantity / intervalBn) + 1n) * intervalBn
+  return `${quantity.toString()}/${next.toString()}`
 }

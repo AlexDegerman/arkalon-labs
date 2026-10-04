@@ -4,5 +4,4 @@ export interface TierThreshold {
   readonly min: bigint
 }
 
-export type NotationMode = 'suffix' | 'scientific' | 'engineering' | 'logarithm'
 export type DecimalPrecision = 1 | 2 | 3
