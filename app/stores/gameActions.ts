@@ -1,29 +1,23 @@
 'use client'
 
-// Core tick action and game loop actions
-// Additional actions appended in subsequent commits
+// Core tick, generator purchase, and game loop actions
+// Additional action groups appended in subsequent commits
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { recalculatePPS } from '@/lib/productionEngine'
 import { checkUnlocks } from '@/lib/unlockWatcher'
+import { costToBuyN, maxAffordable, nextCost } from '@/lib/generatorCosts'
+import {
+  markUnlocksDirty,
+  markTutorialDirty,
+  markAchievementsDirty,
+  consumeUnlocksDirty,
+  consumeTutorialDirty,
+  consumeAchievementsDirty
+} from '@/lib/dirtyFlags'
 import type { GameState } from '@/types/game'
+import type { BulkBuyAmount } from '@/constants/game'
 
-// Dirty flags for deferred checks inside the tick
-let unlocksDirty = false
-let tutorialDirty = false
-let achievementsDirty = false
-
-export function markUnlocksDirty(): void {
-  unlocksDirty = true
-}
-
-export function markTutorialDirty(): void {
-  tutorialDirty = true
-}
-
-export function markAchievementsDirty(): void {
-  achievementsDirty = true
-}
+export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
 // Single 100ms tick dispatched by useGameLoop
 // CRITICAL: reads only cachedPointsPerSecond, never calls recalculatePPS
@@ -45,7 +39,7 @@ export function tick(): void {
   nextState.lifetimePoints = newLifetime
 
   if (tickRP > 0n) {
-    unlocksDirty = true
+    markUnlocksDirty()
   }
 
   // 2. Decrement active research timers
@@ -132,23 +126,59 @@ export function tick(): void {
   handleResearchCompletions(updatedSlots)
 
   // 10. Deferred: unlock check (dirty flag)
-  if (unlocksDirty) {
-    unlocksDirty = false
-    const currentState = useGameStore.getState()
-    checkUnlocks(currentState)
+  if (consumeUnlocksDirty()) {
+    checkUnlocks(useGameStore.getState())
   }
 
   // 11. Deferred: tutorial beats (dirty flag) - wired in Commit 14.1
-  if (tutorialDirty) {
-    tutorialDirty = false
+  if (consumeTutorialDirty()) {
     // checkTutorialBeats() called in Commit 14.1
   }
 
   // 12. Deferred: achievements check - wired in Commit 19.2
-  if (achievementsDirty) {
-    achievementsDirty = false
+  if (consumeAchievementsDirty()) {
     // checkAchievements() called in Commit 19.2
   }
+}
+
+// Generator purchase action
+// amount: 1 | 10 | 100 | 'max'
+export function buyGenerator(
+  generatorIndex: number,
+  amount: BulkBuyAmount
+): void {
+  const store = useGameStore.getState()
+  const gen = store.generators[generatorIndex]
+  if (!gen) return
+
+  // Determine actual count to buy
+  let count: number
+  if (amount === 'max') {
+    count = maxAffordable(generatorIndex, store)
+  } else {
+    count = amount
+  }
+
+  if (count <= 0) return
+
+  const totalCost = costToBuyN(generatorIndex, count, store)
+  if (store.researchPoints < totalCost) return
+
+  const newGenerators = store.generators.map((g, i) => {
+    if (i !== generatorIndex) return g
+    return { ...g, quantity: g.quantity + BigInt(count) }
+  })
+
+  useGameStore.setState((s) => ({
+    researchPoints: s.researchPoints - totalCost,
+    generators: newGenerators,
+  }))
+
+  markUnlocksDirty()
+  markTutorialDirty()
+
+  // Recalculate PPS since generator quantities changed
+  useGameStore.getState().recalcPPS()
 }
 
 // Checks if any research slots completed this tick and processes them

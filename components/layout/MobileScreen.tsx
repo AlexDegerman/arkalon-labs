@@ -4,6 +4,7 @@ import { useActiveTab } from '@/hooks/useActiveTab'
 import MobileMoreDrawer from '@/components/layout/MobileMoreDrawer'
 import ArkalonSphere from '../arkalon/ArkalonSphere'
 import ArkalonTerminal from '../arkalon/ArkalonTerminal'
+import GeneratorList from '../generators/GeneratorList'
 
 export default function MobileScreen() {
   const { mobileTab, moreDrawerOpen, setMoreDrawerOpen } = useActiveTab()
@@ -12,10 +13,8 @@ export default function MobileScreen() {
     <div className="lg:hidden flex-1 overflow-hidden relative min-h-0">
       {/* Lab tab */}
       {mobileTab === 'lab' && (
-        <div className="h-full overflow-y-auto p-3">
-          <p className="terminal text-(--text-secondary) text-xs">
-            Facility Equipment - generator list renders here in Phase 3
-          </p>
+        <div className="h-full flex flex-col min-h-0">
+          <GeneratorList />
         </div>
       )}
 
