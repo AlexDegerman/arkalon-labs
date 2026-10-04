@@ -113,6 +113,14 @@ export async function loadState(): Promise<LoadResult> {
       lastSavedTime: Number(row.last_saved_time)
     }
 
+    // Determine if a new operation cycle has started
+    // A cycle is 90 days; compute from epoch
+    const CYCLE_DURATION_MS = 90 * 24 * 3600 * 1000
+    const serverCycleNumber = Math.floor(Date.now() / CYCLE_DURATION_MS) + 1
+
+    // Attach server cycle number to the state for client to process
+    ;(reconstructed as any)._serverCycleNumber = serverCycleNumber
+
     return { success: true, state: reconstructed }
   } catch (err) {
     console.error('[loadState] db error:', err)

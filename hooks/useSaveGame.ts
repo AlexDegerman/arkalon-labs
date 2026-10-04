@@ -20,17 +20,7 @@ import {
 import { saveState } from '@/app/actions/saveState'
 import { loadState } from '@/app/actions/loadState'
 
-const TOKEN_KEY = 'arkalon_labs_token'
-
 type SaveStatus = 'synced' | 'saving' | 'error' | 'offline' | '--'
-
-function getSessionToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_KEY)
-  } catch {
-    return null
-  }
-}
 
 export function useSaveGame() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('--')
@@ -42,9 +32,6 @@ export function useSaveGame() {
 
   // Performs a cloud save - rate-limited client-side as well as server-side
   const doCloudSave = useCallback(async () => {
-    const token = getSessionToken()
-    if (!token) return
-
     const now = Date.now()
     if (now - lastCloudSaveRef.current < SAVE_RATE_LIMIT_MS) return
 
@@ -55,7 +42,6 @@ export function useSaveGame() {
 
     try {
       const result = await saveState({
-        sessionToken: token,
         save: serialized as unknown as Record<string, unknown>,
         lastSavedTime: serialized.lastSavedTime,
         lifetimePoints: serialized.lifetimePoints,
@@ -87,18 +73,17 @@ export function useSaveGame() {
 
     async function boot() {
       let loadedState = null
-      const token = getSessionToken()
+      let cloudState: Record<string, unknown> | null = null
 
       // 1. Try cloud load
-      if (token) {
-        try {
-          const result = await loadState(token)
-          if (result.success && result.state) {
-            loadedState = deserialiseState(result.state)
-          }
-        } catch {
-          // Cloud unavailable - fall through to localStorage
+      try {
+        const result = await loadState()
+        if (result.success && result.state) {
+          cloudState = result.state
+          loadedState = deserialiseState(result.state)
         }
+      } catch {
+        // Cloud unavailable - fall through to localStorage
       }
 
       // 2. Fall back to localStorage
@@ -126,6 +111,14 @@ export function useSaveGame() {
         const mergedState = { ...loadedState, ...updatedCurrencies }
         useGameStore.getState().applyState(mergedState)
 
+        // Check for operation cycle advance
+        const serverCycle = (cloudState as any)?._serverCycleNumber
+        if (serverCycle && typeof serverCycle === 'number') {
+          const { checkOperationCycle } =
+            await import('@/app/stores/gameActions')
+          checkOperationCycle(serverCycle)
+        }
+
         if (offlinePayload.rpEarned > 0n) {
           const { useUIStore } = await import('@/app/stores/uiStore')
           const { formatPoints, formatDuration } = await import('@/lib/format')
@@ -140,7 +133,7 @@ export function useSaveGame() {
       }
 
       useGameStore.getState().setInitialized(true)
-      setSaveStatus(token ? 'synced' : 'offline')
+      setSaveStatus(cloudState ? 'synced' : 'offline')
     }
 
     boot()

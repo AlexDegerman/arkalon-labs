@@ -49,12 +49,13 @@ import {
 } from '@/lib/researchNodes'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import { RESEARCH_QUEUE_MAX_BASE } from '@/constants/game'
-import type { ExcavationZone, GameState, MegaprojectId, ModuleType } from '@/types/game'
+import type { ExcavationZone, GameState, MegaprojectId, ModuleType, OperationArtifactId } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
 import { canPrestigeTier1, calculateARGain, buildTier1ResetState, canPrestigeTier2, calculateCFGain, buildTier2ResetState, canPrestigeTier3, calculateOSGain, buildTier3ResetState } from '@/lib/prestigeCalc'
 import { meetsProbeGateRequirements, canBuildProbe, nextProbeId, getScanDuration, rollProbeResult, ZONE_MAP } from '@/lib/excavationDefs'
 import { applyMegaprojectReward, getEffectiveConstructionCost, meetsMegaprojectRequirements, MEGAPROJECT_MAP } from '@/lib/megaprojectDefs'
 import { dispatchAnomalyResolved, dispatchGeneratorUnlock, dispatchMegaprojectComplete, dispatchPrestigeComplete, dispatchRelicDiscovered, dispatchResearchComplete } from '@/lib/dialogueDispatcher'
+import { calculateOperationPoints, OPERATION_ARTIFACT_MAP, getCurrentCycle } from '@/lib/operationDefs'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -1063,22 +1064,22 @@ export function processProbeCompletions(): void {
 
 // Activates a megaproject - begins absorbing passive RP toward construction
 export function activateMegaproject(id: MegaprojectId): void {
-  const store = useGameStore.getState();
+  const store = useGameStore.getState()
 
-  if (!meetsMegaprojectRequirements(id, store)) return;
-  if (store.activeMegaprojectId === id) return;
+  if (!meetsMegaprojectRequirements(id, store)) return
+  if (store.activeMegaprojectId === id) return
 
   useGameStore.setState({
     activeMegaprojectId: id,
     megaprojectRPAbsorbed: 0n,
     megaprojectAllocationPercent: 10, // Default 10% allocation
-  });
+  })
 }
 
 // Updates the allocation percentage (0-100)
 export function setMegaprojectAllocation(percent: number): void {
-  const clamped = Math.max(0, Math.min(100, Math.round(percent)));
-  useGameStore.setState({ megaprojectAllocationPercent: clamped });
+  const clamped = Math.max(0, Math.min(100, Math.round(percent)))
+  useGameStore.setState({ megaprojectAllocationPercent: clamped })
 }
 
 // Deactivates the current megaproject without completing it
@@ -1088,7 +1089,7 @@ export function deactivateMegaproject(): void {
     activeMegaprojectId: null,
     megaprojectRPAbsorbed: 0n,
     megaprojectAllocationPercent: 0,
-  });
+  })
 }
 
 // Checks if the active megaproject has received enough RP to complete
@@ -1124,6 +1125,71 @@ export function checkMegaprojectCompletion(): void {
     title: `${def?.name ?? 'Megaproject'} Complete`,
     message: def?.reward ?? 'Megaproject reward applied.',
     autoDismissMs: 8000
+  })
+}
+
+// Operations actions
+// Awards operation points from a resolved operation anomaly
+export function earnOperationPoints(
+  anomalyType: string,
+  interactionScore: number
+): void {
+  const points = calculateOperationPoints(anomalyType, interactionScore)
+  if (points <= 0) return
+
+  useGameStore.setState((s) => ({
+    currentOperationPoints: s.currentOperationPoints + points,
+  }))
+}
+
+// Purchases an operation artifact with operation points
+export function buyOperationArtifact(artifactId: OperationArtifactId): void {
+  const store = useGameStore.getState()
+  const def = OPERATION_ARTIFACT_MAP[artifactId]
+  if (!def) return
+
+  if (store.operationArtifactsUnlocked.includes(artifactId)) return
+  if (store.currentOperationPoints < def.cost) return
+
+  useGameStore.setState((s) => ({
+    currentOperationPoints: s.currentOperationPoints - def.cost,
+    operationArtifactsUnlocked: [...s.operationArtifactsUnlocked, artifactId],
+  }))
+
+  useGameStore.getState().recalcPPS()
+
+  useUIStore.getState().pushAlert({
+    priority: 2,
+    variant: 'unlock',
+    title: 'Operation Artifact Acquired',
+    message: `${def.name}: ${def.effect}`,
+    autoDismissMs: 5000,
+  })
+
+  import('@/lib/dialogueDispatcher').then(({ dispatchOperationStart }) => {
+    dispatchOperationStart()
+  })
+}
+
+// Checks if the operation cycle has advanced and initializes new cycle state
+// Called on game load from loadState Server Action
+export function checkOperationCycle(serverCycleNumber: number): void {
+  const store = useGameStore.getState()
+  if (store.currentOperationCycle === serverCycleNumber) return
+
+  // New cycle started
+  useGameStore.setState((s) => ({
+    currentOperationCycle: serverCycleNumber,
+    // Carry over points but reset to new cycle context
+    // Operation artifacts are permanent - do not reset
+  }))
+
+  useUIStore.getState().pushAlert({
+    priority: 2,
+    variant: 'unlock',
+    title: 'New Operation Cycle',
+    message: `${getCurrentCycle(serverCycleNumber).name} operation has begun.`,
+    autoDismissMs: 6000,
   })
 }
 
