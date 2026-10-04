@@ -48,10 +48,11 @@ import {
 } from '@/lib/researchNodes'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import { RESEARCH_QUEUE_MAX_BASE } from '@/constants/game'
-import type { ExcavationZone, GameState, ModuleType } from '@/types/game'
+import type { ExcavationZone, GameState, MegaprojectId, ModuleType } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
 import { canPrestigeTier1, calculateARGain, buildTier1ResetState, canPrestigeTier2, calculateCFGain, buildTier2ResetState, canPrestigeTier3, calculateOSGain, buildTier3ResetState } from '@/lib/prestigeCalc'
 import { meetsProbeGateRequirements, canBuildProbe, nextProbeId, getScanDuration, rollProbeResult, ZONE_MAP } from '@/lib/excavationDefs'
+import { applyMegaprojectReward, getEffectiveConstructionCost, meetsMegaprojectRequirements, MEGAPROJECT_MAP } from '@/lib/megaprojectDefs'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -150,11 +151,18 @@ export function tick(): void {
     }
   }
 
-  // 7. Megaproject RP absorption (full logic in Commit 12.1)
+  // 7. Megaproject RP absorption
   if (store.activeMegaprojectId && store.megaprojectAllocationPercent > 0) {
     const allocFraction = BigInt(store.megaprojectAllocationPercent)
     const absorbed = (pps * allocFraction) / 1000n // per 100ms tick
-    nextState.megaprojectRPAbsorbed = store.megaprojectRPAbsorbed + absorbed
+    const newAbsorbed = store.megaprojectRPAbsorbed + absorbed
+    nextState.megaprojectRPAbsorbed = newAbsorbed
+
+    // Check completion after update
+    const cost = getEffectiveConstructionCost(store.activeMegaprojectId, store)
+    if (newAbsorbed >= cost) {
+      setTimeout(() => checkMegaprojectCompletion(), 0)
+    }
   }
 
   // 8. Session playtime
@@ -1013,6 +1021,71 @@ export function processProbeCompletions(): void {
   }
 
   markAchievementsDirty()
+}
+
+// Megaproject actions
+
+// Activates a megaproject - begins absorbing passive RP toward construction
+export function activateMegaproject(id: MegaprojectId): void {
+  const store = useGameStore.getState();
+
+  if (!meetsMegaprojectRequirements(id, store)) return;
+  if (store.activeMegaprojectId === id) return;
+
+  useGameStore.setState({
+    activeMegaprojectId: id,
+    megaprojectRPAbsorbed: 0n,
+    megaprojectAllocationPercent: 10, // Default 10% allocation
+  });
+}
+
+// Updates the allocation percentage (0-100)
+export function setMegaprojectAllocation(percent: number): void {
+  const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+  useGameStore.setState({ megaprojectAllocationPercent: clamped });
+}
+
+// Deactivates the current megaproject without completing it
+// (progress is lost)
+export function deactivateMegaproject(): void {
+  useGameStore.setState({
+    activeMegaprojectId: null,
+    megaprojectRPAbsorbed: 0n,
+    megaprojectAllocationPercent: 0,
+  });
+}
+
+// Checks if the active megaproject has received enough RP to complete
+// Called from the tick loop
+export function checkMegaprojectCompletion(): void {
+  const store = useGameStore.getState();
+  if (!store.activeMegaprojectId) return;
+
+  const cost = getEffectiveConstructionCost(store.activeMegaprojectId, store);
+  if (store.megaprojectRPAbsorbed < cost) return;
+
+  const id = store.activeMegaprojectId;
+  const rewardPatch = applyMegaprojectReward(id, store);
+
+  useGameStore.setState((s) => ({
+    ...rewardPatch,
+    activeMegaprojectId: null,
+    megaprojectRPAbsorbed: 0n,
+    megaprojectAllocationPercent: 0,
+    completedMegaprojects: [...s.completedMegaprojects, id],
+  }));
+
+  useGameStore.getState().recalcPPS();
+  markUnlocksDirty();
+
+  const def = MEGAPROJECT_MAP[id];
+  useUIStore.getState().pushAlert({
+    priority: 0,
+    variant: 'unlock',
+    title: `${def?.name ?? 'Megaproject'} Complete`,
+    message: def?.reward ?? 'Megaproject reward applied.',
+    autoDismissMs: 8000,
+  });
 }
 
 // Module purchase action

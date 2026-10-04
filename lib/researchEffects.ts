@@ -149,22 +149,33 @@ export function getTechMultiplierForGenerator(
 // Applied as: totalOutput ^ (1 + exponentBonus)
 // Kept small to avoid runaway scaling; each node adds a small increment
 export function getProductionExponentBonus(state: GameState): number {
-  const completed = new Set(state.completedResearchNodes)
-  let bonus = 0
+  const completed = new Set(state.completedResearchNodes);
+  let bonus = 0;
 
   // C5: +0.1 to global production exponent
-  if (completed.has('C5')) bonus += 0.1
+  if (completed.has('C5')) bonus += 0.1;
 
   // R10: +0.5 to master production exponent
-  if (completed.has('R10')) bonus += 0.5
+  if (completed.has('R10')) bonus += 0.5;
 
   // Tachyon Prism relic (ID 8): +0.02 per level
-  // Applied in Phase 9 relic effects; stub 0 here
+  // Applied in relicEffects.ts via getRelicExponentBonus
 
   // OS Exponential Catalyst: +0.05 per OS held
-  bonus += 0.05 * state.omniSpars * state.osUpgrades.exponential_catalyst
+  bonus += 0.05 * state.omniSpars * state.osUpgrades.exponential_catalyst;
 
-  return bonus
+  // Omega Singularity Sphere megaproject: +0.25
+  if (state.completedMegaprojects.includes('omega_singularity_sphere')) {
+    bonus += 0.25;
+  }
+
+  // Chronos Array megaproject: 1.5x global multiplier applied as exponent boost
+  // Equivalent exponent boost = log(1.5) / log(output) - approximated as 0.18
+  if (state.completedMegaprojects.includes('chronos_array')) {
+    bonus += 0.18;
+  }
+
+  return bonus;
 }
 
 // Returns the global research speed multiplier (applied to study timers)

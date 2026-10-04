@@ -21,17 +21,17 @@ export default function CoordinateLauncher() {
   return (
     <div className="card rounded-lg p-3 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wide">
+        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
           Probe Bay
         </p>
-        <span className="chip border-[var(--border-default)] text-[var(--text-secondary)] text-[0.6rem]">
+        <span className="chip border-(--border-default) text-(--text-secondary) text-[0.6rem]">
           {totalCount}/{MAX_PROBES} probes
         </span>
       </div>
 
       {/* Gate requirement message */}
       {!meetsGate && (
-        <p className="text-[0.65rem] text-[var(--status-warning)]">
+        <p className="text-[0.65rem] text-(--status-warning)">
           Requires 100 Server Clusters and 10 Quantum Computers to build probes.
         </p>
       )}
@@ -39,13 +39,11 @@ export default function CoordinateLauncher() {
       {/* Probe stats */}
       {totalCount > 0 && (
         <div className="flex items-center gap-4 text-[0.65rem] font-mono">
-          <span className="text-[var(--text-secondary)]">
-            Active:{' '}
-            <span className="text-[var(--text-accent)]">{activeCount}</span>
+          <span className="text-(--text-secondary)">
+            Active: <span className="text-(--text-accent)">{activeCount}</span>
           </span>
-          <span className="text-[var(--text-secondary)]">
-            Idle:{' '}
-            <span className="text-[var(--text-primary)]">{idleCount}</span>
+          <span className="text-(--text-secondary)">
+            Idle: <span className="text-(--text-primary)">{idleCount}</span>
           </span>
         </div>
       )}
@@ -57,10 +55,10 @@ export default function CoordinateLauncher() {
           disabled={!meetsGate || !canBuild}
           className={[
             'w-full py-2 text-xs font-mono rounded border transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-accent)]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
             meetsGate && canBuild
-              ? 'border-[var(--status-success)] text-[var(--status-success)] hover:bg-[var(--status-success)]/10'
-              : 'border-[var(--status-locked)] text-[var(--status-locked)] cursor-not-allowed opacity-60'
+              ? 'border-(--status-success) text-(--status-success) hover:bg-(--status-success)/10'
+              : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
           ].join(' ')}
         >
           Build Probe - {formatPoints(PROBE_COST_RP)} RP
@@ -69,7 +67,7 @@ export default function CoordinateLauncher() {
         </button>
       )}
       {atMax && (
-        <p className="text-[0.65rem] text-[var(--text-secondary)] text-center">
+        <p className="text-[0.65rem] text-(--text-secondary) text-center">
           Maximum probe count reached ({MAX_PROBES}).
         </p>
       )}
