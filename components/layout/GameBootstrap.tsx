@@ -4,6 +4,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import { useGameLoop } from '@/hooks/useGameLoop'
 import { useTabGuard } from '@/hooks/useTabGuard'
 import { useSaveGame } from '@/hooks/useSaveGame'
+import FooterBarLive from '@/components/layout/FooterBarLive'
 
 // Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
@@ -11,9 +12,7 @@ export default function GameBootstrap() {
   const initialized = useGameStore((s) => s._initialized)
   const isDuplicate = useTabGuard()
 
-  // useSaveGame handles: localStorage load on mount, offline calc,
-  // local save interval every 5s, and exposes save status
-  const { lastSaveLabel } = useSaveGame()
+  const { lastSaveLabel, saveStatus } = useSaveGame()
 
   // Start game loop once initialized and not a duplicate tab
   useGameLoop(initialized && !isDuplicate)
@@ -34,5 +33,6 @@ export default function GameBootstrap() {
     )
   }
 
-  return null
+  // Render the live footer overlay that shows dynamic save status
+  return <FooterBarLive lastSaveLabel={lastSaveLabel} saveStatus={saveStatus} />
 }

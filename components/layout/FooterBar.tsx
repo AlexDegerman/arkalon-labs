@@ -50,7 +50,10 @@ export default function FooterBar({ lastSaveLabel = '--' }: Props) {
         {anomalyLabel}
       </span>
 
-      <span className="text-xs font-mono text-(--text-secondary) shrink-0">
+      <span
+        id="footer-save-status"
+        className="text-xs font-mono text-(--text-secondary) shrink-0"
+      >
         Save: {lastSaveLabel}
       </span>
     </footer>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import {
   saveToLocalStorage,
@@ -12,72 +12,155 @@ import {
   calculateOfflineProgress,
   applyOfflineProgress
 } from '@/lib/offlineCalc'
-import { LOCAL_SAVE_INTERVAL_MS, SAVE_RATE_LIMIT_MS } from '@/constants/game'
+import {
+  LOCAL_SAVE_INTERVAL_MS,
+  CLOUD_SAVE_INTERVAL_MS,
+  SAVE_RATE_LIMIT_MS
+} from '@/constants/game'
+import { saveState } from '@/app/actions/saveState'
+import { loadState } from '@/app/actions/loadState'
+
+const TOKEN_KEY = 'arkalon_labs_token'
 
 type SaveStatus = 'synced' | 'saving' | 'error' | 'offline' | '--'
+
+function getSessionToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
 
 export function useSaveGame() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('--')
   const [lastSaveLabel, setLastSaveLabel] = useState('--')
   const localSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const cloudSaveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastCloudSaveRef = useRef<number>(0)
   const mountedRef = useRef(false)
 
-  // On mount: load save then start local save interval
+  // Performs a cloud save - rate-limited client-side as well as server-side
+  const doCloudSave = useCallback(async () => {
+    const token = getSessionToken()
+    if (!token) return
+
+    const now = Date.now()
+    if (now - lastCloudSaveRef.current < SAVE_RATE_LIMIT_MS) return
+
+    setSaveStatus('saving')
+
+    const state = useGameStore.getState()
+    const serialized = serialiseState(state)
+
+    try {
+      const result = await saveState({
+        sessionToken: token,
+        save: serialized as unknown as Record<string, unknown>,
+        lastSavedTime: serialized.lastSavedTime,
+        lifetimePoints: serialized.lifetimePoints,
+        currentPoints: serialized.researchPoints,
+        cachedPPS: serialized.cachedPointsPerSecond
+      })
+
+      if (result.success) {
+        lastCloudSaveRef.current = now
+        setSaveStatus('synced')
+        setLastSaveLabel(
+          new Date().toLocaleTimeString(undefined, {
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        )
+      } else {
+        setSaveStatus('error')
+      }
+    } catch {
+      setSaveStatus('offline')
+    }
+  }, [])
+
+  // On mount: attempt cloud load, fall back to localStorage, apply offline progress
   useEffect(() => {
     if (mountedRef.current) return
     mountedRef.current = true
 
-    // Load order: localStorage first (cloud load added in Commit 7.3)
-    const saved = loadFromLocalStorage()
-    if (saved) {
-      // Calculate offline progress
-      const lastSaveTime = saved.stats?.lastPrestigeTime ?? Date.now()
-      const offlinePayload = calculateOfflineProgress(
-        saved,
-        lastSaveTime,
-        Date.now()
-      )
+    async function boot() {
+      let loadedState = null
+      const token = getSessionToken()
 
-      const updatedCurrencies = applyOfflineProgress(saved, offlinePayload)
-      const mergedState = { ...saved, ...updatedCurrencies }
-
-      useGameStore.getState().applyState(mergedState)
-
-      if (offlinePayload.rpEarned > 0n) {
-        // Show offline progress notification (Facility Alert)
-        const { useUIStore } = require('@/app/stores/uiStore')
-        const { formatPoints, formatDuration } = require('@/lib/format')
-        useUIStore.getState().pushAlert({
-          priority: 2,
-          variant: 'info',
-          title: 'Offline Progress',
-          message: `Generated ${formatPoints(offlinePayload.rpEarned)} RP while away (${formatDuration(offlinePayload.elapsedSeconds)} at ${Math.round(offlinePayload.efficiencyApplied * 100)}% efficiency).`,
-          autoDismissMs: 6000
-        })
+      // 1. Try cloud load
+      if (token) {
+        try {
+          const result = await loadState(token)
+          if (result.success && result.state) {
+            loadedState = deserialiseState(result.state)
+          }
+        } catch {
+          // Cloud unavailable - fall through to localStorage
+        }
       }
+
+      // 2. Fall back to localStorage
+      if (!loadedState) {
+        loadedState = loadFromLocalStorage()
+      }
+
+      // 3. Apply loaded state and offline progress
+      if (loadedState) {
+        const lastSaveTime =
+          loadedState.stats.lastPrestigeTime > 0
+            ? loadedState.stats.lastPrestigeTime
+            : Date.now() - 5000
+
+        const offlinePayload = calculateOfflineProgress(
+          loadedState,
+          lastSaveTime,
+          Date.now()
+        )
+
+        const updatedCurrencies = applyOfflineProgress(
+          loadedState,
+          offlinePayload
+        )
+        const mergedState = { ...loadedState, ...updatedCurrencies }
+        useGameStore.getState().applyState(mergedState)
+
+        if (offlinePayload.rpEarned > 0n) {
+          const { useUIStore } = await import('@/app/stores/uiStore')
+          const { formatPoints, formatDuration } = await import('@/lib/format')
+          useUIStore.getState().pushAlert({
+            priority: 2,
+            variant: 'info',
+            title: 'Offline Progress',
+            message: `Generated ${formatPoints(offlinePayload.rpEarned)} RP while away (${formatDuration(offlinePayload.elapsedSeconds)} at ${Math.round(offlinePayload.efficiencyApplied * 100)}% efficiency).`,
+            autoDismissMs: 6000
+          })
+        }
+      }
+
+      useGameStore.getState().setInitialized(true)
+      setSaveStatus(token ? 'synced' : 'offline')
     }
 
-    useGameStore.getState().setInitialized(true)
+    boot()
 
-    // Local save interval
+    // Local save every 5 seconds
     localSaveTimerRef.current = setInterval(() => {
       const state = useGameStore.getState()
       saveToLocalStorage(state)
-      setLastSaveLabel(
-        new Date().toLocaleTimeString(undefined, {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
-      )
     }, LOCAL_SAVE_INTERVAL_MS)
 
-    return () => {
-      if (localSaveTimerRef.current) {
-        clearInterval(localSaveTimerRef.current)
-      }
-    }
-  }, [])
+    // Cloud save every 60 seconds
+    cloudSaveTimerRef.current = setInterval(() => {
+      doCloudSave()
+    }, CLOUD_SAVE_INTERVAL_MS)
 
-  return { saveStatus, lastSaveLabel }
+    return () => {
+      if (localSaveTimerRef.current) clearInterval(localSaveTimerRef.current)
+      if (cloudSaveTimerRef.current) clearInterval(cloudSaveTimerRef.current)
+    }
+  }, [doCloudSave])
+
+  return { saveStatus, lastSaveLabel, doCloudSave }
 }
