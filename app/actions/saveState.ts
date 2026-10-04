@@ -4,9 +4,9 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import pool from '@/lib/db'
 import type { SerializedSave } from '@/lib/saveGame'
+import { SAVE_SANITY_MULTIPLIER } from '@/constants/game'
 
 interface SavePayload {
-  sessionToken: string
   save: SerializedSave
   lastSavedTime: number
   lifetimePoints: string
@@ -49,7 +49,8 @@ function sanityCheckPoints(
 
   // Max points that could have been earned = pps * elapsed * 1.5
   const elapsedBn = BigInt(Math.ceil(elapsedSeconds))
-  const maxEarnable = (cachedPPS * elapsedBn * 3n) / 2n
+  const sanityBn = BigInt(Math.round(SAVE_SANITY_MULTIPLIER * 10))
+  const maxEarnable = (cachedPPS * elapsedBn * sanityBn) / 10n
 
   // Base allowance of 10^12 handles early-game when PPS was 0
   const baseCeiling = 1_000_000_000_000n

@@ -4,7 +4,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import { getActiveSlotCount } from './researchNodes'
 import { ERA_THRESHOLDS } from '@/constants/game'
-import { dispatchEraTransition, dispatchTutorialBeat } from './dialogueDispatcher'
+import { dispatchEraTransition, dispatchPrestigeAvailable, dispatchTutorialBeat } from './dialogueDispatcher'
 import { ANOMALY_DIALOGUE_MAP } from './arkalonDialogue'
 import { ACHIEVEMENTS } from './achievementDefs'
 
@@ -153,20 +153,21 @@ function handleUnlockSideEffects(key: FeatureKey, state: GameState): void {
       if (!state.unlockedRelics.includes(1)) {
         useGameStore.setState((s) => ({
           unlockedRelics: [...s.unlockedRelics, 1],
-          relicLevels: { ...s.relicLevels, 1: 1 },
+          relicLevels: { ...s.relicLevels, 1: 1 }
         }))
       }
       break
 
     case 'prestige':
       // Prestige unlock triggers a high-priority Arkalon dialogue
+      dispatchPrestigeAvailable(1)
       useUIStore.getState().pushAlert({
         priority: 0,
         variant: 'prestige',
         title: 'Saturation Threshold Reached',
         message:
           'The current construct has reached physical saturation. Reality Recalibration is now possible.',
-        autoDismissMs: 8000,
+        autoDismissMs: 8000
       })
       break
 

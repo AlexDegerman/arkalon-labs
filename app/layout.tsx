@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import { ArkalonNetworkWidget } from '@/components/ui/ArkalonNetworkWidget'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -33,6 +34,7 @@ export default function RootLayout({
     >
       <body className="bg-(--bg-primary) text-(--text-primary) antialiased">
         {children}
+        <ArkalonNetworkWidget theme="dark" />
       </body>
     </html>
   )

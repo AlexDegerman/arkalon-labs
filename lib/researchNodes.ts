@@ -6,6 +6,7 @@ import {
 import type { ResearchNodeDefinition } from '@/constants/research'
 import type { GameState } from '@/types/game'
 import { infNodeCostAtLevel } from '@/lib/format'
+import { getRelicResearchSpeedMultiplier } from './relicEffects'
 
 export type { ResearchNodeDefinition }
 
@@ -110,7 +111,8 @@ export function getEffectiveStudyTime(
   ) {
     time *= 0.9
   }
-
+    // Arkalon's Left Eye relic (ID 1): +2% Arkalon branch speed per level
+  time /= getRelicResearchSpeedMultiplier(node.branch, state)
   return Math.max(1, time)
 }
 
@@ -153,11 +155,4 @@ export function getBranchNodes(
   return RESEARCH_NODES.filter(
     (n) => n.branch === branch && (includeInfinite ? true : !n.isInfinite)
   ).sort((a, b) => a.tier - b.tier)
-}
-
-// Returns all nodes for display in a branch including infinite
-export function getBranchNodesAll(branch: string): ResearchNodeDefinition[] {
-  return RESEARCH_NODES.filter((n) => n.branch === branch).sort(
-    (a, b) => (a.isInfinite ? 999 : a.tier) - (b.isInfinite ? 999 : b.tier)
-  )
 }

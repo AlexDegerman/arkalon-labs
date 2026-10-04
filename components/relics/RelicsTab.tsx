@@ -4,6 +4,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import RelicSlot from '@/components/relics/RelicSlot'
 import RelicGrid from '@/components/relics/RelicGrid'
 import { getRelicSlotCount } from '@/lib/relicDefs'
+import { formatPoints } from '@/lib/format'
 
 export default function RelicsTab() {
   const store = useGameStore.getState()
@@ -23,7 +24,7 @@ export default function RelicsTab() {
             Dust:
           </span>
           <span className="text-xs font-mono font-bold text-(--text-accent)">
-            {artifactDust}
+            {formatPoints(BigInt(artifactDust))}
           </span>
         </div>
       </div>

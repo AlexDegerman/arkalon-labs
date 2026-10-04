@@ -16,8 +16,6 @@ const BULK_LABELS: Record<string | number, string> = {
 
 export default function GeneratorList() {
   const [bulkAmount, setBulkAmount] = useState<BulkBuyAmount>(1)
-  const unlocks = useGameStore((s) => s.unlocks)
-  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
 
   // Determine which generators are visible
   // Generators above the current era threshold are shown as locked placeholders

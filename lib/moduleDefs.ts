@@ -3,7 +3,7 @@
 
 import { GENERATORS } from '@/constants/generators'
 import type { ModuleType } from '@/types/game'
-import { MODULE_LEVEL_CAP } from '@/constants/game'
+import { MODULE_LEVEL_CAP, MODULE_LEVEL_CAP_AC5 } from '@/constants/game'
 
 export interface ModuleDefinition {
   type: ModuleType
@@ -60,27 +60,26 @@ export function getModuleUpgradeCost(
 // Returns the effective level cap for modules
 // AC5 challenge completion raises cap to 8
 export function getModuleLevelCap(state: {
-  activeChallengeRestrictions: { moduleLevelCapOverride: number | null } | null;
-  challengeRecords: Record<string, { completedTiers: number }>;
+  activeChallengeRestrictions: { moduleLevelCapOverride: number | null } | null
+  challengeRecords: Record<string, { completedTiers: number }>
 }): number {
   // Challenge override (during AC5 run: doubled levels)
-  const override = state.activeChallengeRestrictions?.moduleLevelCapOverride;
+  const override = state.activeChallengeRestrictions?.moduleLevelCapOverride
   if (override !== null && override !== undefined) {
-    return override;
+    return override
   }
 
   // AC5 permanent reward: cap raised to 8
-  const ac5Tiers = state.challengeRecords['AC5']?.completedTiers ?? 0;
-  if (ac5Tiers > 0) return 8;
-
-  return MODULE_LEVEL_CAP;
+  const ac5Tiers = state.challengeRecords['AC5']?.completedTiers ?? 0
+  if (ac5Tiers > 0) return MODULE_LEVEL_CAP_AC5
+  
+  return MODULE_LEVEL_CAP
 }
 
 // Returns the effect description for a module at a given level
 export function getModuleEffectLabel(
   moduleType: ModuleType,
-  level: number,
-  generatorIndex: number
+  level: number
 ): string {
   if (level === 0) return 'Not installed'
 

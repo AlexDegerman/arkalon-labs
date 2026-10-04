@@ -285,6 +285,7 @@ export function saveToLocalStorage(state: GameState): void {
   try {
     const serialized = serialiseState(state)
     localStorage.setItem(SAVE_KEY, JSON.stringify(serialized))
+    setLastSaveTime(Date.now())
   } catch {
     // localStorage may be full or unavailable; fail silently
   }
@@ -332,15 +333,21 @@ export function clearLocalStorageSave(): void {
 }
 
 // Returns the last save timestamp from localStorage without full deserialization
-export function getLastSaveTime(): number | null {
+const LAST_SAVE_KEY = 'arkalon_labs_last_save_time'
+
+export function getLastSaveTime(): number {
   try {
-    const raw = localStorage.getItem(SAVE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return typeof parsed?.lastSavedTime === 'number'
-      ? parsed.lastSavedTime
-      : null
+    const raw = localStorage.getItem(LAST_SAVE_KEY)
+    return raw ? parseInt(raw, 10) : Date.now()
   } catch {
-    return null
+    return Date.now()
+  }
+}
+
+export function setLastSaveTime(ms: number): void {
+  try {
+    localStorage.setItem(LAST_SAVE_KEY, String(ms))
+  } catch {
+    // Storage full or blocked
   }
 }

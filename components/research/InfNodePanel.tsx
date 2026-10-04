@@ -34,7 +34,7 @@ export default function InfNodePanel({ branch }: Props) {
   if (!available) return null
 
   const scaling = INF_NODE_COST_SCALING[nodeId] ?? 1.5
-  const cost = infNodeCostAtLevel(node.cost, scaling, level)
+  const cost = getNodeCost(nodeId, state)
   const canAfford = researchPoints >= cost
   const prereqComplete = node.prerequisiteId
     ? completedNodes.includes(node.prerequisiteId)

@@ -16,28 +16,34 @@ function MiniStatStrip() {
 
   return (
     <div className="flex items-center gap-3 px-3 py-1.5 border-b border-(--border-default) bg-(--bg-surface) shrink-0 overflow-x-auto scrollbar-dark">
-      <StatItem label="Gen" value={String(totalGenerators)} />
+      <StatItem label="Gen" value={formatPoints(BigInt(totalGenerators))} />
       <StatDivider />
-      <StatItem label="Dust" value={String(artifactDust)} />
-
+      <StatItem label="Dust" value={formatPoints(BigInt(artifactDust))} />
       {arkalonResonance > 0 && (
         <>
           <StatDivider />
-          <StatItem label="AR" value={String(arkalonResonance)} />
+          <StatItem
+            label="AR"
+            value={formatPoints(BigInt(Math.floor(arkalonResonance)))}
+          />
         </>
       )}
-
       {chronalFractures > 0 && (
         <>
           <StatDivider />
-          <StatItem label="CF" value={String(chronalFractures)} />
+          <StatItem
+            label="CF"
+            value={formatPoints(BigInt(Math.floor(chronalFractures)))}
+          />
         </>
       )}
-
       {omniSpars > 0 && (
         <>
           <StatDivider />
-          <StatItem label="OS" value={String(omniSpars)} />
+          <StatItem
+            label="OS"
+            value={formatPoints(BigInt(Math.floor(omniSpars)))}
+          />
         </>
       )}
     </div>

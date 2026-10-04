@@ -5,11 +5,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import { startResearch } from '@/app/stores/gameActions'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import {
-  getBranchNodesAll,
   isNodeAvailable,
-  isNodeCompleted,
-  isNodeActive,
-  isNodeQueued,
   getNodeCost,
   getEffectiveStudyTime,
   getBranchNodes

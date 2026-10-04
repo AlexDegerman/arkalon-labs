@@ -57,11 +57,6 @@ export function getRelicSlotIndex(relicId: number, state: GameState): number {
   return state.relicSlots.findIndex((s) => s.relicId === relicId)
 }
 
-// Returns relic level, defaulting to 0 if not leveled
-export function getRelicLevel(relicId: number, state: GameState): number {
-  return state.relicLevels[relicId] ?? 0
-}
-
 // Returns a text description of the effect at the current level
 export function getRelicEffectAtLevel(relicId: number, level: number): string {
   const def = RELIC_MAP[relicId]

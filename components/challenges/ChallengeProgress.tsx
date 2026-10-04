@@ -2,7 +2,7 @@
 
 import { useGameStore } from '@/app/stores/gameStore'
 import { formatPoints } from '@/lib/format'
-import { getChallengeTarget, getEffectiveTarget } from '@/lib/challengeDefs'
+import { getEffectiveTarget } from '@/lib/challengeDefs'
 import ProgressBar from '@/components/ui/ProgressBar'
 
 interface Props {

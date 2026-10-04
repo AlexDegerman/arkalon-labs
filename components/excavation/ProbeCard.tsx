@@ -1,7 +1,6 @@
 'use client'
 
 import { memo } from 'react'
-import { useGameStore } from '@/app/stores/gameStore'
 import { launchProbe } from '@/app/stores/gameActions'
 import { ZONE_DEFINITIONS, ZONE_MAP } from '@/lib/excavationDefs'
 import { formatCountdown, formatDuration } from '@/lib/format'
@@ -13,7 +12,6 @@ interface Props {
 }
 
 function ProbeCard({ probe }: Props) {
-  const store = useGameStore.getState()
 
   const isIdle = probe.status === 'idle'
   const isScanning = probe.status === 'scanning'

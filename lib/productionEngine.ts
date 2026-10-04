@@ -25,9 +25,10 @@ import {
 } from '@/lib/challengeDefs'
 import {
   computeRelicProductionMultiplier as computeRelicProductionMultiplierFn,
+  getInfiniteLedgerReduction,
   getRelicExponentBonus,
   getRelicPerGeneratorMultiplier,
-  getRelicPerGeneratorMultiplier as getRelicPerGeneratorMultiplierFn
+  getSuperrecursiveCoreLevel
 } from '@/lib/relicEffects'
 
 // Precision scale factor: all intermediate multipliers are computed as
@@ -35,31 +36,27 @@ import {
 const SCALE_DENOM = 1_000_000n // 6 decimal places of precision
 
 // Returns the effective milestone interval for a given generator index
-function getMilestoneInterval(
+export function getMilestoneInterval(
   generatorIndex: number,
   quantity: bigint,
   milestoneSharpenerLevel: number,
   superrecursiveCoreLevel: number
 ): number {
   // Research Desk uses smaller intervals below 50 (at 50+ uses standard interval)
-  if (generatorIndex === 0 && quantity < BigInt(RESEARCH_DESK_MILESTONE_CAP)) {
-    return RESEARCH_DESK_MILESTONE_INTERVAL
-  }
-
-  let interval = MILESTONE_INTERVAL
-
+  const base =
+    generatorIndex === 0 && quantity < BigInt(RESEARCH_DESK_MILESTONE_CAP)
+      ? RESEARCH_DESK_MILESTONE_INTERVAL
+      : MILESTONE_INTERVAL
+  let interval = base
   // Each Milestone Sharpener level reduces by 1 (floor MILESTONE_MIN_INTERVAL)
   interval -= milestoneSharpenerLevel * MILESTONE_SHARPENER_REDUCTION
-
   // Superrecursive Core relic reduces by 2 per level (floor SUPERRECURSIVE_CORE_MIN)
   interval -= superrecursiveCoreLevel * SUPERRECURSIVE_CORE_REDUCTION
-
-  return Math.max(
-    generatorIndex === 0
-      ? RESEARCH_DESK_MILESTONE_INTERVAL
-      : MILESTONE_MIN_INTERVAL,
-    interval
-  )
+  const floor =
+    superrecursiveCoreLevel > 0
+      ? SUPERRECURSIVE_CORE_MIN
+      : MILESTONE_MIN_INTERVAL
+  return Math.max(floor, interval)
 }
 
 // Computes 2^(floor(quantity / interval)) milestone multiplier as a bigint ratio
@@ -74,10 +71,7 @@ function milestoneMultiplier(quantity: bigint, interval: number): bigint {
 
 // Computes the total output multiplier from generator modules
 // Returns a float multiplier (applied via BigInt approximation)
-function computeModuleEfficiencyMultiplier(
-  generatorIndex: number,
-  efficiencyLevel: number
-): number {
+function computeModuleEfficiencyMultiplier(efficiencyLevel: number): number {
   // Each level: output * 1.25^level
   return Math.pow(1.25, efficiencyLevel)
 }
@@ -89,26 +83,15 @@ function computeSynergyMultiplier(
   targetIndex: number,
   state: GameState
 ): number {
-  let bonus = 0;
-
+  let bonus = 0
   for (const synergy of MODULE_SYNERGIES) {
     if (synergy.targetIndex !== targetIndex) continue
-
     const sourceGen = state.generators[synergy.sourceIndex]
     if (!sourceGen || sourceGen.synergyLevel === 0) continue
-
     const sourceQty = Number(sourceGen.quantity)
-    // bonusPerSourcePerLevel * synergyLevel * sourceQuantity
-    let synergyBonus =
-      sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel
-
-    // Matter-Data Bridge relic (ID 13): +5% cross-generator synergy per level
-    // Relic effect applied globally via computeRelicProductionMultiplier
-
-    bonus += synergyBonus
+    bonus += sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel
   }
-
-  return 1 + bonus;
+  return 1 + bonus
 }
 
 // Returns a summary of active synergy bonuses affecting a generator
@@ -117,27 +100,26 @@ export function getSynergyBonusSummary(
   targetIndex: number,
   state: GameState
 ): Array<{ sourceName: string; bonus: number; synergyName: string }> {
-  const { GENERATORS: gens } = require('@/constants/generators');
-  const results: Array<{ sourceName: string; bonus: number; synergyName: string }> = [];
-
+  const results: Array<{
+    sourceName: string
+    bonus: number
+    synergyName: string
+  }> = []
   for (const synergy of MODULE_SYNERGIES) {
-    if (synergy.targetIndex !== targetIndex) continue;
-
-    const sourceGen = state.generators[synergy.sourceIndex];
-    if (!sourceGen || sourceGen.synergyLevel === 0) continue;
-
-    const sourceQty = Number(sourceGen.quantity);
+    if (synergy.targetIndex !== targetIndex) continue
+    const sourceGen = state.generators[synergy.sourceIndex]
+    if (!sourceGen || sourceGen.synergyLevel === 0) continue
+    const sourceQty = Number(sourceGen.quantity)
     const bonus =
-      sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel * 100;
-
+      sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel * 100
     results.push({
-      sourceName: gens[synergy.sourceIndex]?.name ?? `Gen ${synergy.sourceIndex}`,
+      sourceName:
+        GENERATORS[synergy.sourceIndex]?.name ?? `Gen ${synergy.sourceIndex}`,
       bonus,
-      synergyName: synergy.name,
-    });
+      synergyName: synergy.name
+    })
   }
-
-  return results;
+  return results
 }
 
 // Computes the effective output of a single generator type in milliRP/sec * SCALE_DENOM
@@ -185,23 +167,9 @@ function computeGeneratorOutput(
     baseOutput = (baseOutput * milestoneScale) / SCALE_DENOM
   }
 
-  // Milestone multiplier
-  const interval = getMilestoneInterval(
-    index,
-    gen.quantity,
-    milestoneSharpenerLevel,
-    superrecursiveCoreLevel
-  )
-  const milestoneScale = milestoneMultiplier(gen.quantity, interval)
-  // milestoneScale is already multiplied by SCALE_DENOM apply:
-  baseOutput = (baseOutput * milestoneScale) / SCALE_DENOM
-
   // Efficiency module multiplier (float -> bigint approximation)
   if (gen.efficiencyLevel > 0) {
-    const effMult = computeModuleEfficiencyMultiplier(
-      index,
-      gen.efficiencyLevel
-    )
+    const effMult = computeModuleEfficiencyMultiplier(gen.efficiencyLevel)
     baseOutput = BigInt(Math.round(Number(baseOutput) * effMult))
   }
 
@@ -237,7 +205,7 @@ function computeGeneratorOutput(
     generatorIndex: number,
     state: GameState
   ): number {
-    return getTechMultiplierForGenerator(generatorIndex, state);
+    return getTechMultiplierForGenerator(generatorIndex, state)
   }
 
 // Computes the AR production bonus
@@ -315,14 +283,8 @@ function computeGeneratorPrimingBonus(state: GameState): number {
 // Called only when inputs change - NEVER from the tick loop
 // Returns total RP/sec as bigint (in whole RP, not milliRP)
 export function recalculatePPS(state: GameState): bigint {
-  const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener
-
-  // Superrecursive Core relic level (relic ID 11, index 10)
-  const superrecursiveCoreLevel =
-    state.unlockedRelics.includes(11) &&
-    state.relicSlots.some((s) => s.relicId === 11)
-      ? (state.relicLevels[11] ?? 0)
-      : 0
+    const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener
+    const superrecursiveCoreLevel = getSuperrecursiveCoreLevel(state)
 
   const arBonus = computeARBonus(state)
   const relicMultiplier = computeRelicMultiplier(state)
@@ -357,7 +319,6 @@ export function recalculatePPS(state: GameState): bigint {
 
   // Apply production exponent bonus: output ^ (1 + bonus)
   // Includes research node bonus and relic (Tachyon Prism) bonus
-  const { getRelicExponentBonus } = require('@/lib/relicEffects')
   const exponentBonus =
     getProductionExponentBonus(state) +
     getRelicExponentBonus(state) +
@@ -406,6 +367,17 @@ export function generatorEffectiveCost(
   // OS Dimensional Transcendence: -0.05 to all (floor 1.01)
   if (state.osUpgrades.dimensional_transcendence > 0) {
     growthFactor = Math.max(1.01, growthFactor - 0.05)
+  }
+  // Infinite Ledger relic (ID 4): -0.001 growth on first 5 generators per level
+  if (
+    generatorIndex < 5 &&
+    state.unlockedRelics.includes(4) &&
+    state.relicSlots.some((s) => s.relicId === 4)
+  ) {
+    growthFactor = Math.max(
+      1.01,
+      growthFactor - getInfiniteLedgerReduction(state.relicLevels[4] ?? 0)
+    )
   }
 
   // O5: 0.01% cost reduction per Arkalon Interface owned

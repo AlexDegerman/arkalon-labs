@@ -27,6 +27,8 @@ const NO_RESTRICTIONS: ChallengeRestrictions = {
   moduleLevelCapOverride: null,
   onlyGeneratorType: null,
   autoPrestigeIntervalSeconds: null,
+  anomalySpawnIntervalSeconds: null,
+  anomalyDurationOverrideSeconds: null,
   noResearchTimerTick: false,
   noBaseGeneratorOutput: false
 }
@@ -157,7 +159,8 @@ export const CHALLENGE_BALANCE: ChallengeBalanceDef[] = [
     tierTargets: scaledTargets(10n ** 14n, 5),
     buildRestrictions: () => ({
       ...NO_RESTRICTIONS,
-      autoPrestigeIntervalSeconds: 60
+      anomalySpawnIntervalSeconds: 60,
+      anomalyDurationOverrideSeconds: 10
     })
   },
   {
@@ -183,7 +186,7 @@ export const CHALLENGE_BALANCE: ChallengeBalanceDef[] = [
     tierTargets: [10n ** 120n],
     buildRestrictions: () => ({
       ...NO_RESTRICTIONS,
-      onlyGeneratorType: 0 // starts at generator 0; switching handled in UI
+      onlyGeneratorType: 0 // starts at generator 0 switching handled in UI
     })
   },
   {
@@ -219,30 +222,20 @@ export function getChallengeTarget(challengeId: string, tier: number): bigint {
   return def.tierTargets[idx]
 }
 
-// Returns true if the player has met the target for the current challenge tier
-export function hasMetChallengeTarget(
-  challengeId: string,
-  currentTier: number,
-  lifetimePoints: bigint
-): boolean {
-  const target = getChallengeTarget(challengeId, currentTier + 1)
-  return lifetimePoints >= target
-}
-
 // Returns the cumulative production multiplier from all completed challenge rewards
 // Called from productionEngine.ts
 export function getChallengeProductionMultiplier(state: {
-  challengeRecords: Record<string, { completedTiers: number }>;
+  challengeRecords: Record<string, { completedTiers: number }>
 }): number {
-  let multiplier = 1;
+  let multiplier = 1
 
   // SC2: +3% global production per tier completed
-  const sc2Tiers = state.challengeRecords['SC2']?.completedTiers ?? 0;
-  if (sc2Tiers > 0) multiplier *= (1 + 0.03 * sc2Tiers);
+  const sc2Tiers = state.challengeRecords['SC2']?.completedTiers ?? 0
+  if (sc2Tiers > 0) multiplier *= (1 + 0.03 * sc2Tiers)
 
   // SC12: +1% to ALL permanent multipliers per tier
-  const sc12Tiers = state.challengeRecords['SC12']?.completedTiers ?? 0;
-  if (sc12Tiers > 0) multiplier *= (1 + 0.01 * sc12Tiers);
+  const sc12Tiers = state.challengeRecords['SC12']?.completedTiers ?? 0
+  if (sc12Tiers > 0) multiplier *= (1 + 0.01 * sc12Tiers)
 
   // AC1: +0.5% production exponent per tier (handled in exponent bonus)
   // AC8: +0.1 production exponent (handled in exponent bonus)
@@ -250,31 +243,32 @@ export function getChallengeProductionMultiplier(state: {
   // EC1: +2% per completed EC to ALL production
   const ecCompleted = ['EC1', 'EC2', 'EC3', 'EC4'].filter(
     (id) => (state.challengeRecords[id]?.completedTiers ?? 0) > 0
-  ).length;
-  if (ecCompleted > 0) multiplier *= (1 + 0.02 * ecCompleted);
+  ).length
+  if (ecCompleted > 0) multiplier *= (1 + 0.02 * ecCompleted)
 
-  return multiplier;
+  return multiplier
 }
 
 // Returns additional production exponent bonus from challenge rewards
 export function getChallengeExponentBonus(state: {
-  challengeRecords: Record<string, { completedTiers: number }>;
+  challengeRecords: Record<string, { completedTiers: number }>
 }): number {
-  let bonus = 0;
+  let bonus = 0
 
   // AC1: +0.5% per tier (as exponent)
-  const ac1Tiers = state.challengeRecords['AC1']?.completedTiers ?? 0;
-  bonus += 0.005 * ac1Tiers;
+  const ac1Tiers = state.challengeRecords['AC1']?.completedTiers ?? 0
+  bonus += 0.005 * ac1Tiers
 
   // AC8: +0.1 exponent on completion
-  const ac8Done = (state.challengeRecords['AC8']?.completedTiers ?? 0) > 0;
-  if (ac8Done) bonus += 0.1;
+  const ac8Done = (state.challengeRecords['AC8']?.completedTiers ?? 0) > 0
+  if (ac8Done) bonus += 0.1
 
-  return bonus;
+  return bonus
 }
 
 // Applies challenge-accelerant reduction (25% if purchased)
 export function getEffectiveTarget(
+  challengeId: string,
   tier: number,
   hasAccelerant: boolean
 ): bigint {

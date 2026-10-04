@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useGameStore } from '@/app/stores/gameStore'
+import { makeInitialState, useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
-import { exportSave, importSave, clearLocalStorageSave } from '@/lib/saveGame'
+import { exportSave, importSave, clearLocalStorageSave, saveToLocalStorage } from '@/lib/saveGame'
 import { setNotationMode, setDecimalPrecision } from '@/lib/format'
 import VolumeControls from '@/components/ui/VolumeControls'
 import type { NotationMode } from '@/types/game'
@@ -89,7 +89,6 @@ export default function SettingsPanel() {
 
   function handleManualSave() {
     const state = useGameStore.getState()
-    const { saveToLocalStorage } = require('@/lib/saveGame')
     saveToLocalStorage(state)
     useUIStore.getState().pushAlert({
       priority: 2,
@@ -120,8 +119,6 @@ export default function SettingsPanel() {
         return
       }
       // Perform hard reset
-      const { makeInitialState } = require('@/app/stores/gameStore')
-      const { clearLocalStorageSave } = require('@/lib/saveGame')
       clearLocalStorageSave()
       useGameStore.getState().applyState(makeInitialState())
       setResetConfirm('idle')

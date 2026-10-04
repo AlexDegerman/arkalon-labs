@@ -1,7 +1,6 @@
 import type { ExcavationZone, ProbeState } from '@/types/game'
 import type { ProbeResultPayload } from '@/types/excavation'
 import {
-  UNSTABLE_RIFT_REPAIR_SECONDS,
   PROBE_GATE_SERVER_CLUSTERS,
   PROBE_GATE_QUANTUM_COMPUTERS,
   MAX_PROBES,

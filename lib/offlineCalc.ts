@@ -26,10 +26,10 @@ function getMaxOfflineSeconds(state: GameState): number {
 
 // Returns the offline efficiency multiplier (0.0 - 1.0)
 function getOfflineEfficiency(state: GameState): number {
-  const completed = state.completedResearchNodes;
+  const completed = state.completedResearchNodes
 
   // E2: 100% efficiency
-  if (completed.includes('E2')) return 1.0;
+  if (completed.includes('E2')) return 1.0
 
   // E1: 75%
   if (completed.includes('E1')) {

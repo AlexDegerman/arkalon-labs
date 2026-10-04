@@ -16,6 +16,7 @@ import { applyArkalonClickBoost } from '@/app/stores/gameActions'
 import RelicsTab from '@/components/relics/RelicsTab'
 import FeatureLockOverlay from '@/components/ui/FeatureLockOverlay'
 import { FEATURE_MAP } from '@/lib/featureRegistry'
+import { dispatchArkalonClick } from '@/lib/dialogueDispatcher'
 
 function RelicsFeatureWrapper() {
   return (
@@ -44,9 +45,7 @@ function MobileArkalonTab() {
   function handleClick() {
     if (!interactiveArkalon) return
     applyArkalonClickBoost()
-    import('@/lib/dialogueDispatcher').then(({ dispatchArkalonClick }) => {
-      dispatchArkalonClick()
-    })
+    dispatchArkalonClick()
   }
 
   return (

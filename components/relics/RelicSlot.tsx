@@ -1,14 +1,14 @@
-'use client';
+'use client'
 
-import { memo } from 'react';
-import { useGameStore } from '@/app/stores/gameStore';
-import { unequipRelic } from '@/app/stores/gameActions';
-import { RELIC_MAP } from '@/constants/relics';
-import { getRelicEffectAtLevel } from '@/lib/relicDefs';
-import { formatCountdown } from '@/lib/format';
+import { memo } from 'react'
+import { useGameStore } from '@/app/stores/gameStore'
+import { unequipRelic } from '@/app/stores/gameActions'
+import { RELIC_MAP } from '@/constants/relics'
+import { getRelicEffectAtLevel } from '@/lib/relicDefs'
+import { formatCountdown } from '@/lib/format'
 
 interface Props {
-  slotIndex: number;
+  slotIndex: number
 }
 
 function RelicSlot({ slotIndex }: Props) {
@@ -77,4 +77,4 @@ function RelicSlot({ slotIndex }: Props) {
   )
 }
 
-export default memo(RelicSlot);
+export default memo(RelicSlot)

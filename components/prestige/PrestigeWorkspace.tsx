@@ -188,7 +188,7 @@ export default function PrestigeWorkspace() {
                 AR Balance
               </span>
               <span className="text-xs font-mono text-(--text-accent)">
-                {arkalonResonance} AR
+                {formatPoints(BigInt(Math.floor(arkalonResonance)))} AR
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -202,7 +202,7 @@ export default function PrestigeWorkspace() {
                 ].join(' ')}
               >
                 {arGain > 0
-                  ? `+${arGain} AR`
+                  ? `+${formatPoints(BigInt(arGain))} AR`
                   : `Need ${formatPoints(PRESTIGE_TIER1_THRESHOLD)} lifetime RP`}
               </span>
             </div>
@@ -242,7 +242,7 @@ export default function PrestigeWorkspace() {
                 CF Balance
               </span>
               <span className="text-xs font-mono text-(--text-accent)">
-                {chronalFractures} CF
+                {formatPoints(BigInt(Math.floor(chronalFractures)))} CF
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -256,7 +256,7 @@ export default function PrestigeWorkspace() {
                 ].join(' ')}
               >
                 {cfGain > 0
-                  ? `+${cfGain} CF`
+                  ? `+${formatPoints(BigInt(cfGain))} CF`
                   : `Need ${formatPoints(PRESTIGE_TIER2_THRESHOLD)} + Chronos Array`}
               </span>
             </div>
@@ -291,7 +291,7 @@ export default function PrestigeWorkspace() {
                 OS Balance
               </span>
               <span className="text-xs font-mono text-(--text-accent)">
-                {omniSpars} OS
+                {formatPoints(BigInt(Math.floor(omniSpars)))} OS
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -305,7 +305,7 @@ export default function PrestigeWorkspace() {
                 ].join(' ')}
               >
                 {osGain > 0
-                  ? `+${osGain} OS`
+                  ? `+${formatPoints(BigInt(osGain))} OS`
                   : `Need ${formatPoints(PRESTIGE_TIER3_THRESHOLD)} + Omega Sphere`}
               </span>
             </div>

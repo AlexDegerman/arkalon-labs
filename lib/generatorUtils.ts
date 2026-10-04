@@ -1,54 +1,57 @@
 // Generator display utilities used by GeneratorCard and tooltip components
 
 import type { GameState } from '@/types/game'
-import { GENERATORS } from '@/constants/generators'
-import { generatorEffectiveCost, marginalPPS } from '@/lib/productionEngine'
+import {
+  generatorEffectiveCost,
+  getMilestoneInterval,
+  marginalPPS
+} from '@/lib/productionEngine'
 import {
   formatPoints,
   formatRate,
   formatTimeToAfford,
-  formatPercent,
-  formatMilestoneTarget
+  formatPercent
 } from '@/lib/format'
-import {
-  MILESTONE_INTERVAL,
-  RESEARCH_DESK_MILESTONE_INTERVAL,
-  RESEARCH_DESK_MILESTONE_CAP
-} from '@/constants/game'
-import { getStageForQuantity } from '@/hooks/useGeneratorStage'
+import { getSuperrecursiveCoreLevel } from './relicEffects'
 
 // Returns the next milestone threshold for a generator
+// Interval honors Milestone Sharpener and Superrecursive Core via the
+// shared production-engine helper so display never drifts from production
 export function getNextMilestone(
   generatorIndex: number,
-  quantity: bigint
+  quantity: bigint,
+  state: GameState
 ): { current: number; next: number; multiplier: number } {
-  const isResearchDesk =
-    generatorIndex === 0 && quantity < BigInt(RESEARCH_DESK_MILESTONE_CAP)
-  const interval = isResearchDesk
-    ? RESEARCH_DESK_MILESTONE_INTERVAL
-    : MILESTONE_INTERVAL
-
+  const interval = getMilestoneInterval(
+    generatorIndex,
+    quantity,
+    state.arUpgrades.milestone_sharpener,
+    getSuperrecursiveCoreLevel(state)
+  )
   const q = Number(quantity)
   const nextMilestone =
     q === 0 ? interval : Math.ceil((q + 1) / interval) * interval
   const doublings = Math.floor(nextMilestone / interval)
-
   return {
     current: q,
     next: nextMilestone,
     multiplier: Math.pow(2, doublings)
   }
 }
-
 // Returns the milestone string for display on a generator card
-// e.g. "12/25 - 2x at 25"
+// e.g. "12/25 - 2x at 25", total multiplier at the next threshold
 export function getMilestoneString(
   generatorIndex: number,
-  quantity: bigint
+  quantity: bigint,
+  state: GameState
 ): string {
-  const { current, next } = getNextMilestone(generatorIndex, quantity)
-  if (quantity === 0n) return `0/${next} - 2x at ${next}`
-  return `${current}/${next} - 2x at ${next}`
+  const { current, next, multiplier } = getNextMilestone(
+    generatorIndex,
+    quantity,
+    state
+  )
+  if (quantity === 0n) return `0/${next} - ${multiplier}x at ${next}`
+  return `${current}/${next} - ${multiplier}x at ${next}`
 }
 
 // Returns the marginal cost efficiency as a string
@@ -92,72 +95,4 @@ export function getTimeToAffordString(
     state.researchPoints,
     state.cachedPointsPerSecond
   )
-}
-
-// Returns a full tooltip data object for a generator card
-export interface GeneratorTooltipData {
-  name: string
-  description: string
-  baseCost: string
-  currentCost: string
-  baseOutput: string
-  currentOutput: string
-  milestoneString: string
-  costEfficiency: string
-  timeToAfford: string
-  stage: 1 | 2 | 3 | 4 | 5 | 6
-  moduleEfficiency: number
-  moduleCostReduction: number
-  moduleSynergy: number
-}
-
-export function getGeneratorTooltipData(
-  generatorIndex: number,
-  state: GameState
-): GeneratorTooltipData {
-  const def = GENERATORS[generatorIndex]
-  const gen = state.generators[generatorIndex]
-  if (!def || !gen) {
-    return {
-      name: '',
-      description: '',
-      baseCost: '',
-      currentCost: '',
-      baseOutput: '',
-      currentOutput: '',
-      milestoneString: '',
-      costEfficiency: '',
-      timeToAfford: '',
-      stage: 1,
-      moduleEfficiency: 0,
-      moduleCostReduction: 0,
-      moduleSynergy: 0
-    }
-  }
-
-  const cost = generatorEffectiveCost(generatorIndex, gen.quantity, state)
-  // Base output is stored as milliRP/sec * 1000
-  const baseOutputRPS = def.baseOutput / 1000n
-  // Per-generator output = baseOutput * quantity / 1000 (milliRP to RP)
-  const perGenOutput =
-    gen.quantity > 0n ? (def.baseOutput * gen.quantity) / 1000n : 0n
-
-  return {
-    name: def.name,
-    description: def.description,
-    baseCost: formatPoints(def.baseCost),
-    currentCost: formatPoints(cost),
-    baseOutput: `${formatPoints(baseOutputRPS)}/s per unit`,
-    currentOutput:
-      gen.quantity > 0n
-        ? `${formatRate(perGenOutput)} (base, pre-multiplier)`
-        : '0/s',
-    milestoneString: getMilestoneString(generatorIndex, gen.quantity),
-    costEfficiency: getCostEfficiencyString(generatorIndex, state),
-    timeToAfford: getTimeToAffordString(generatorIndex, state),
-    stage: getStageForQuantity(gen.quantity),
-    moduleEfficiency: gen.efficiencyLevel,
-    moduleCostReduction: gen.costReductionLevel,
-    moduleSynergy: gen.synergyLevel
-  }
 }

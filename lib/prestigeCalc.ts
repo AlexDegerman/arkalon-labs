@@ -2,9 +2,6 @@
 
 import type {
   GameState,
-  ARUpgrades,
-  CFUpgrades,
-  OSUpgrades
 } from '@/types/game'
 import {
   AR_FORMULA_MULTIPLIER,

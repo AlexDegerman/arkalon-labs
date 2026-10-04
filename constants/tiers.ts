@@ -1,4 +1,5 @@
-export const TIER_THRESHOLDS = [
+import type { TierThreshold } from '@/types/tiers'
+export const TIER_THRESHOLDS: readonly TierThreshold[] = [
   { label: 'Trequinquagintillion', cls: 'g-tqgs', min: 10n ** 162n },
   { label: 'Duoquinquagintillion', cls: 'g-dqgs', min: 10n ** 159n },
   { label: 'Unquinquagintillion', cls: 'g-uqgs', min: 10n ** 156n },
@@ -56,4 +57,4 @@ export const TIER_THRESHOLDS = [
   { label: '100 Million', cls: 'g-m3', min: 100_000_000n },
   { label: '10 Million', cls: 'g-m2', min: 10_000_000n },
   { label: 'Million', cls: 'g-m1', min: 1_000_000n }
-] as const
+]

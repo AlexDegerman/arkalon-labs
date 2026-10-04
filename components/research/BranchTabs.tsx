@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import type { ResearchBranch } from '@/types/game'
 
 const BRANCHES: { id: ResearchBranch; label: string; shortLabel: string }[] = [

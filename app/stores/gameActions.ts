@@ -21,7 +21,6 @@ import {
   ANOMALY_DEFINITIONS,
   OPERATION_ANOMALY_DEFINITIONS
 } from '@/lib/anomalyDefs'
-import type { AnomalyResultPayload } from '@/types/anomalies'
 import {
   getRelicUpgradeCost,
   getRelicSlotCount,
@@ -37,7 +36,7 @@ import {
   ANOMALY_GRACE_SECONDS,
   RELIC_LEVEL_CAP
 } from '@/constants/game'
-import { costToBuyN, maxAffordable, nextCost } from '@/lib/generatorCosts'
+import { canAfford, costToBuyN, maxAffordable, nextCost } from '@/lib/generatorCosts'
 import {
   markUnlocksDirty,
   markTutorialDirty,
@@ -63,25 +62,28 @@ import type { BulkBuyAmount } from '@/constants/game'
 import { canPrestigeTier1, calculateARGain, buildTier1ResetState, canPrestigeTier2, calculateCFGain, buildTier2ResetState, canPrestigeTier3, calculateOSGain, buildTier3ResetState } from '@/lib/prestigeCalc'
 import { meetsProbeGateRequirements, canBuildProbe, nextProbeId, getScanDuration, rollProbeResult, ZONE_MAP } from '@/lib/excavationDefs'
 import { applyMegaprojectReward, getEffectiveConstructionCost, meetsMegaprojectRequirements, MEGAPROJECT_MAP } from '@/lib/megaprojectDefs'
-import { dispatchAnomalyResolved, dispatchChallengeComplete, dispatchChallengeEnter, dispatchGeneratorUnlock, dispatchMegaprojectComplete, dispatchPrestigeComplete, dispatchRelicDiscovered, dispatchResearchComplete } from '@/lib/dialogueDispatcher'
+import {
+  dispatchAnomalyResolved,
+  dispatchChallengeComplete,
+  dispatchChallengeEnter,
+  dispatchGeneratorUnlock,
+  dispatchMegaprojectComplete,
+  dispatchOperationArtifact,
+  dispatchOperationStart,
+  dispatchPrestigeComplete,
+  dispatchRelicDiscovered,
+  dispatchResearchComplete
+} from '@/lib/dialogueDispatcher'
 import { calculateOperationPoints, OPERATION_ARTIFACT_MAP, getCurrentCycle } from '@/lib/operationDefs'
 import { CHALLENGE_BALANCE_MAP, getEffectiveTarget } from '@/lib/challengeDefs'
 import { CHALLENGE_MAP } from '@/constants/challenges'
-import { AUTO_BUY_BASIC_INTERVAL_TICKS, AUTO_BUY_OPTIMAL_INTERVAL_TICKS } from '@/lib/automationDefs'
+import { AUTO_AUTOMATION_INTERVAL_TICKS, AUTO_BUY_BASIC_INTERVAL_TICKS, AUTO_BUY_OPTIMAL_INTERVAL_TICKS } from '@/lib/automationDefs'
 import { marginalPPS } from '@/lib/productionEngine'
 import {
   getModuleUpgradeCost as getModuleUpgradeCostFn,
   getModuleLevelCap as getModuleLevelCapFn,
-  getModuleUpgradeCost
 } from '@/lib/moduleDefs'
-import type { FeatureKey } from '@/lib/featureRegistry'
-import { ERA_THRESHOLDS } from '@/constants/game'
-import {
-  dispatchEraTransition,
-  dispatchTutorialBeat
-} from '@/lib/dialogueDispatcher'
-import { ANOMALY_DIALOGUE_MAP } from '@/lib/arkalonDialogue'
-import { ACHIEVEMENTS } from '@/lib/achievementDefs'
+import { AR_UPGRADES, CF_UPGRADES, OS_UPGRADES, getUpgradeCost } from '@/lib/prestigeUpgradeDefs'
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
 // Single 100ms tick dispatched by useGameLoop
@@ -253,7 +255,7 @@ export function tick(): void {
   if (
     store.automation.autoPrestigeTierI ||
     store.automation.autoPrestigeTierII ||
-    store.activeChallengeRestrictions?.autoPrestigeIntervalSeconds !== null
+    store.activeChallengeRestrictions?.autoPrestigeIntervalSeconds != null
   ) {
     checkAutoPrestige(store)
   }
@@ -339,11 +341,6 @@ export function startResearch(nodeId: string): void {
     store.activeChallengeRestrictions?.energyBranchLocked &&
     nodeId.startsWith('E')
   ) return
-
-  // Challenge: single research slot (SC10 - R3 effect disabled)
-  if (store.activeChallengeRestrictions?.singleResearchSlot) {
-    // Clamp available slots to 1 regardless of R3 completion
-  }
 
   if (!isNodeAvailable(nodeId, store)) return
   if (isNodeCompleted(nodeId, store)) return
@@ -678,31 +675,6 @@ export function unequipRelic(relicId: number): void {
   useGameStore.getState().recalcPPS()
 }
 
-// Swaps a relic in a specific slot with a new relic
-export function swapRelic(slotIndex: number, newRelicId: number): void {
-  const store = useGameStore.getState()
-  const slot = store.relicSlots[slotIndex]
-  if (!slot) return
-  if (slot.cooldownRemaining > 0) return
-  if (!store.unlockedRelics.includes(newRelicId)) return
-  if (isRelicEquipped(newRelicId, store)) return
-
-  const cooldown = getSwapCooldownSeconds(store)
-
-  useGameStore.setState((s) => {
-    const newSlots = [...s.relicSlots]
-    newSlots[slotIndex] = {
-      relicId: newRelicId,
-      cooldownRemaining: 0,
-    }
-    // Start cooldown on this slot for next swap
-    // The cooldown applies to the NEXT swap, not the current equip
-    return { relicSlots: newSlots }
-  })
-
-  useGameStore.getState().recalcPPS()
-}
-
 // Upgrades a relic using artifact dust
 export function upgradeRelic(relicId: number): void {
   const store = useGameStore.getState()
@@ -907,9 +879,6 @@ export function buyPrestigeUpgrade(
   currency: 'ar' | 'cf' | 'os'
 ): void {
   const store = useGameStore.getState()
-  const { AR_UPGRADES, CF_UPGRADES, OS_UPGRADES, getUpgradeCost } =
-    require('@/lib/prestigeUpgradeDefs')
-
   const allDefs = [...AR_UPGRADES, ...CF_UPGRADES, ...OS_UPGRADES]
   const def = allDefs.find((d: any) => d.id === upgradeId)
   if (!def) return
@@ -1182,7 +1151,6 @@ export function checkMegaprojectCompletion(): void {
   }))
 
   useGameStore.getState().recalcPPS()
-  useGameStore.getState().recalcPPS()
   markUnlocksDirty()
 
   dispatchMegaprojectComplete(id)
@@ -1428,7 +1396,7 @@ export function tickAutomation(): void {
 
   // Other automation: every 1 second
   autoOtherTick++
-  if (autoOtherTick >= 10) {
+  if (autoOtherTick >= AUTO_AUTOMATION_INTERVAL_TICKS) {
     autoOtherTick = 0
 
     if (auto.autoResearchQueue) runAutoResearch(store)
@@ -1440,24 +1408,21 @@ export function tickAutomation(): void {
 }
 
 // Buys the cheapest affordable generator
-function runAutoBuyBasic(store: ReturnType<typeof useGameStore.getState>): void {
-  if (store.activeChallengeRestrictions?.modulesDisabled) return
-
+function runAutoBuyBasic(
+  store: ReturnType<typeof useGameStore.getState>
+): void {
   let cheapestIndex = -1
   let cheapestCost = store.researchPoints + 1n
-
   for (let i = 0; i < 20; i++) {
     // Respect challenge tier limits
     const maxTier = store.activeChallengeRestrictions?.maxGeneratorTier
     if (maxTier !== null && maxTier !== undefined && i >= maxTier) continue
-
-    const cost = genNextCost(i, store)
+    const cost = nextCost(i, store)
     if (cost <= store.researchPoints && cost < cheapestCost) {
       cheapestCost = cost
       cheapestIndex = i
     }
   }
-
   if (cheapestIndex !== -1) {
     buyGenerator(cheapestIndex, 1)
   }
@@ -1467,16 +1432,12 @@ function runAutoBuyBasic(store: ReturnType<typeof useGameStore.getState>): void 
 function runAutoBuyOptimal(store: ReturnType<typeof useGameStore.getState>): void {
   let bestIndex = -1
   let bestEfficiency = -1
-
   for (let i = 0; i < 20; i++) {
     const maxTier = store.activeChallengeRestrictions?.maxGeneratorTier
     if (maxTier !== null && maxTier !== undefined && i >= maxTier) continue
-
-    if (!canAffordGen(i, store)) continue
-
-    const cost = genNextCost(i, store)
+    if (!canAfford(i, store)) continue
+    const cost = nextCost(i, store)
     if (cost <= 0n) continue
-
     const marginal = marginalPPS(i, store)
     const efficiency = Number(marginal) / Number(cost)
     if (efficiency > bestEfficiency) {
@@ -1484,7 +1445,6 @@ function runAutoBuyOptimal(store: ReturnType<typeof useGameStore.getState>): voi
       bestIndex = i
     }
   }
-
   if (bestIndex !== -1) {
     buyGenerator(bestIndex, 1)
   }
@@ -1508,11 +1468,17 @@ function runAutoResearch(
   }
 }
 
-// Auto-stabilizes active anomaly at 50% reward
-function runAutoStabilize(store: ReturnType<typeof useGameStore.getState>): void {
+function runAutoStabilize(
+  store: ReturnType<typeof useGameStore.getState>
+): void {
   if (!store.activeAnomalyType) return
   // Only trigger if anomaly has been active for at least 3 seconds
   // (avoid immediately resolving newly spawned anomalies)
+  const allDefs = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS]
+  const def = allDefs.find((d) => d.type === store.activeAnomalyType)
+  if (!def) return
+  const elapsed = getEffectiveDuration(def, store) - store.anomalyTimeRemaining
+  if (elapsed < 3) return
   resolveAnomaly(0.5)
 }
 
@@ -1620,22 +1586,18 @@ export function buyOperationArtifact(artifactId: OperationArtifactId): void {
 
   useGameStore.setState((s) => ({
     currentOperationPoints: s.currentOperationPoints - def.cost,
-    operationArtifactsUnlocked: [...s.operationArtifactsUnlocked, artifactId],
+    operationArtifactsUnlocked: [...s.operationArtifactsUnlocked, artifactId]
   }))
 
   useGameStore.getState().recalcPPS()
-
   useUIStore.getState().pushAlert({
     priority: 2,
     variant: 'unlock',
     title: 'Operation Artifact Acquired',
     message: `${def.name}: ${def.effect}`,
-    autoDismissMs: 5000,
+    autoDismissMs: 5000
   })
-
-  import('@/lib/dialogueDispatcher').then(({ dispatchOperationStart }) => {
-    dispatchOperationStart()
-  })
+  dispatchOperationArtifact()
 }
 
 // Checks if the operation cycle has advanced and initializes new cycle state
@@ -1646,17 +1608,18 @@ export function checkOperationCycle(serverCycleNumber: number): void {
 
   // New cycle started
   useGameStore.setState((s) => ({
-    currentOperationCycle: serverCycleNumber,
+    currentOperationCycle: serverCycleNumber
     // Carry over points but reset to new cycle context
     // Operation artifacts are permanent - do not reset
   }))
 
+  dispatchOperationStart()
   useUIStore.getState().pushAlert({
     priority: 2,
     variant: 'unlock',
     title: 'New Operation Cycle',
     message: `${getCurrentCycle(serverCycleNumber).name} operation has begun.`,
-    autoDismissMs: 6000,
+    autoDismissMs: 6000
   })
 }
 
@@ -1667,15 +1630,11 @@ export function buyModule(
   currentLevel: number
 ): void {
   const store = useGameStore.getState()
-
   // SC4, EC1, EC4: modules disabled
   if (store.activeChallengeRestrictions?.modulesDisabled) return
-
   const cap = getModuleLevelCapFn(store)
-
   if (currentLevel >= cap) return
-
-  const cost = getModuleUpgradeCost(generatorIndex, moduleType, currentLevel)
+  const cost = getModuleUpgradeCostFn(generatorIndex, moduleType, currentLevel)
   if (store.researchPoints < cost) return
 
   useGameStore.setState((s) => {
@@ -1694,7 +1653,7 @@ export function buyModule(
     })
     return {
       researchPoints: s.researchPoints - cost,
-      generators: newGenerators,
+      generators: newGenerators
     }
   })
 
@@ -1759,7 +1718,7 @@ function handleResearchCompletions(
   let newQueue = [...store.researchQueue]
   const newSlots = [...store.activeResearchSlots]
   const autoResearchEnabled = store.arUpgrades.auto_research_queue > 0
-  const pushAlert = (useUIStore as any).getState().pushAlert
+  const pushAlert = useUIStore.getState().pushAlert
 
   slots.forEach((slot, idx) => {
     if (!slot.nodeId || slot.timerRemaining > 0) return
@@ -1860,7 +1819,6 @@ function handleResearchCompletions(
     }
   }))
 
-  // Recalculate PPS since research nodes affect production
   // Fire research completion dialogue only for nodes that completed THIS tick
   const previouslyCompleted = new Set(store.completedResearchNodes)
   for (const nodeId of newCompleted) {

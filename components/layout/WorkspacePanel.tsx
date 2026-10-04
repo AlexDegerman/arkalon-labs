@@ -1,7 +1,6 @@
 'use client'
 
 import { useActiveTab } from '@/hooks/useActiveTab'
-import { useGameStore } from '@/app/stores/gameStore'
 import FeatureLockOverlay from '@/components/ui/FeatureLockOverlay'
 import { FEATURE_MAP } from '@/lib/featureRegistry'
 import ResearchWorkspace from '@/components/research/ResearchWorkspace'
@@ -14,17 +13,6 @@ import OperationsWorkspace from '../operations/OperationsWorkspace'
 import ChallengeWorkspace from '../challenges/ChallengeWorkspace'
 import StatsWorkspace from '../stats/StatsWorkspace'
 import AchievementsWorkspace from '../achievements/AchievementsWorkspace'
-
-// Placeholder panels - replaced by real implementations in later commits
-function PlaceholderPanel({ label }: { label: string }) {
-  return (
-    <div className="flex items-center justify-center h-32 p-4">
-      <p className="terminal text-(--text-secondary) text-xs text-center">
-        {label} panel - implemented in later phase
-      </p>
-    </div>
-  )
-}
 
 export default function WorkspacePanel() {
   const { workspaceTab } = useActiveTab()

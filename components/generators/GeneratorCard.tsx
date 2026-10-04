@@ -4,7 +4,7 @@ import { memo, useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { buyGenerator } from '@/app/stores/gameActions'
 import { canAfford, nextCost } from '@/lib/generatorCosts'
-import { formatPoints, formatTimeToAfford } from '@/lib/format'
+import { formatPoints } from '@/lib/format'
 import { GENERATORS } from '@/constants/generators'
 import type { BulkBuyAmount } from '@/constants/game'
 import GeneratorIcon from '@/components/generators/GeneratorIcon'
@@ -14,7 +14,8 @@ import TutorialArrow from '@/components/tutorial/TutorialArrow'
 import { getStageForQuantity } from '@/hooks/useGeneratorStage'
 import {
   getMilestoneString,
-  getCostEfficiencyString
+  getCostEfficiencyString,
+  getTimeToAffordString
 } from '@/lib/generatorUtils'
 
 interface Props {
@@ -31,19 +32,13 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
     (s) => s.generators[generatorIndex]?.quantity ?? 0n
   )
   const researchPoints = useGameStore((s) => s.researchPoints)
-  const pps = useGameStore((s) => s.cachedPointsPerSecond)
-
   const state = useGameStore.getState()
   const cost = nextCost(generatorIndex, state)
   const affordable = canAfford(generatorIndex, state)
-
   if (!def) return null
-
   const stage = getStageForQuantity(quantity)
-  const milestoneStr = getMilestoneString(generatorIndex, quantity)
-  const timeToAfford = affordable
-    ? ''
-    : formatTimeToAfford(cost, researchPoints, pps)
+  const milestoneStr = getMilestoneString(generatorIndex, quantity, state)
+  const timeToAfford = getTimeToAffordString(generatorIndex, state)
 
   // Cost efficiency shown in tooltip
   const efficiency = showTooltip

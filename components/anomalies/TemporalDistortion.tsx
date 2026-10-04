@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import {
   resolveAnomaly,

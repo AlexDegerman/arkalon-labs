@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import EnergyCore from './EnergyCore'
 import type { GeneratorStage } from '@/hooks/useGeneratorStage'
 

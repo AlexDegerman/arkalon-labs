@@ -3,7 +3,6 @@ import type {
   GameState,
   GeneratorState,
   ResearchSlotState,
-  ProbeState,
   RelicSlotState,
   ARUpgrades,
   CFUpgrades,

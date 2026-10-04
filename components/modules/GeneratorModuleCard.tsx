@@ -37,11 +37,7 @@ const ModuleTrack = memo(function ModuleTrack({
     ? 0n
     : getModuleUpgradeCost(generatorIndex, moduleType, currentLevel)
   const canAfford = !atCap && rp >= cost
-  const effectLabel = getModuleEffectLabel(
-    moduleType,
-    currentLevel,
-    generatorIndex
-  )
+  const effectLabel = getModuleEffectLabel(moduleType, currentLevel)
 
   function handleUpgrade() {
     if (atCap || !canAfford) return
@@ -115,6 +111,7 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
   const synergyTargets = MODULE_SYNERGIES.filter(
     (s) => s.sourceIndex === generatorIndex
   ).map((s) => ({
+    targetIndex: s.targetIndex,
     targetName: GENERATORS[s.targetIndex]?.name ?? `Gen ${s.targetIndex}`,
     name: s.name
   }))
@@ -135,11 +132,24 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
 
       {/* Synergy target info */}
       {synergyTargets.length > 0 && gen.synergyLevel > 0 && (
-        <div className="text-[0.65rem] text-(--text-secondary) bg-(--bg-elevated) rounded px-2 py-1">
-          <span className="text-(--text-accent)">
-            {synergyTargets[0].name}:
-          </span>{' '}
-          boosts {synergyTargets[0].targetName}
+        <div className="text-[0.65rem] text-(--text-secondary) bg-(--bg-elevated) rounded px-2 py-1 flex flex-col gap-0.5">
+          {synergyTargets.map((t) => {
+            const bonus = getSynergyBonusSummary(t.targetIndex, store).find(
+              (e) => e.synergyName === t.name
+            )?.bonus
+            return (
+              <span key={t.name}>
+                <span className="text-(--text-accent)">{t.name}:</span> boosts{' '}
+                {t.targetName}
+                {bonus !== undefined && bonus > 0 && (
+                  <span className="text-(--status-success)">
+                    {' '}
+                    (+{bonus.toFixed(1)}%)
+                  </span>
+                )}
+              </span>
+            )
+          })}
         </div>
       )}
 

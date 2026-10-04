@@ -2,7 +2,10 @@
 // Maps game events to Arkalon dialogue trigger IDs
 // Called from gameActions.ts and unlockWatcher.ts to push lines to uiStore
 
+import { useMusicStore } from '@/app/stores/musicStore'
+import { useUIStore } from '@/app/stores/uiStore'
 import { getDialogue, getNextClickResponseId } from '@/lib/arkalonDialogue'
+import { speakArkalon } from './arkalonTTS'
 
 // Generator index to unlock trigger mapping
 const GENERATOR_UNLOCK_TRIGGERS: Record<number, string> = {
@@ -65,16 +68,9 @@ const ERA_TRIGGERS: Record<number, string> = {
 function pushLine(triggerId: string): void {
   const text = getDialogue(triggerId)
   if (!text) return
-
-  // Dynamic import to avoid circular dependency
-  import('@/app/stores/uiStore').then(({ useUIStore }) => {
-    useUIStore.getState().pushTerminalLine(text)
-  })
-
-  import('@/lib/arkalonTTS').then(({ speakArkalon }) => {
-    // Volume will be read from gameStore at speak time
-    speakArkalon(text, 0.8)
-  })
+  useUIStore.getState().pushTerminalLine(text)
+  const { muted, volumeVoice } = useMusicStore.getState()
+  if (!muted) speakArkalon(text, volumeVoice)
 }
 
 // Exported dispatch functions called from game systems
@@ -130,6 +126,10 @@ export function dispatchRelicDiscovered(): void {
 
 export function dispatchOperationStart(): void {
   pushLine('operation_started')
+}
+
+export function dispatchOperationArtifact(): void {
+  pushLine('operation_artifact_acquired')
 }
 
 export function dispatchArkalonClick(): void {

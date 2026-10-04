@@ -9,12 +9,8 @@ const VERSION_KEY = 'arkalon_labs_version'
 const PLAYER_ID_KEY = 'arkalon_labs_player_id'
 
 export function UpdateModal() {
-  const showUpdateModal = useUIStore(
-    (s: any) => s.showUpdateModal ?? s.updateModalOpen
-  )
-  const setShowUpdateModal = useUIStore(
-    (s: any) => s.setShowUpdateModal ?? s.setUpdateModalOpen
-  )
+  const showUpdateModal = useUIStore((s) => s.updateModalOpen)
+  const setShowUpdateModal = useUIStore((s) => s.setUpdateModalOpen)
 
   // Returning players whose acknowledged version stamp is behind get the notes
   useEffect(() => {

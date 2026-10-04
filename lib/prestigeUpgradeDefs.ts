@@ -248,7 +248,7 @@ export const OS_UPGRADES: PrestigeUpgradeDef[] = [
   }
 ]
 
-// Returns upgrade cost - most AR upgrades cost baseCost * level for leveled ones
+// Returns upgrade cost - flat baseCost per level purchase
 export function getUpgradeCost(
   def: PrestigeUpgradeDef,
   currentLevel: number

@@ -21,7 +21,7 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden flex items-stretch border-t border-[var(--border-default)] bg-[var(--bg-surface)] shrink-0"
+      className="lg:hidden flex items-stretch border-t border-(--border-default) bg-(--bg-surface) shrink-0"
       aria-label="Main navigation"
     >
       {NAV_ITEMS.map((item) => {
@@ -32,10 +32,10 @@ export default function MobileNav() {
             onClick={() => setMobileTab(item.id)}
             className={[
               'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--border-accent)]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--border-accent)',
               isActive
-                ? 'text-[var(--text-accent)] border-t border-[var(--border-accent)] -mt-px'
-                : 'text-[var(--text-secondary)]'
+                ? 'text-(--text-accent) border-t border-(--border-accent) -mt-px'
+                : 'text-(--text-secondary)'
             ].join(' ')}
             aria-current={isActive ? 'page' : undefined}
           >

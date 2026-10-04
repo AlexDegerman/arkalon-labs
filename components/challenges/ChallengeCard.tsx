@@ -17,7 +17,6 @@ function ChallengeCard({ challengeId }: Props) {
 
   const record = useGameStore((s) => s.challengeRecords[challengeId])
   const activeChallengeId = useGameStore((s) => s.activeChallengeId)
-  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
 
   const completedTiers = record?.completedTiers ?? 0
   const bestRP = record?.bestRP ?? 0n

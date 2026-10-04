@@ -225,6 +225,13 @@ export function getRelicExponentBonus(state: GameState): number {
   return bonus
 }
 
+// Superrecursive Core (relic 11) level while equipped in an active slot
+export function getSuperrecursiveCoreLevel(state: GameState): number {
+  if (!state.unlockedRelics.includes(11)) return 0
+  if (!state.relicSlots.some((s) => s.relicId === 11)) return 0
+  return state.relicLevels[11] ?? 0
+}
+
 // Returns the offline efficiency bonus from equipped relics
 export function getRelicOfflineEfficiencyBonus(state: GameState): number {
   let bonus = 0

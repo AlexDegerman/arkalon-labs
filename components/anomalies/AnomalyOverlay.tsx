@@ -11,9 +11,11 @@ import ProgressBar from '@/components/ui/ProgressBar'
 import { formatCountdown } from '@/lib/format'
 import {
   ANOMALY_DEFINITIONS,
+  getEffectiveDuration,
   OPERATION_ANOMALY_DEFINITIONS
 } from '@/lib/anomalyDefs'
 import { ChronoFreezeFlux, SolarFlareOverload, GravitySinkCollapse, MatrixInversion } from './OperationAnomalies'
+import { GameState } from '@/types/game'
 
 // Returns the label for an anomaly type
 function getAnomalyLabel(type: string): string {
@@ -21,9 +23,12 @@ function getAnomalyLabel(type: string): string {
   return all.find((d) => d.type === type)?.label ?? type
 }
 
-function getBaseDuration(type: string): number {
+// Effective duration honors E7, Anomaly Extender, relics and AC7 override
+function getBaseDuration(type: string, state: GameState): number {
   const all = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS]
-  return all.find((d) => d.type === type)?.baseDurationSeconds ?? 45
+  const def = all.find((d) => d.type === type)
+  if (!def) return 45
+  return getEffectiveDuration(def, state)
 }
 
 function getInteractionComponent(type: string): React.ComponentType | null {
@@ -94,7 +99,8 @@ export default function AnomalyOverlay() {
           <ProgressBar
             progress={
               timeRemaining > 0
-                ? timeRemaining / getBaseDuration(activeType)
+                ? timeRemaining /
+                  getBaseDuration(activeType, useGameStore.getState())
                 : 0
             }
             variant="warning"
@@ -169,14 +175,17 @@ export function MobileAnomalyBar() {
       <div className="px-4 pt-3">
         <ProgressBar
           progress={
-            timeRemaining > 0 ? timeRemaining / getBaseDuration(activeType) : 0
+            timeRemaining > 0
+              ? timeRemaining /
+                getBaseDuration(activeType, useGameStore.getState())
+              : 0
           }
           variant="warning"
           height={3}
           animated={false}
         />
       </div>
-
+      
       <div className="flex-1 overflow-y-auto p-4">
         {InteractionComponent && <InteractionComponent />}
       </div>

@@ -2,7 +2,6 @@
 
 import { useGameStore } from '@/app/stores/gameStore'
 import GeneratorModuleCard from '@/components/modules/GeneratorModuleCard'
-import { GENERATORS } from '@/constants/generators'
 
 export default function ModulesWorkspace() {
   const generators = useGameStore((s) => s.generators)

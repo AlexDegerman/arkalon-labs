@@ -1,6 +1,7 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
+import { useUIStore } from '@/app/stores/uiStore'
 import { useActiveTab, WorkspaceTab } from '@/hooks/useActiveTab'
 import { FEATURE_MAP } from '@/lib/featureRegistry'
 
@@ -58,13 +59,24 @@ export default function MobileMoreDrawer({ onClose }: Props) {
           <span className="text-xs font-mono text-(--text-secondary) uppercase tracking-widest">
             More
           </span>
-          <button
-            onClick={onClose}
-            className="text-(--text-secondary) text-lg leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent) rounded"
-            aria-label="Close drawer"
-          >
-            x
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                onClose()
+                useUIStore.getState().setSettingsPanelOpen(true)
+              }}
+              className="text-(--text-secondary) text-xs font-mono hover:text-(--text-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent) rounded px-1"
+            >
+              Settings
+            </button>
+            <button
+              onClick={onClose}
+              className="text-(--text-secondary) text-lg leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent) rounded"
+              aria-label="Close drawer"
+            >
+              x
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-1 p-3 pb-safe">

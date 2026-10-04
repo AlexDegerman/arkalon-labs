@@ -6,6 +6,7 @@ import { formatPoints, formatRate } from '@/lib/format'
 import { getCurrentEra } from '@/lib/eraThresholds'
 import { useProgressionTier, useReducedMotion } from '@/hooks/useProgressionTier'
 import TutorialHighlight from '@/components/tutorial/TutorialHighlight'
+import { calculateARGain } from '@/lib/prestigeCalc'
 
 export default function RPBanner() {
   const researchPoints = useGameStore((s) => s.researchPoints)
@@ -22,10 +23,7 @@ export default function RPBanner() {
   const era = getCurrentEra(lifetimePoints)
 
   // Projected AR for prestige hint
-  const projectedAR =
-    lifetimePoints >= 1_000_000_000n
-      ? Math.floor(5 * Math.sqrt(Number(lifetimePoints) / 1_000_000_000))
-      : 0
+  const projectedAR = calculateARGain(useGameStore.getState())
 
   return (
     <div className="px-3 py-2 border-b border-(--border-default) bg-(--bg-surface) shrink-0">
@@ -59,7 +57,7 @@ export default function RPBanner() {
 
         {arkalonResonance > 0 && (
           <span className="chip border-(--text-accent) text-(--text-accent)">
-            {arkalonResonance} AR
+            {formatPoints(BigInt(Math.floor(arkalonResonance)))} AR
           </span>
         )}
 

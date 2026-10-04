@@ -161,13 +161,22 @@ export default function StatsWorkspace() {
           value={stats.totalPrestigesTier3.toLocaleString()}
         />
         {arkalonResonance > 0 && (
-          <StatRow label="Arkalon Resonance" value={`${arkalonResonance} AR`} />
+          <StatRow
+            label="Arkalon Resonance"
+            value={`${formatPoints(BigInt(Math.floor(arkalonResonance)))} AR`}
+          />
         )}
         {chronalFractures > 0 && (
-          <StatRow label="Chronal Fractures" value={`${chronalFractures} CF`} />
+          <StatRow
+            label="Chronal Fractures"
+            value={`${formatPoints(BigInt(Math.floor(chronalFractures)))} CF`}
+          />
         )}
         {omniSpars > 0 && (
-          <StatRow label="Omni-Spars" value={`${omniSpars} OS`} />
+          <StatRow
+            label="Omni-Spars"
+            value={`${formatPoints(BigInt(Math.floor(omniSpars)))} OS`}
+          />
         )}
       </StatSection>
     </div>

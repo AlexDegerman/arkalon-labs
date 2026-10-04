@@ -1,7 +1,5 @@
 'use client'
 
-import { useGameStore } from '@/app/stores/gameStore'
-
 // Stage 1-6 based on quantity owned
 // Each stage adds visual complexity to the generator SVG
 const STAGE_THRESHOLDS = [
@@ -21,14 +19,6 @@ export function getStageForQuantity(quantity: bigint): GeneratorStage {
     if (quantity >= min) return stage
   }
   return 1
-}
-
-// React hook that subscribes to a single generator's quantity and returns its stage
-export function useGeneratorStage(generatorIndex: number): GeneratorStage {
-  const quantity = useGameStore(
-    (s) => s.generators[generatorIndex]?.quantity ?? 0n
-  )
-  return getStageForQuantity(quantity)
 }
 
 // Returns the tier color for a generator by index

@@ -6,8 +6,6 @@ import {
   resolveAnomaly,
   updateAnomalyInteraction
 } from '@/app/stores/gameActions'
-import { formatCountdown } from '@/lib/format'
-import ProgressBar from '@/components/ui/ProgressBar'
 
 // Chrono-Freeze Flux: Match frequency spikes with slider
 export function ChronoFreezeFlux() {

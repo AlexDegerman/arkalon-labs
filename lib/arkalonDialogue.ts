@@ -220,7 +220,7 @@ export function getNextClickResponseId(): string {
 
 // Returns the dialogue text for a given trigger, or null if not found
 export function getDialogue(triggerId: string): string | null {
-  return DIALOGUE_LIBRARY[triggerId] ?? null;
+  return DIALOGUE_LIBRARY[triggerId] ?? null
 }
 
 // Maps anomaly types to their dialogue trigger IDs
@@ -229,4 +229,8 @@ export const ANOMALY_DIALOGUE_MAP: Record<string, string> = {
   temporal_distortion: 'anomaly_temporal_distortion',
   containment_breach: 'anomaly_containment_breach',
   arkalon_resonance: 'anomaly_arkalon_resonance',
+  operation_chrono_freeze: 'anomaly_incoming',
+  operation_solar_flare: 'anomaly_incoming',
+  operation_gravity_sink: 'anomaly_incoming',
+  operation_matrix_inversion: 'anomaly_incoming'
 }

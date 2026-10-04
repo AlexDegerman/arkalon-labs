@@ -5,14 +5,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import { resolveAnomaly } from '@/app/stores/gameActions'
 
 const SYMBOLS = ['Omega', 'Delta', 'Sigma', 'Phi', 'Psi', 'Lambda'] as const
-const SYMBOL_GLYPHS: Record<string, string> = {
-  Omega: 'Omega',
-  Delta: 'Delta',
-  Sigma: 'Sigma',
-  Phi: 'Phi',
-  Psi: 'Psi',
-  Lambda: 'Lambda'
-}
+
 // Unicode glyphs
 const SYMBOL_CHARS: Record<string, string> = {
   Omega: '\u03A9',
@@ -32,16 +25,12 @@ function generateSequence(): string[] {
   )
 }
 
-type InputMode = 'keyboard' | 'tap'
-
 export default function ArkalonResonanceAnomaly() {
   const timeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
   const [sequence] = useState<string[]>(generateSequence)
   const [input, setInput] = useState<string[]>([])
   const [result, setResult] = useState<'correct' | 'wrong' | null>(null)
-  const [mode] = useState<InputMode>('tap') // always tap on mobile, keyboard on desktop
   const resolvedRef = useRef(false)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   // Resolve on timer expiry
   useEffect(() => {
@@ -98,8 +87,6 @@ export default function ArkalonResonanceAnomaly() {
     },
     [input, handleSymbolInput]
   )
-
-  const progress = input.length / SEQUENCE_LENGTH
 
   return (
     <div className="flex flex-col gap-4">

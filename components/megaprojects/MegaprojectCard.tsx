@@ -5,7 +5,6 @@ import { useGameStore } from '@/app/stores/gameStore'
 import {
   activateMegaproject,
   deactivateMegaproject,
-  setMegaprojectAllocation
 } from '@/app/stores/gameActions'
 import {
   meetsMegaprojectRequirements,

@@ -37,7 +37,7 @@ export type ModuleType = 'efficiency' | 'cost_reduction' | 'synergy'
 
 // Notation mode for number display
 // Single source of truth - imported by lib/format.ts
-export type NotationMode = 'suffix' | 'scientific' | 'engineering' | 'logarithm';
+export type NotationMode = 'suffix' | 'scientific' | 'engineering' | 'logarithm'
 
 // BGM context
 export type BGMContext = 'idle' | 'anomaly' | 'prestige' | 'operation'
@@ -264,79 +264,8 @@ export interface ChallengeRestrictions {
   moduleLevelCapOverride: number | null // null = normal cap
   onlyGeneratorType: number | null // null = no restriction
   autoPrestigeIntervalSeconds: number | null // null = no forced prestige
+  anomalySpawnIntervalSeconds: number | null // null = normal 8-15 min window
+  anomalyDurationOverrideSeconds: number | null // null = definition duration
   noResearchTimerTick: boolean
   noBaseGeneratorOutput: boolean
-}
-
-// Save payload sent to Server Action (bigints serialized as strings)
-export interface SavePayload {
-  sessionToken: string
-  researchPoints: string
-  lifetimePoints: string
-  arkalonResonance: number
-  chronalFractures: number
-  omniSpars: number
-  artifactDust: number
-  generatorData: GeneratorState[]
-  researchData: {
-    completedNodes: string[]
-    activeSlots: ResearchSlotState[]
-    queue: string[]
-    infiniteLevels: Record<string, number>
-  }
-  prestigeUpgrades: {
-    ar: ARUpgrades
-    cf: CFUpgrades
-    os: OSUpgrades
-  }
-  relicData: {
-    slots: RelicSlotState[]
-    unlocked: number[]
-    levels: Record<number, number>
-  }
-  excavationData: ProbeState[]
-  megaprojectData: {
-    activeId: MegaprojectId | null
-    allocationPercent: number
-    rpAbsorbed: string
-    completed: MegaprojectId[]
-  }
-  anomalyData: {
-    activeType: AnomalyType | null
-    timeRemaining: number
-    interactionValue: number
-    timeToNextCheck: number
-  }
-  featureFlags: UnlockFlags
-  tutorialData: TutorialState
-  challengeData: {
-    activeChallengeId: string | null
-    records: Record<string, { completedTiers: number; bestRP: string }>
-  }
-  automationData: AutomationState
-  operationData: {
-    points: number
-    multiplierLevel: number
-    artifactsUnlocked: OperationArtifactId[]
-    currentCycle: number
-  }
-  achievements: string[]
-  statsData: {
-    totalAnomaliesResolved: number
-    totalPrestigesTier1: number
-    totalPrestigesTier2: number
-    totalPrestigesTier3: number
-    totalResearchNodesCompleted: number
-    peakRPPerSec: string
-    totalSessionPlaytime: number
-    lastPrestigeTime: number
-  }
-  clientSettings: SettingsState
-  lastSavedTime: number
-}
-
-export interface TierThreshold {
-  readonly label: string
-  readonly cls: string
-  readonly min: bigint
 }

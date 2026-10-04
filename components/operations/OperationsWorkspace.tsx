@@ -19,7 +19,6 @@ function getCycleProgress(): { daysRemaining: number; progress: number } {
 export default function OperationsWorkspace() {
   const cycleNumber = useGameStore((s) => s.currentOperationCycle)
   const operationPoints = useGameStore((s) => s.currentOperationPoints)
-  const multiplierLevel = useGameStore((s) => s.operationMultiplierLevel)
   const artifactsUnlocked = useGameStore((s) => s.operationArtifactsUnlocked)
   const anomaliesUnlocked = useGameStore((s) => s.unlocks.anomalies)
 

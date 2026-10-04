@@ -7,6 +7,8 @@ import { useSaveGame } from '@/hooks/useSaveGame'
 import FooterBarLive from '@/components/layout/FooterBarLive'
 import { useInactiveTabDetection } from '@/hooks/useInactiveTabDetection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
+import { useUIStore } from '@/app/stores/uiStore'
+import { useBGM } from '@/hooks/useBGM'
 
 // Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
@@ -20,6 +22,15 @@ export default function GameBootstrap() {
   useGameLoop(initialized && !isDuplicate)
   useInactiveTabDetection()
   useKeyboardShortcuts()
+  // Context-aware BGM: operation anomalies take priority, then prestige, then anomalies
+  const activeAnomalyType = useGameStore((s) => s.activeAnomalyType)
+  const prestigeAnimating = useUIStore((s) => s.prestigeAnimating)
+  useBGM({
+    anomalyActive:
+      activeAnomalyType !== null && !activeAnomalyType.startsWith('operation_'),
+    prestigeActive: prestigeAnimating,
+    operationActive: activeAnomalyType?.startsWith('operation_') ?? false
+  })
   
   // Duplicate tab overlay
   if (isDuplicate) {

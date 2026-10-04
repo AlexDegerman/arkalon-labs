@@ -6,7 +6,8 @@ import {
   saveToLocalStorage,
   loadFromLocalStorage,
   serialiseState,
-  deserialiseState
+  deserialiseState,
+  getLastSaveTime
 } from '@/lib/saveGame'
 import {
   calculateOfflineProgress,
@@ -19,6 +20,9 @@ import {
 } from '@/constants/game'
 import { saveState } from '@/app/actions/saveState'
 import { loadState } from '@/app/actions/loadState'
+import { checkOperationCycle } from '@/app/stores/gameActions'
+import { useUIStore } from '@/app/stores/uiStore'
+import { formatPoints, formatDuration } from '@/lib/format'
 
 type SaveStatus = 'synced' | 'saving' | 'error' | 'offline' | '--'
 
@@ -42,7 +46,7 @@ export function useSaveGame() {
 
     try {
       const result = await saveState({
-        save: serialized as unknown as Record<string, unknown>,
+        save: serialized,
         lastSavedTime: serialized.lastSavedTime,
         lifetimePoints: serialized.lifetimePoints,
         currentPoints: serialized.researchPoints,
@@ -92,7 +96,6 @@ export function useSaveGame() {
         loadedState = loadFromLocalStorage()
         // Get lastSavedTime from localStorage save
         if (loadedState) {
-          const { getLastSaveTime } = await import('@/lib/saveGame')
           localSaveTime = getLastSaveTime()
         }
       }
@@ -117,14 +120,9 @@ export function useSaveGame() {
         // Check for operation cycle advance
         const serverCycle = (cloudState as any)?._serverCycleNumber
         if (serverCycle && typeof serverCycle === 'number') {
-          const { checkOperationCycle } =
-            await import('@/app/stores/gameActions')
           checkOperationCycle(serverCycle)
         }
-
         if (offlinePayload.rpEarned > 0n) {
-          const { useUIStore } = await import('@/app/stores/uiStore')
-          const { formatPoints, formatDuration } = await import('@/lib/format')
           useUIStore.getState().pushAlert({
             priority: 2,
             variant: 'info',
@@ -139,16 +137,15 @@ export function useSaveGame() {
       const CYCLE_DURATION_MS = 90 * 24 * 3600 * 1000
       const clientCycleNumber = Math.floor(Date.now() / CYCLE_DURATION_MS) + 1
       const currentCycle = useGameStore.getState().currentOperationCycle
-      if (
-        clientCycleNumber !== currentCycle &&
-        useGameStore.getState().unlocks.anomalousOperations
-      ) {
-        const { checkOperationCycle } = await import('@/app/stores/gameActions')
-        checkOperationCycle(clientCycleNumber)
-      }
+    if (
+      clientCycleNumber !== currentCycle &&
+      useGameStore.getState().unlocks.anomalousOperations
+    ) {
+      checkOperationCycle(clientCycleNumber)
+    }
 
       useGameStore.getState().setInitialized(true)
-      setSaveStatus(token ? 'synced' : 'offline')
+      setSaveStatus(cloudState ? 'synced' : 'offline')
     }
 
     boot()

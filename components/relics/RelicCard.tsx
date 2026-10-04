@@ -12,6 +12,7 @@ import {
   getRelicEffectAtLevel
 } from '@/lib/relicDefs'
 import { RELIC_LEVEL_CAP } from '@/constants/game'
+import { formatPoints } from '@/lib/format'
 
 interface Props {
   relicId: number
@@ -24,22 +25,19 @@ function RelicCard({ relicId }: Props) {
   const level = useGameStore((s) => s.relicLevels[relicId] ?? 0)
   const dust = useGameStore((s) => s.artifactDust)
   const relicSlots = useGameStore((s) => s.relicSlots)
-  const challengeRecords = useGameStore((s) => s.challengeRecords)
-  const activeChallengeRestrictions = useGameStore(
-    (s) => s.activeChallengeRestrictions
-  )
-
-  const equipped = relicSlots.some((s) => s.relicId === relicId)
-  const sc11Tiers = challengeRecords['SC11']?.completedTiers ?? 0
-  const slotCount = Math.min(6, 3 + sc11Tiers)
+  const state = useGameStore.getState()
+  const relicsDisabled =
+    state.activeChallengeRestrictions?.relicsDisabled ?? false
+  const equipped = isRelicEquipped(relicId, state)
+  const slotCount = getRelicSlotCount(state)
   const hasAvailableSlot = relicSlots
     .slice(0, slotCount)
-    .some((s) => s.relicId === null && s.cooldownRemaining <= 0)
-
+    .some((s) => canEquipToSlot(s))
   const atCap = level >= RELIC_LEVEL_CAP
   const upgradeCost = atCap ? 0 : getRelicUpgradeCost(relicId, level)
   const canAffordUpgrade = dust >= upgradeCost && !atCap
-  const canEquip = !equipped && hasAvailableSlot && level > 0
+  const canEquip =
+    !equipped && hasAvailableSlot && level > 0 && !relicsDisabled
 
   return (
     <div
@@ -90,7 +88,13 @@ function RelicCard({ relicId }: Props) {
                 : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
             ].join(' ')}
           >
-            {!hasAvailableSlot ? 'No slot' : level === 0 ? 'Need Lv1' : 'Equip'}
+            {relicsDisabled
+              ? 'Restricted'
+              : !hasAvailableSlot
+                ? 'No slot'
+                : level === 0
+                  ? 'Need Lv1'
+                  : 'Equip'}
           </button>
         ) : (
           <div className="flex-1 py-1 text-[0.65rem] font-mono text-center text-(--text-accent)">
@@ -112,7 +116,7 @@ function RelicCard({ relicId }: Props) {
                 : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
           ].join(' ')}
         >
-          {atCap ? 'MAX' : `${upgradeCost} dust`}
+          {atCap ? 'MAX' : `${formatPoints(BigInt(upgradeCost))} dust`}
         </button>
       </div>
     </div>

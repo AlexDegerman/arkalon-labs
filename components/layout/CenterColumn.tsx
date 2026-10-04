@@ -9,6 +9,7 @@ import { applyArkalonClickBoost } from '@/app/stores/gameActions'
 import { formatCountdown } from '@/lib/format'
 import type { ArkalonState } from '@/components/arkalon/ArkalonSphere'
 import { useUIStore } from '@/app/stores/uiStore'
+import { dispatchArkalonClick } from '@/lib/dialogueDispatcher'
 
 export default function CenterColumn() {
   const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
@@ -47,11 +48,8 @@ export default function CenterColumn() {
     }, 500)
 
     applyArkalonClickBoost()
-
     // Dispatcher handles rotation through click responses
-    import('@/lib/dialogueDispatcher').then(({ dispatchArkalonClick }) => {
-      dispatchArkalonClick()
-    })
+    dispatchArkalonClick()
   }
 
   // Anomaly countdown label (O3 required for specific countdown)

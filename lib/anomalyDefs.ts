@@ -1,6 +1,7 @@
 import type { AnomalyType } from '@/types/game'
 import type { GameState } from '@/types/game'
 import type { AnomalyResultPayload } from '@/types/anomalies'
+import { ANOMALY_SPAWN_MIN_SECONDS, ANOMALY_SPAWN_MAX_SECONDS } from '@/constants/game'
 
 export interface AnomalyDefinition {
   type: AnomalyType
@@ -147,23 +148,18 @@ export function getEffectiveDuration(
   // Anomalous Lens operation artifact: +15% frequency (shorter intervals)
   // affects spawn rate not duration
 
-  // AC7 challenge: anomalies last only 10 seconds
-  if (state.activeChallengeId && state.activeChallengeRestrictions) {
-    // AC7 "Anomaly Storm": 10-second duration
-    // Checked in challenge definitions
+  // AC7 challenge: fixed 10-second duration
+  const forcedDuration =
+    state.activeChallengeRestrictions?.anomalyDurationOverrideSeconds
+  if (forcedDuration !== null && forcedDuration !== undefined) {
+    return forcedDuration
   }
-
   return Math.max(5, duration)
 }
 
 // Returns the next spawn check interval in seconds
 // Range: 8-15 minutes, adjusted by Neural Pipeline and Anomalous Lens
 export function getNextSpawnInterval(state: GameState): number {
-  const {
-    ANOMALY_SPAWN_MIN_SECONDS,
-    ANOMALY_SPAWN_MAX_SECONDS
-  } = require('@/constants/game')
-
   let minSeconds = ANOMALY_SPAWN_MIN_SECONDS
   let maxSeconds = ANOMALY_SPAWN_MAX_SECONDS
 
@@ -190,9 +186,11 @@ export function getNextSpawnInterval(state: GameState): number {
     minSeconds = Math.max(60, minSeconds - 3 * relicLevel)
   }
 
-  // AC7 challenge: every 60 seconds
-  if (state.activeChallengeRestrictions && state.activeChallengeId) {
-    // Set in challenge runner (Commit 17.2)
+  // AC7 challenge: fixed 60-second spawn interval
+  const forcedInterval =
+    state.activeChallengeRestrictions?.anomalySpawnIntervalSeconds
+  if (forcedInterval !== null && forcedInterval !== undefined) {
+    return forcedInterval
   }
 
   // SC5 challenge: no anomalies

@@ -19,10 +19,10 @@ export default function AllocationSlider({ effectivePPS }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-mono text-[var(--text-secondary)]">
+        <span className="text-xs font-mono text-(--text-secondary)">
           Allocation
         </span>
-        <span className="text-xs font-mono text-[var(--text-accent)] font-bold">
+        <span className="text-xs font-mono text-(--text-accent) font-bold">
           {percent}%
         </span>
       </div>
@@ -34,7 +34,7 @@ export default function AllocationSlider({ effectivePPS }: Props) {
         step={5}
         value={percent}
         onChange={(e) => setMegaprojectAllocation(Number(e.target.value))}
-        className="w-full accent-[var(--border-accent)] cursor-pointer"
+        className="w-full accent-(--border-accent) cursor-pointer"
         aria-label="Megaproject allocation percentage"
         aria-valuemin={0}
         aria-valuemax={100}
@@ -43,14 +43,14 @@ export default function AllocationSlider({ effectivePPS }: Props) {
 
       <div className="flex items-center justify-between text-[0.65rem] font-mono">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[var(--text-secondary)]">To project</span>
-          <span className="text-[var(--text-accent)]">
+          <span className="text-(--text-secondary)">To project</span>
+          <span className="text-(--text-accent)">
             {formatPoints(allocatedPPS)}/s
           </span>
         </div>
         <div className="flex flex-col gap-0.5 text-right">
-          <span className="text-[var(--text-secondary)]">Remaining</span>
-          <span className="text-[var(--text-primary)]">
+          <span className="text-(--text-secondary)">Remaining</span>
+          <span className="text-(--text-primary)">
             {formatPoints(remainingPPS)}/s
           </span>
         </div>

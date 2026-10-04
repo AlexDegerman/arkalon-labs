@@ -233,12 +233,3 @@ export function formatRate(pps: bigint): string {
 export function formatPercent(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`
 }
-
-// Returns a short human-readable label for a bigint magnitude
-// Used in generator "next milestone" displays
-export function formatMilestoneTarget(quantity: bigint, interval: number): string {
-  if (interval <= 0) return `${quantity.toString()}/0`
-  const intervalBn = BigInt(interval)
-  const next = ((quantity / intervalBn) + 1n) * intervalBn
-  return `${quantity.toString()}/${next.toString()}`
-}

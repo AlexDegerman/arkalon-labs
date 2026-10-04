@@ -4,7 +4,7 @@
 // full footer re-renders on high-frequency timer updates.
 // FooterBar itself only subscribes to low-frequency state.
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { formatCountdown } from '@/lib/format'
 

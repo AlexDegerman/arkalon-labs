@@ -12,6 +12,7 @@ import WelcomeModal from '@/components/modals/WelcomeModal'
 import GameBootstrap from '@/components/layout/GameBootstrap'
 import AnomalyOverlay from '@/components/anomalies/AnomalyOverlay'
 import SettingsPanel from '@/components/settings/SettingsPanel'
+import SettingsButton from '@/components/ui/SettingsButton'
 
 export default function GamePage() {
   return (
@@ -34,6 +35,7 @@ export default function GamePage() {
             Primary Command Engine
           </span>
         </div>
+        <SettingsButton />
       </header>
 
       {/* PC RP banner (below header, above columns) */}
