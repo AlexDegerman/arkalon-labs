@@ -1,5 +1,7 @@
 'use client'
+
 import { create } from 'zustand'
+import { useUIStore } from '@/app/stores/uiStore'
 
 export type BGMContext = 'idle' | 'anomaly' | 'prestige' | 'operation'
 
@@ -9,7 +11,7 @@ interface BGMTrack {
   loop: boolean
 }
 
-// Maps each facility context to its background track configuration.
+// Maps each facility context to its background track configuration
 export const BGM_TRACKS: Record<BGMContext, BGMTrack[]> = {
   idle: [{ id: 'idle-01', src: '/music/bgm-idle.mp3', loop: true }],
   anomaly: [{ id: 'anomaly-01', src: '/music/bgm-anomaly.mp3', loop: true }],
@@ -36,10 +38,21 @@ interface MusicStore {
   isPlaying: boolean
   isCrossfading: boolean
 
+  // Audio Channels & Master Controls
+  muted: boolean
+  volumeBGM: number
+  volumeSFX: number
+  volumeVoice: number
+
   setContext: (ctx: BGMContext) => void
   advanceTrack: () => void
   setIsPlaying: (playing: boolean) => void
   setIsCrossfading: (crossfading: boolean) => void
+
+  setMuted: (muted: boolean) => void
+  setVolumeBGM: (volume: number) => void
+  setVolumeSFX: (volume: number) => void
+  setVolumeVoice: (volume: number) => void
 }
 
 export const useMusicStore = create<MusicStore>()((set, get) => ({
@@ -48,14 +61,17 @@ export const useMusicStore = create<MusicStore>()((set, get) => ({
   isPlaying: false,
   isCrossfading: false,
 
+  muted: false,
+  volumeBGM: 0.4,
+  volumeSFX: 0.6,
+  volumeVoice: 0.8,
+
   setContext: (context) => {
-    // Re-entering the same context keeps the current track alive
     if (context === get().context) return
     const track = pickRandomTrack(context)
     set({ context, trackId: track.id })
   },
 
-  // Called when a non-looping track ends: rotate to another track
   advanceTrack: () => {
     const { context, trackId } = get()
     const next = pickRandomTrack(context, trackId)
@@ -63,5 +79,28 @@ export const useMusicStore = create<MusicStore>()((set, get) => ({
   },
 
   setIsPlaying: (isPlaying) => set({ isPlaying }),
-  setIsCrossfading: (isCrossfading) => set({ isCrossfading })
+  setIsCrossfading: (isCrossfading) => set({ isCrossfading }),
+
+  setMuted: (muted) => {
+    set({ muted })
+    useUIStore.getState().setMusicEnabled(!muted)
+    useUIStore.getState().setSfxEnabled(!muted)
+  },
+
+  setVolumeBGM: (volume) => {
+    const clamped = Math.max(0, Math.min(1, volume))
+    set({ volumeBGM: clamped })
+    useUIStore.getState().setMusicVolume(clamped)
+  },
+
+  setVolumeSFX: (volume) => {
+    const clamped = Math.max(0, Math.min(1, volume))
+    set({ volumeSFX: clamped })
+    useUIStore.getState().setSfxVolume(clamped)
+  },
+
+  setVolumeVoice: (volume) => {
+    const clamped = Math.max(0, Math.min(1, volume))
+    set({ volumeVoice: clamped })
+  }
 }))

@@ -36,7 +36,7 @@ function AchievementBadge({ achievement, earned }: AchievementBadgeProps) {
     <div
       className={[
         'card rounded-lg p-2.5 flex flex-col gap-1 transition-colors',
-        earned ? 'border-[var(--status-success)]' : 'opacity-50'
+        earned ? 'border-(--status-success)' : 'opacity-50'
       ].join(' ')}
     >
       <div className="flex items-center gap-1.5">
@@ -44,18 +44,18 @@ function AchievementBadge({ achievement, earned }: AchievementBadgeProps) {
           className={[
             'text-sm',
             earned
-              ? 'text-[var(--status-success)]'
-              : 'text-[var(--status-locked)]'
+              ? 'text-(--status-success)'
+              : 'text-(--status-locked)'
           ].join(' ')}
           aria-hidden="true"
         >
           {earned ? '★' : '☆'}
         </span>
-        <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
+        <span className="text-xs font-semibold text-(--text-primary) truncate">
           {achievement.name}
         </span>
       </div>
-      <p className="text-[0.65rem] text-[var(--text-secondary)] leading-snug">
+      <p className="text-[0.65rem] text-(--text-secondary) leading-snug">
         {achievement.description}
       </p>
     </div>
@@ -79,17 +79,17 @@ export default function AchievementsWorkspace() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-default)] shrink-0">
-        <p className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wide">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-(--border-default) shrink-0">
+        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
           Achievements
         </p>
-        <span className="chip border-[var(--border-default)] text-[var(--text-secondary)] text-[0.6rem]">
+        <span className="chip border-(--border-default) text-(--text-secondary) text-[0.6rem]">
           {earnedCount}/{ACHIEVEMENTS.length}
         </span>
       </div>
 
       {/* Category filter */}
-      <div className="flex overflow-x-auto scrollbar-dark border-b border-[var(--border-default)] shrink-0">
+      <div className="flex overflow-x-auto scrollbar-dark border-b border-(--border-default) shrink-0">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}

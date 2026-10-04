@@ -6,6 +6,7 @@ import { useTabGuard } from '@/hooks/useTabGuard'
 import { useSaveGame } from '@/hooks/useSaveGame'
 import FooterBarLive from '@/components/layout/FooterBarLive'
 import { useInactiveTabDetection } from '@/hooks/useInactiveTabDetection'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 // Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
@@ -18,6 +19,7 @@ export default function GameBootstrap() {
   // Start game loop once initialized and not a duplicate tab
   useGameLoop(initialized && !isDuplicate)
   useInactiveTabDetection()
+  useKeyboardShortcuts()
   
   // Duplicate tab overlay
   if (isDuplicate) {

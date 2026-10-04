@@ -21,3 +21,17 @@ export function useProgressionTier(lifetimePoints: bigint) {
     document.documentElement.setAttribute('data-tier', tier)
   }, [lifetimePoints])
 }
+
+// Applies data-reduced-motion attribute based on settings and prefers-reduced-motion
+export function useReducedMotion(reducedMotion: boolean) {
+  useEffect(() => {
+    const prefersReduced = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches
+    const shouldReduce = reducedMotion || prefersReduced
+    document.documentElement.setAttribute(
+      'data-reduced-motion',
+      shouldReduce ? 'true' : 'false'
+    )
+  }, [reducedMotion])
+}

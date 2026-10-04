@@ -4,7 +4,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import { useAnimatedBigInt } from '@/hooks/useAnimatedBigInt'
 import { formatPoints, formatRate } from '@/lib/format'
 import { getCurrentEra } from '@/lib/eraThresholds'
-import { useProgressionTier } from '@/hooks/useProgressionTier'
+import { useProgressionTier, useReducedMotion } from '@/hooks/useProgressionTier'
 import TutorialHighlight from '@/components/tutorial/TutorialHighlight'
 
 export default function RPBanner() {
@@ -16,7 +16,8 @@ export default function RPBanner() {
 
   // Apply data-tier attribute to <html> based on lifetime points
   useProgressionTier(lifetimePoints)
-
+  const reducedMotion = useGameStore((s) => s.settings.reducedMotion)
+  useReducedMotion(reducedMotion)
   const displayRef = useAnimatedBigInt(researchPoints)
   const era = getCurrentEra(lifetimePoints)
 

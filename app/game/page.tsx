@@ -11,6 +11,7 @@ import UpdateModal from '@/components/modals/UpdateModal'
 import WelcomeModal from '@/components/modals/WelcomeModal'
 import GameBootstrap from '@/components/layout/GameBootstrap'
 import AnomalyOverlay from '@/components/anomalies/AnomalyOverlay'
+import SettingsPanel from '@/components/settings/SettingsPanel'
 
 export default function GamePage() {
   return (
@@ -20,6 +21,7 @@ export default function GamePage() {
       <UpdateModal />
       <GameBootstrap />
       <AnomalyOverlay />
+      <SettingsPanel />
 
       {/* PC header */}
       <header className="hidden lg:flex items-center justify-between px-4 py-2 border-b border-(--border-default) bg-(--bg-surface) shrink-0">
