@@ -25,6 +25,7 @@ import {
 } from '@/constants/game'
 import ExpandedCFShop from './ExpandedCFShop'
 import OSUpgradeShop from './OSUpgradeShop'
+import AutomationPanel from './AutomationPanel'
 
 type PrestigeSubTab = 'tier1' | 'tier2' | 'tier3'
 
@@ -224,6 +225,8 @@ export default function PrestigeWorkspace() {
 
           <div className="section-divider" />
           <ARUpgradeShop />
+          <div className="section-divider" />
+          <AutomationPanel />
         </div>
       )}
 
