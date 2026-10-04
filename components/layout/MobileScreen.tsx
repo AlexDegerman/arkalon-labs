@@ -2,14 +2,49 @@
 
 import { useActiveTab } from '@/hooks/useActiveTab'
 import MobileMoreDrawer from '@/components/layout/MobileMoreDrawer'
-import ArkalonSphere from '../arkalon/ArkalonSphere'
-import ArkalonTerminal from '../arkalon/ArkalonTerminal'
-import GeneratorList from '../generators/GeneratorList'
-import MiniStatStrip from './MiniStatStrip'
-import RPBanner from './RPBanner'
-import WorkspaceTabBar from './WorkspaceTabBar'
-import WorkspacePanel from './WorkspacePanel'
-import { MobileAnomalyBar } from '../anomalies/AnomalyOverlay'
+import ArkalonSphere from '@/components/arkalon/ArkalonSphere'
+import ArkalonTerminal from '@/components/arkalon/ArkalonTerminal'
+import GeneratorList from '@/components/generators/GeneratorList'
+import RPBanner from '@/components/layout/RPBanner'
+import MiniStatStrip from '@/components/layout/MiniStatStrip'
+import WorkspaceTabBar from '@/components/layout/WorkspaceTabBar'
+import WorkspacePanel from '@/components/layout/WorkspacePanel'
+import { MobileAnomalyBar } from '@/components/anomalies/AnomalyOverlay'
+import { useUIStore } from '@/app/stores/uiStore'
+import { useGameStore } from '@/app/stores/gameStore'
+import { applyArkalonClickBoost } from '@/app/stores/gameActions'
+
+function ArkalonTerminalMobile() {
+  const lines = useUIStore((s) => s.terminalLines)
+  return <ArkalonTerminal lines={lines} maxLines={3} />
+}
+
+function MobileArkalonTab() {
+  const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
+  const interactiveArkalon = useGameStore((s) => s.unlocks.interactiveArkalon)
+  const sphereState = activeAnomaly ? ('anomaly' as const) : ('idle' as const)
+
+  function handleClick() {
+    if (!interactiveArkalon) return
+    applyArkalonClickBoost()
+  }
+
+  return (
+    <div className="h-full overflow-y-auto p-4 flex flex-col items-center gap-6 scrollbar-dark">
+      <div className="mt-6">
+        <ArkalonSphere
+          state={sphereState}
+          interactive={interactiveArkalon}
+          onClick={handleClick}
+          size={140}
+        />
+      </div>
+      <div className="w-full">
+        <ArkalonTerminalMobile />
+      </div>
+    </div>
+  )
+}
 
 export default function MobileScreen() {
   const { mobileTab, moreDrawerOpen, setMoreDrawerOpen } = useActiveTab()
@@ -33,19 +68,7 @@ export default function MobileScreen() {
         )}
 
         {/* Arkalon tab */}
-        {mobileTab === 'arkalon' && (
-          <div className="h-full overflow-y-auto p-4 flex flex-col items-center gap-6 scrollbar-dark">
-            <div className="mt-6">
-              <ArkalonSphere state="idle" interactive={false} size={140} />
-            </div>
-            <div className="w-full">
-              <ArkalonTerminal
-                lines={['System check... complete. Core online.']}
-                maxLines={3}
-              />
-            </div>
-          </div>
-        )}
+        {mobileTab === 'arkalon' && <MobileArkalonTab />}
 
         {/* Research tab - workspace panel with tab bar */}
         {mobileTab === 'research' && (

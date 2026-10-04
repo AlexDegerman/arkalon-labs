@@ -98,10 +98,24 @@ export const DIALOGUE_LIBRARY: Record<string, string> = {
 
   // O3 anomaly prediction
   anomaly_incoming:
-    'Anomalous readings intensifying. A distortion event is imminent.'
+    'Anomalous readings intensifying. A distortion event is imminent.',
+
+  // Interactive Arkalon click responses (rotated client-side)
+  arkalon_click:
+    'Processing accelerated. Research efficiency temporarily elevated.',
+  arkalon_click_2: 'Signal received. Synaptic throughput increased.',
+  arkalon_click_3: 'Acknowledged. The matrix is responding.'
 }
 
 // Returns the dialogue text for a given trigger, or null if not found
 export function getDialogue(triggerId: string): string | null {
-  return DIALOGUE_LIBRARY[triggerId] ?? null
+  return DIALOGUE_LIBRARY[triggerId] ?? null;
 }
+
+// Maps anomaly types to their dialogue trigger IDs
+export const ANOMALY_DIALOGUE_MAP: Record<string, string> = {
+  quantum_surge: 'anomaly_quantum_surge',
+  temporal_distortion: 'anomaly_temporal_distortion',
+  containment_breach: 'anomaly_containment_breach',
+  arkalon_resonance: 'anomaly_arkalon_resonance',
+};

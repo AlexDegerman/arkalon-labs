@@ -8,13 +8,20 @@ interface UIStore {
   sfxEnabled: boolean
   sfxVolume: number
 
-  // Facility Alert Queue
+  // Facility Alert Queue - priority-ordered popup system
   alertQueue: FacilityAlertPayload[]
   activeAlert: FacilityAlertPayload | null
 
-  // Modals & Panels
+  // Arkalon terminal dialogue lines (shared between PC and mobile)
+  terminalLines: string[]
+
+  // Settings panel visibility
   settingsPanelOpen: boolean
+
+  // Welcome modal
   welcomeModalOpen: boolean
+
+  // Update modal
   updateModalOpen: boolean
   updateModalVersion: string
 
@@ -25,6 +32,7 @@ interface UIStore {
 
   pushAlert: (alert: Omit<FacilityAlertPayload, 'id'>) => void
   dismissAlert: () => void
+  pushTerminalLine: (text: string) => void
   setSettingsPanelOpen: (open: boolean) => void
   setWelcomeModalOpen: (open: boolean) => void
   setUpdateModalOpen: (open: boolean, version?: string) => void
@@ -40,6 +48,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   alertQueue: [],
   activeAlert: null,
+  terminalLines: ['System check complete. Core online.'],
   settingsPanelOpen: false,
   welcomeModalOpen: false,
   updateModalOpen: false,
@@ -79,6 +88,12 @@ export const useUIStore = create<UIStore>((set, get) => ({
       set({ activeAlert: null })
     }
   },
+
+  pushTerminalLine: (text) =>
+    set((s) => {
+      const next = [...s.terminalLines, text]
+      return { terminalLines: next.length > 20 ? next.slice(-20) : next }
+    }),
 
   setSettingsPanelOpen: (settingsPanelOpen) => set({ settingsPanelOpen }),
   setWelcomeModalOpen: (welcomeModalOpen) => set({ welcomeModalOpen }),

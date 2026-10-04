@@ -1,12 +1,42 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
+import { useGameStore } from '@/app/stores/gameStore'
 import ArkalonSphere from '@/components/arkalon/ArkalonSphere'
 import ArkalonTerminal from '@/components/arkalon/ArkalonTerminal'
-
-// Static boot line shown before the store is hydrated
-const BOOT_LINES = ['System check complete. Core online.']
+import { useArkalonDialogue } from '@/hooks/useArkalonDialogue'
+import { ANOMALY_DIALOGUE_MAP } from '@/lib/arkalonDialogue'
+import { applyArkalonClickBoost } from '@/app/stores/gameActions'
+import type { ArkalonState } from '@/components/arkalon/ArkalonSphere'
 
 export default function CenterColumn() {
+  const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
+  const interactiveArkalon = useGameStore((s) => s.unlocks.interactiveArkalon)
+  const probeCount = useGameStore((s) => s.probes.length)
+  const { lines, pushDialogue } = useArkalonDialogue()
+  const prevAnomalyRef = useRef<string | null>(null)
+
+  // Trigger anomaly-specific dialogue when a new anomaly spawns
+  useEffect(() => {
+    if (activeAnomaly && activeAnomaly !== prevAnomalyRef.current) {
+      prevAnomalyRef.current = activeAnomaly
+      const triggerId = ANOMALY_DIALOGUE_MAP[activeAnomaly]
+      if (triggerId) pushDialogue(triggerId)
+    }
+    if (!activeAnomaly) {
+      prevAnomalyRef.current = null
+    }
+  }, [activeAnomaly, pushDialogue])
+
+  // Sphere visual state
+  const sphereState: ArkalonState = activeAnomaly ? 'anomaly' : 'idle'
+
+  function handleSphereClick() {
+    if (!interactiveArkalon) return
+    applyArkalonClickBoost()
+    pushDialogue('arkalon_click')
+  }
+
   return (
     <div className="flex flex-col h-full border-r border-(--border-default) overflow-hidden">
       <div className="px-3 py-2 border-b border-(--border-default) shrink-0">
@@ -15,22 +45,38 @@ export default function CenterColumn() {
         </p>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center gap-6 p-4 overflow-y-auto scrollbar-dark">
-        <ArkalonSphere state="idle" interactive={false} size={160} />
+        <ArkalonSphere
+          state={sphereState}
+          interactive={interactiveArkalon}
+          onClick={handleSphereClick}
+          size={160}
+        />
         <div className="w-full">
-          <ArkalonTerminal lines={BOOT_LINES} maxLines={3} />
+          <ArkalonTerminal lines={lines} maxLines={3} />
         </div>
-        {/* Status row - wired in Phase 3 */}
-        <div className="w-full flex items-center gap-3 px-1">
+
+        {/* Status row */}
+        <div className="w-full flex items-center gap-3 px-1 flex-wrap">
           <div className="flex items-center gap-1.5">
-            <span className="status-dot status-dot-locked" />
+            <span
+              className={[
+                'status-dot',
+                activeAnomaly ? 'bg-[#ef4444] dot-pulse' : 'status-dot-locked'
+              ].join(' ')}
+            />
             <span className="text-xs font-mono text-(--text-secondary)">
-              Anomaly: standby
+              {activeAnomaly ? 'Anomaly active' : 'Anomaly: standby'}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="status-dot status-dot-locked" />
+            <span
+              className={[
+                'status-dot',
+                probeCount > 0 ? 'status-dot-active' : 'status-dot-locked'
+              ].join(' ')}
+            />
             <span className="text-xs font-mono text-(--text-secondary)">
-              Probe: 0
+              Probes: {probeCount}
             </span>
           </div>
         </div>
