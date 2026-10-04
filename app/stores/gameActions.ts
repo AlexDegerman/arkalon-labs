@@ -4,7 +4,20 @@
 // Additional action groups appended in subsequent commits
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { checkUnlocks, checkEraTransition, checkResearchSlotExpansion } from '@/lib/unlockWatcher'
+import { useUIStore } from '@/app/stores/uiStore'
+import { useMusicStore } from '@/app/stores/musicStore'
+import {
+  checkUnlocks,
+  checkEraTransition,
+  checkResearchSlotExpansion
+} from '@/lib/unlockWatcher'
+import {
+  selectNextAnomaly,
+  getEffectiveDuration,
+  getNextSpawnInterval,
+  buildAnomalyReward
+} from '@/lib/anomalyDefs'
+import type { AnomalyResultPayload } from '@/types/anomalies'
 import { costToBuyN, maxAffordable, nextCost } from '@/lib/generatorCosts'
 import {
   markUnlocksDirty,
@@ -82,8 +95,8 @@ export function tick(): void {
     const nextTimer = Math.max(0, store.anomalyTimeRemaining - 0.1)
     nextState.anomalyTimeRemaining = nextTimer
     if (nextTimer === 0) {
-      nextState.activeAnomalyType = null
-      nextState.anomalyInteractionValue = 0
+      // Timer expired - dismiss without reward after state update
+      setTimeout(() => dismissAnomaly(), 0)
     }
   }
 
@@ -91,7 +104,10 @@ export function tick(): void {
   if (store.unlocks.anomalies && !store.activeAnomalyType) {
     const nextSpawnTimer = Math.max(0, store.timeToNextAnomalyCheck - 0.1)
     nextState.timeToNextAnomalyCheck = nextSpawnTimer
-    // Spawn check handled in anomaly actions (Commit 8.1)
+    if (nextSpawnTimer === 0 && store.timeToNextAnomalyCheck > 0) {
+      // Timer just hit zero - fire spawn check after state update
+      setTimeout(() => checkAnomalySpawn(), 0)
+    }
   }
 
   // 6. Decrement probe timers (full logic in Commit 11.1)
@@ -292,6 +308,138 @@ export function applyArkalonClickBoost(): void {
       }
     }),
   }))
+}
+
+// Anomaly actions
+
+// Called by the tick loop when the spawn check timer reaches 0
+export function checkAnomalySpawn(): void {
+  const store = useGameStore.getState();
+  if (!store.unlocks.anomalies) return;
+  if (store.activeAnomalyType) return;
+  if (store.activeChallengeRestrictions?.anomaliesDisabled) return;
+
+  const def = selectNextAnomaly(store);
+  const duration = getEffectiveDuration(def, store);
+  const nextCheck = getNextSpawnInterval(store);
+
+  useGameStore.setState({
+    activeAnomalyType: def.type,
+    anomalyTimeRemaining: duration,
+    anomalyInteractionValue: 0,
+    timeToNextAnomalyCheck: nextCheck,
+  });
+
+  // Transition BGM to anomaly context
+  useMusicStore.getState().setContext('anomaly');
+
+  // Fire tutorial beat for first anomaly
+  markTutorialDirty();
+
+  // Push anomaly alert
+  useUIStore.getState().pushAlert({
+    priority: 1,
+    variant: 'anomaly',
+    title: def.label,
+    message: def.description,
+    autoDismissMs: 5000,
+  });
+}
+
+// Called when the player successfully resolves an anomaly
+// interactionScore: 0.0-1.0
+export function resolveAnomaly(interactionScore: number): void {
+  const store = useGameStore.getState();
+  if (!store.activeAnomalyType) return;
+
+  const { ANOMALY_DEFINITIONS, OPERATION_ANOMALY_DEFINITIONS } =
+    require('@/lib/anomalyDefs');
+  const allDefs = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS];
+  const def = allDefs.find((d: any) => d.type === store.activeAnomalyType);
+  if (!def) return;
+
+  const reward = buildAnomalyReward(def, interactionScore, store);
+
+  // Apply instant RP payout
+  let rpGain = reward.instantRPPayout + reward.rpReward;
+
+  // Apply dust
+  const newDust = store.artifactDust + reward.dustDropped;
+
+  // Unlock relic if dropped
+  const newUnlocked = reward.relicDropped > 0 &&
+    !store.unlockedRelics.includes(reward.relicDropped)
+    ? [...store.unlockedRelics, reward.relicDropped]
+    : store.unlockedRelics;
+
+  if (reward.relicDropped > 0 && !store.unlockedRelics.includes(reward.relicDropped)) {
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'unlock',
+      title: 'Relic Discovered',
+      message: `A new relic has been added to your collection.`,
+      autoDismissMs: 5000,
+    });
+  }
+
+  // Apply R4: reduce running research timers
+  let updatedSlots = store.activeResearchSlots;
+  if (reward.researchTimeReduction > 0) {
+    updatedSlots = store.activeResearchSlots.map((slot) => {
+      if (!slot.nodeId || slot.timerRemaining <= 0) return slot;
+      return {
+        ...slot,
+        timerRemaining: Math.max(0, slot.timerRemaining - reward.researchTimeReduction),
+      };
+    });
+  }
+
+  useGameStore.setState((s) => ({
+    researchPoints: s.researchPoints + rpGain,
+    lifetimePoints: s.lifetimePoints + rpGain,
+    artifactDust: newDust,
+    unlockedRelics: newUnlocked,
+    activeAnomalyType: null,
+    anomalyTimeRemaining: 0,
+    anomalyInteractionValue: 0,
+    activeResearchSlots: updatedSlots,
+    stats: {
+      ...s.stats,
+      totalAnomaliesResolved: s.stats.totalAnomaliesResolved + 1,
+    },
+  }));
+
+  // Return to idle BGM
+  useMusicStore.getState().setContext('idle');
+
+  markUnlocksDirty();
+  markAchievementsDirty();
+
+  if (rpGain > 0n) {
+    useGameStore.getState().recalcPPS();
+  }
+}
+
+// Dismisses the active anomaly without reward (timer expired or skipped)
+export function dismissAnomaly(): void {
+  const store = useGameStore.getState();
+  if (!store.activeAnomalyType) return;
+
+  const nextCheck = getNextSpawnInterval(store);
+
+  useGameStore.setState({
+    activeAnomalyType: null,
+    anomalyTimeRemaining: 0,
+    anomalyInteractionValue: 0,
+    timeToNextAnomalyCheck: nextCheck,
+  });
+
+  useMusicStore.getState().setContext('idle');
+}
+
+// Updates the anomaly interaction value (used by interaction widgets)
+export function updateAnomalyInteraction(value: number): void {
+  useGameStore.setState({ anomalyInteractionValue: value });
 }
 
 // Module purchase action
