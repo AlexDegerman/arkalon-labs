@@ -1,10 +1,12 @@
 'use client'
 
-// Live save status overlay rendered by GameBootstrap
-// Passes dynamic save info to the static FooterBar via a portal-like approach
-// by updating a shared DOM ref - avoids re-rendering the full footer
+// Renders live footer state via direct DOM writes to avoid triggering
+// full footer re-renders on high-frequency timer updates.
+// FooterBar itself only subscribes to low-frequency state.
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
+import { useGameStore } from '@/app/stores/gameStore'
+import { formatCountdown } from '@/lib/format'
 
 interface Props {
   lastSaveLabel: string
@@ -28,9 +30,10 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function FooterBarLive({ lastSaveLabel, saveStatus }: Props) {
+  const rafRef = useRef<number>(0)
+
+  // Update save status label
   useEffect(() => {
-    // Write save status directly to the footer DOM element
-    // The FooterBar renders a span with id="footer-save-status"
     const el = document.getElementById('footer-save-status')
     if (!el) return
     const label =
@@ -40,6 +43,47 @@ export default function FooterBarLive({ lastSaveLabel, saveStatus }: Props) {
     el.textContent = `Save: ${label}`
     el.style.color = STATUS_COLORS[saveStatus]
   }, [lastSaveLabel, saveStatus])
+
+  // Update anomaly label via rAF loop - reads from store directly
+  useEffect(() => {
+    let running = true
+
+    function update() {
+      if (!running) return
+
+      const store = useGameStore.getState()
+      const el = document.getElementById('footer-anomaly-label')
+      if (el) {
+        const activeAnomaly = store.activeAnomalyType
+        const anomaliesUnlocked = store.unlocks.anomalies
+        const o3 = store.completedResearchNodes.includes('O3')
+
+        let label: string
+        if (activeAnomaly) {
+          label = `Anomaly: ${formatCountdown(store.anomalyTimeRemaining)}`
+        } else if (anomaliesUnlocked && o3) {
+          label = `Next: ${formatCountdown(store.timeToNextAnomalyCheck)}`
+        } else if (anomaliesUnlocked) {
+          label = 'Anomaly scan: active'
+        } else {
+          label = 'Anomaly scan: standby'
+        }
+
+        if (el.textContent !== label) {
+          el.textContent = label
+        }
+      }
+
+      // Update at ~4fps - enough for countdown display
+      rafRef.current = window.setTimeout(update, 250)
+    }
+
+    update()
+    return () => {
+      running = false
+      clearTimeout(rafRef.current)
+    }
+  }, [])
 
   return null
 }

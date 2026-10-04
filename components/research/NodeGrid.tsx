@@ -27,18 +27,21 @@ const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
   const node = RESEARCH_NODE_MAP[nodeId]
   if (!node) return null
 
-  const state = useGameStore.getState()
+  // Narrow selectors: only subscribe to data this specific card needs
   const researchPoints = useGameStore((s) => s.researchPoints)
-  const completedNodes = useGameStore((s) => s.completedResearchNodes)
-  const activeSlots = useGameStore((s) => s.activeResearchSlots)
-  const queue = useGameStore((s) => s.researchQueue)
-  const infLevels = useGameStore((s) => s.infiniteResearchLevels)
-
-  const completed = completedNodes.includes(nodeId)
-  const active = activeSlots.some((s) => s.nodeId === nodeId)
-  const queued = queue.includes(nodeId)
-  const available = isNodeAvailable(nodeId, useGameStore.getState())
-
+  const isCompleted = useGameStore((s) =>
+    s.completedResearchNodes.includes(nodeId)
+  )
+  const isActiveInSlot = useGameStore((s) =>
+    s.activeResearchSlots.some((sl) => sl.nodeId === nodeId)
+  )
+  const isInQueue = useGameStore((s) => s.researchQueue.includes(nodeId))
+  const infLevel = useGameStore((s) => s.infiniteResearchLevels[nodeId] ?? 0)
+  const state = useGameStore.getState()
+  const completed = isCompleted
+  const active = isActiveInSlot
+  const queued = isInQueue
+  const available = isNodeAvailable(nodeId, state)
   const cost = getNodeCost(nodeId, useGameStore.getState())
   const canAffordNode = researchPoints >= cost
 
@@ -46,7 +49,6 @@ const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
     ? 0
     : getEffectiveStudyTime(nodeId, useGameStore.getState())
 
-  const infLevel = node.isInfinite ? (infLevels[nodeId] ?? 0) : 0
   const infNextCost = node.isInfinite
     ? infNodeCostAtLevel(
         node.cost,

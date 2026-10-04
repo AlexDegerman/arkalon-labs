@@ -12,15 +12,19 @@ interface Props {
 }
 
 function RelicSlot({ slotIndex }: Props) {
-  const slot = useGameStore((s) => s.relicSlots[slotIndex]);
-  const relicLevels = useGameStore((s) => s.relicLevels);
+  const slot = useGameStore((s) => s.relicSlots[slotIndex])
+  // Narrow: only read the level for the relic currently in this slot
+  const relicLevel = useGameStore((s) =>
+    s.relicSlots[slotIndex]?.relicId != null
+      ? (s.relicLevels[s.relicSlots[slotIndex].relicId!] ?? 0)
+      : 0
+  )
+  if (!slot) return null
 
-  if (!slot) return null;
-
-  const isEmpty = slot.relicId === null;
-  const onCooldown = slot.cooldownRemaining > 0;
-  const relic = slot.relicId !== null ? RELIC_MAP[slot.relicId] : null;
-  const level = slot.relicId !== null ? (relicLevels[slot.relicId] ?? 0) : 0;
+  const isEmpty = slot.relicId === null
+  const onCooldown = slot.cooldownRemaining > 0
+  const relic = slot.relicId !== null ? RELIC_MAP[slot.relicId] : null
+  const level = relicLevel
 
   return (
     <div
