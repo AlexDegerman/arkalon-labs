@@ -15,6 +15,7 @@ const WORKSPACE_TABS: TabDefinition[] = [
   { id: 'research', label: 'Research', featureKey: 'techMatrix' },
   { id: 'prestige', label: 'Prestige', featureKey: 'prestige' },
   { id: 'modules', label: 'Modules', featureKey: 'modules' },
+  { id: 'relics', label: 'Relics', featureKey: 'relics' },
   { id: 'excavation', label: 'Excavation', featureKey: 'excavation' },
   { id: 'megaprojects', label: 'Mega', featureKey: 'megaprojects' },
   { id: 'operations', label: 'Ops', featureKey: 'anomalousOperations' },

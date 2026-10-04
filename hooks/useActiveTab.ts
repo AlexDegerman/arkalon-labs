@@ -7,13 +7,14 @@ export type WorkspaceTab =
   | 'research'
   | 'prestige'
   | 'modules'
+  | 'relics'
   | 'excavation'
   | 'megaprojects'
   | 'operations'
   | 'stats'
   | 'challenges'
   | 'achievements'
-
+  
 interface ActiveTabStore {
   mobileTab: MobileTab
   workspaceTab: WorkspaceTab

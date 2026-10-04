@@ -13,6 +13,17 @@ import { MobileAnomalyBar } from '@/components/anomalies/AnomalyOverlay'
 import { useUIStore } from '@/app/stores/uiStore'
 import { useGameStore } from '@/app/stores/gameStore'
 import { applyArkalonClickBoost } from '@/app/stores/gameActions'
+import RelicsTab from '@/components/relics/RelicsTab'
+import FeatureLockOverlay from '@/components/ui/FeatureLockOverlay'
+import { FEATURE_MAP } from '@/lib/featureRegistry'
+
+function RelicsFeatureWrapper() {
+  return (
+    <FeatureLockOverlay feature={FEATURE_MAP.relics}>
+      <RelicsTab />
+    </FeatureLockOverlay>
+  )
+}
 
 function ArkalonTerminalMobile() {
   const lines = useUIStore((s) => s.terminalLines)
@@ -80,10 +91,8 @@ export default function MobileScreen() {
 
         {/* Relics tab */}
         {mobileTab === 'relics' && (
-          <div className="h-full overflow-y-auto p-3">
-            <p className="terminal text-(--text-secondary) text-xs">
-              Relics tab renders here in Phase 9
-            </p>
+          <div className="h-full min-h-0">
+            <RelicsFeatureWrapper />
           </div>
         )}
 

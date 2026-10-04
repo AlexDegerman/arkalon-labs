@@ -6,6 +6,7 @@ import FeatureLockOverlay from '@/components/ui/FeatureLockOverlay'
 import { FEATURE_MAP } from '@/lib/featureRegistry'
 import ResearchWorkspace from '@/components/research/ResearchWorkspace'
 import ModulesWorkspace from '../modules/ModulesWorkspace'
+import RelicsTab from '../relics/RelicsTab'
 
 // Placeholder panels - replaced by real implementations in later commits
 function PlaceholderPanel({ label }: { label: string }) {
@@ -35,6 +36,11 @@ export default function WorkspacePanel() {
     modules: (
       <FeatureLockOverlay feature={FEATURE_MAP.modules}>
         <ModulesWorkspace />
+      </FeatureLockOverlay>
+    ),
+    relics: (
+      <FeatureLockOverlay feature={FEATURE_MAP.relics}>
+        <RelicsTab />
       </FeatureLockOverlay>
     ),
     excavation: (
