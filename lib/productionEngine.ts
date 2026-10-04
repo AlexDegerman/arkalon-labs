@@ -15,6 +15,7 @@ import {
   AR_PRODUCTION_CAP,
   PHI_AR_PRODUCTION
 } from '@/constants/game'
+import { getProductionExponentBonus, getTechMultiplierForGenerator } from './researchEffects'
 
 // Precision scale factor: all intermediate multipliers are computed as
 // integer numerators over SCALE_DENOM to avoid floating-point in the hot path
@@ -156,7 +157,7 @@ function computeGeneratorOutput(
     baseOutput = BigInt(Math.round(Number(baseOutput) * synergyMult))
   }
 
-  // Tech multiplier (aggregated from all research nodes)
+  // Tech multiplier (per-generator research effects)
   if (techMultiplier !== 1) {
     baseOutput = BigInt(Math.round(Number(baseOutput) * techMultiplier))
   }
@@ -164,69 +165,58 @@ function computeGeneratorOutput(
   return baseOutput
 }
 
-// Aggregates all research node effects into a single tech multiplier per class
-// Returns a float multiplier applied to all generators
-// Full research effect integration added in Commit 5.2
-function computeTechMultiplier(state: GameState): number {
-  const completed = new Set(state.completedResearchNodes)
-  let multiplier = 1
-
-  // C2: -5% research time (production effect: none; timer handled in tick)
-
-  // C3: +10% computation output per completed node
-  if (completed.has('C3')) {
-    const bonus = 0.1 * completed.size
-    multiplier *= 1 + bonus
-  }
-
-  // C5: +0.1 to production exponent - approximated as 1.26x multiplier here;
-  // full exponent integration added in Commit 5.2
-  if (completed.has('C5')) multiplier *= 1.26
-
-  // E4: 5x energy systems
-  // Applied per-class in Commit 5.2; stub here
-
-  // O4: Arkalon Interface +300%
-  if (completed.has('O4')) {
-    // Applied to generator 6 specifically in Commit 5.2; global stub here
-  }
-
-  // O9: Arkalon Interface 5x
-  if (completed.has('O9')) {
-    // Applied to generator 6 specifically in Commit 5.2
-  }
-
-  // R10: +0.5 to master production exponent - approximated; full in Commit 5.2
-  if (completed.has('R10')) multiplier *= 3.16
-
-  // C10: +1% per completed node
-  if (completed.has('C10')) {
-    multiplier *= 1 + 0.01 * completed.size
-  }
-
-  return multiplier
+// Per-generator tech multiplier - delegates to researchEffects.ts
+function computeTechMultiplierForGenerator(
+  generatorIndex: number,
+  state: GameState
+): number {
+  return getTechMultiplierForGenerator(generatorIndex, state);
 }
 
 // Computes the AR production bonus
 // Super-Symmetry: +10% per unspent AR held (capped at AR_PRODUCTION_CAP)
 // PHI_AR_PRODUCTION: +10% per unspent AR (base)
 function computeARBonus(state: GameState): number {
-  const unspentAR = Math.min(state.arkalonResonance, AR_PRODUCTION_CAP)
-  if (unspentAR === 0) return 1
+  const unspentAR = Math.min(state.arkalonResonance, AR_PRODUCTION_CAP);
+  if (unspentAR === 0) return 1;
 
-  let arBonus = 1 + PHI_AR_PRODUCTION * unspentAR
+  // Base AR efficiency per unit
+  let perARBonus = PHI_AR_PRODUCTION;
 
-  // Super-Symmetry doubles the AR production rate
+  // O_INF: +5% AR multiplier strength per level
+  const oInfLevel = state.infiniteResearchLevels['O_INF'] ?? 0;
+  if (oInfLevel > 0) {
+    perARBonus *= 1 + 0.05 * oInfLevel;
+  }
+
+  // O7: +1% AR effectiveness per total prestige completed
+  const totalPrestiges =
+    state.stats.totalPrestigesTier1 +
+    state.stats.totalPrestigesTier2 +
+    state.stats.totalPrestigesTier3;
+  if (
+    state.completedResearchNodes.includes('O7') &&
+    totalPrestiges > 0
+  ) {
+    perARBonus *= 1 + 0.01 * totalPrestiges;
+  }
+
+  let arBonus = 1 + perARBonus * unspentAR;
+
+  // Super-Symmetry: additional +10% per unspent AR
   if (state.arUpgrades.super_symmetry > 0) {
-    arBonus += 0.1 * unspentAR
+    arBonus += 0.1 * unspentAR;
   }
 
   // E5: +0.5% per unspent AR
   if (state.completedResearchNodes.includes('E5')) {
-    arBonus += 0.005 * unspentAR
+    arBonus += 0.005 * unspentAR;
   }
 
-  return arBonus
+  // Resonance Amplification CF upgrade: +1.5x per CF held on AR yields
+  // (affects prestige reward, not production multiplier directly)
+
+  return arBonus;
 }
 
 // Computes relic passive multipliers
@@ -259,45 +249,53 @@ function computeGeneratorPrimingBonus(state: GameState): number {
 // Called only when inputs change - NEVER from the tick loop
 // Returns total RP/sec as bigint (in whole RP, not milliRP)
 export function recalculatePPS(state: GameState): bigint {
-  const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener
+  const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener;
 
   // Superrecursive Core relic level (relic ID 11, index 10)
   const superrecursiveCoreLevel =
     state.unlockedRelics.includes(11) &&
     state.relicSlots.some((s) => s.relicId === 11)
       ? (state.relicLevels[11] ?? 0)
-      : 0
+      : 0;
 
-  const techMultiplier = computeTechMultiplier(state)
-  const arBonus = computeARBonus(state)
-  const relicMultiplier = computeRelicMultiplier(state)
-  const lambda = computeLambda(state)
-  const primingBonus = computeGeneratorPrimingBonus(state)
+  const arBonus = computeARBonus(state);
+  const relicMultiplier = computeRelicMultiplier(state);
+  const lambda = computeLambda(state);
+  const primingBonus = computeGeneratorPrimingBonus(state);
 
-  let totalMilliRP = 0n
+  let totalMilliRP = 0n;
 
   for (let i = 0; i < 20; i++) {
+    // Per-generator tech multiplier (replaces global multiplier)
+    const techMult = computeTechMultiplierForGenerator(i, state);
     const output = computeGeneratorOutput(
       i,
       state,
-      techMultiplier,
+      techMult,
       milestoneSharpenerLevel,
       superrecursiveCoreLevel
-    )
-    totalMilliRP += output
+    );
+    totalMilliRP += output;
   }
 
   // Apply global multipliers as float then convert
-  let totalFloat = Number(totalMilliRP)
-  totalFloat *= arBonus
-  totalFloat *= relicMultiplier
-  totalFloat *= lambda
-  totalFloat *= primingBonus
+  let totalFloat = Number(totalMilliRP);
+  totalFloat *= arBonus;
+  totalFloat *= relicMultiplier;
+  totalFloat *= lambda;
+  totalFloat *= primingBonus;
+
+  // Apply production exponent bonus: output ^ (1 + bonus)
+  // Only applied when bonus > 0 to avoid unnecessary Math.pow call
+  const exponentBonus = getProductionExponentBonus(state);
+  if (exponentBonus > 0 && totalFloat > 1) {
+    totalFloat = Math.pow(totalFloat, 1 + exponentBonus);
+  }
 
   // Convert from milliRP/sec to RP/sec (divide by 1000)
-  const totalRP = BigInt(Math.floor(totalFloat / 1000))
+  const totalRP = BigInt(Math.floor(totalFloat / 1000));
 
-  return totalRP
+  return totalRP;
 }
 
 // Returns the effective cost of a generator purchase accounting for
