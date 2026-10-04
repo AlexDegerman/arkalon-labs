@@ -1,6 +1,8 @@
 'use client'
 
+import { useGameStore } from '@/app/stores/gameStore'
 import { useActiveTab, WorkspaceTab } from '@/hooks/useActiveTab'
+import { FEATURE_MAP } from '@/lib/featureRegistry'
 
 interface DrawerItem {
   id: WorkspaceTab
@@ -27,6 +29,7 @@ interface Props {
 
 export default function MobileMoreDrawer({ onClose }: Props) {
   const { setWorkspaceTab, setMobileTab } = useActiveTab()
+  const unlocks = useGameStore((s) => s.unlocks)
 
   function handleSelect(tab: WorkspaceTab) {
     setWorkspaceTab(tab)
@@ -65,20 +68,35 @@ export default function MobileMoreDrawer({ onClose }: Props) {
         </div>
 
         <div className="grid grid-cols-4 gap-1 p-3 pb-safe">
-          {DRAWER_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleSelect(item.id)}
-              className="flex flex-col items-center gap-1 py-3 px-1 rounded text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-surface) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)"
-            >
-              <span className="text-lg leading-none" aria-hidden="true">
-                {item.icon}
-              </span>
-              <span className="text-xs text-center leading-tight">
-                {item.label}
-              </span>
-            </button>
-          ))}
+          {DRAWER_ITEMS.map((item) => {
+            // Check if a feature key maps to this drawer item
+            const featureDef = Object.values(FEATURE_MAP).find(
+              (f) => f.workspaceTab === item.id
+            )
+            const isLocked = featureDef ? !unlocks[featureDef.key] : false
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleSelect(item.id)}
+                className={[
+                  'flex flex-col items-center gap-1 py-3 px-1 rounded transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+                  isLocked
+                    ? 'text-(--status-locked) opacity-60'
+                    : 'text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-surface)'
+                ].join(' ')}
+                aria-label={`${item.label}${isLocked ? ' (locked)' : ''}`}
+              >
+                <span className="text-lg leading-none" aria-hidden="true">
+                  {isLocked ? '&#x1F512;' : item.icon}
+                </span>
+                <span className="text-xs text-center leading-tight">
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
     </>

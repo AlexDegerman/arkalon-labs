@@ -7,6 +7,8 @@ import ArkalonTerminal from '../arkalon/ArkalonTerminal'
 import GeneratorList from '../generators/GeneratorList'
 import MiniStatStrip from './MiniStatStrip'
 import RPBanner from './RPBanner'
+import WorkspaceTabBar from './WorkspaceTabBar'
+import WorkspacePanel from './WorkspacePanel'
 
 export default function MobileScreen() {
   const { mobileTab, moreDrawerOpen, setMoreDrawerOpen } = useActiveTab()
@@ -41,12 +43,11 @@ export default function MobileScreen() {
           </div>
         )}
 
-        {/* Research tab */}
+        {/* Research tab - workspace panel with tab bar */}
         {mobileTab === 'research' && (
-          <div className="h-full overflow-y-auto p-3">
-            <p className="terminal text-(--text-secondary) text-xs">
-              Research workspace renders here in Phase 5
-            </p>
+          <div className="h-full flex flex-col min-h-0">
+            <WorkspaceTabBar />
+            <WorkspacePanel />
           </div>
         )}
 
