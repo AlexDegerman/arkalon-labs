@@ -63,10 +63,10 @@ export default function RPBanner() {
           </span>
         )}
 
-        {/* Projected prestige gain hint */}
-        {projectedAR > 0 && !prestige1Done && (
+        {/* Projected prestige gain - shown whenever prestige threshold is reachable */}
+        {projectedAR > 0 && (
           <span className="text-xs font-mono text-(--text-secondary)">
-            Prestige: ~{projectedAR} AR
+            {prestige1Done ? 'Next prestige:' : 'Prestige:'} ~{projectedAR} AR
           </span>
         )}
       </div>

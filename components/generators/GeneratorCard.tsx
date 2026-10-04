@@ -1,44 +1,32 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { buyGenerator } from '@/app/stores/gameActions'
 import { canAfford, nextCost } from '@/lib/generatorCosts'
-import {
-  formatPoints,
-  formatTimeToAfford,
-  formatMilestoneTarget
-} from '@/lib/format'
+import { formatPoints, formatTimeToAfford } from '@/lib/format'
 import { GENERATORS } from '@/constants/generators'
-import {
-  MILESTONE_INTERVAL,
-  RESEARCH_DESK_MILESTONE_INTERVAL,
-  RESEARCH_DESK_MILESTONE_CAP
-} from '@/constants/game'
 import type { BulkBuyAmount } from '@/constants/game'
 import GeneratorIcon from '@/components/generators/GeneratorIcon'
 import BuyButton from '@/components/generators/BuyButton'
-import TutorialArrow from '../tutorial/TutorialArrow'
-import TutorialHighlight from '../tutorial/TutorialHighlight'
+import TutorialHighlight from '@/components/tutorial/TutorialHighlight'
+import TutorialArrow from '@/components/tutorial/TutorialArrow'
 import { getStageForQuantity } from '@/hooks/useGeneratorStage'
+import {
+  getMilestoneString,
+  getCostEfficiencyString
+} from '@/lib/generatorUtils'
+
 interface Props {
   generatorIndex: number
   bulkAmount: BulkBuyAmount
 }
 
-function getMilestoneInterval(index: number, quantity: bigint): number {
-  if (index === 0 && quantity < BigInt(RESEARCH_DESK_MILESTONE_CAP)) {
-    return RESEARCH_DESK_MILESTONE_INTERVAL
-  }
-  return MILESTONE_INTERVAL
-}
-
-
-
 function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   const def = GENERATORS[generatorIndex]
+  const [showTooltip, setShowTooltip] = useState(false)
 
-  // Narrow selectors - only subscribe to what this card needs
+  // Narrow selectors
   const quantity = useGameStore(
     (s) => s.generators[generatorIndex]?.quantity ?? 0n
   )
@@ -52,11 +40,15 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   if (!def) return null
 
   const stage = getStageForQuantity(quantity)
-  const interval = getMilestoneInterval(generatorIndex, quantity)
-  const milestoneStr = formatMilestoneTarget(quantity, interval)
+  const milestoneStr = getMilestoneString(generatorIndex, quantity)
   const timeToAfford = affordable
     ? ''
     : formatTimeToAfford(cost, researchPoints, pps)
+
+  // Cost efficiency shown in tooltip
+  const efficiency = showTooltip
+    ? getCostEfficiencyString(generatorIndex, state)
+    : ''
 
   function handleBuy() {
     buyGenerator(generatorIndex, bulkAmount)
@@ -67,10 +59,12 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   return (
     <div
       className={[
-        'card flex items-center gap-3 p-3 rounded-lg transition-colors',
+        'card flex items-center gap-3 p-3 rounded-lg transition-colors relative',
         affordable ? 'affordable' : '',
         isLocked ? 'opacity-50' : ''
       ].join(' ')}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
     >
       {/* SVG icon */}
       <div className="shrink-0">
@@ -99,7 +93,9 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
           <span
             className={[
               'text-xs font-mono',
-              affordable ? 'text-(--status-success)' : 'text-(--text-secondary)'
+              affordable
+                ? 'text-(--status-success)'
+                : 'text-(--text-secondary)'
             ].join(' ')}
           >
             {formatPoints(cost)} RP
@@ -113,17 +109,13 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
 
         {/* Milestone progress */}
         {quantity > 0n && (
-          <span className="text-xs font-mono text-(--text-secondary)">
-            {milestoneStr} - 2x at{' '}
-            {(() => {
-              const q = Number(quantity)
-              return Math.ceil((q + 1) / interval) * interval
-            })()}
+          <span className="text-[0.65rem] font-mono text-(--text-secondary)">
+            {milestoneStr}
           </span>
         )}
       </div>
 
-      {/* Buy button - highlighted during tutorial boot beat */}
+      {/* Buy button */}
       <div className="shrink-0">
         {generatorIndex === 0 && (
           <TutorialArrow targetId="generator-0-buy" direction="above" />
@@ -137,6 +129,16 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
           />
         </TutorialHighlight>
       </div>
+
+      {/* Cost efficiency tooltip - desktop hover only */}
+      {showTooltip && efficiency && (
+        <div
+          className="absolute left-0 right-0 -bottom-8 z-10 px-3 py-1.5 bg-(--bg-elevated) border border-(--border-default) rounded text-[0.6rem] font-mono text-(--text-secondary) pointer-events-none"
+          aria-hidden="true"
+        >
+          Efficiency: {efficiency}
+        </div>
+      )}
     </div>
   )
 }
