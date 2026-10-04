@@ -9,7 +9,8 @@ import { useMusicStore } from '@/app/stores/musicStore'
 import {
   checkUnlocks,
   checkEraTransition,
-  checkResearchSlotExpansion
+  checkResearchSlotExpansion,
+  checkTutorialBeats
 } from '@/lib/unlockWatcher'
 import {
   selectNextAnomaly,
@@ -53,6 +54,7 @@ import type { BulkBuyAmount } from '@/constants/game'
 import { canPrestigeTier1, calculateARGain, buildTier1ResetState, canPrestigeTier2, calculateCFGain, buildTier2ResetState, canPrestigeTier3, calculateOSGain, buildTier3ResetState } from '@/lib/prestigeCalc'
 import { meetsProbeGateRequirements, canBuildProbe, nextProbeId, getScanDuration, rollProbeResult, ZONE_MAP } from '@/lib/excavationDefs'
 import { applyMegaprojectReward, getEffectiveConstructionCost, meetsMegaprojectRequirements, MEGAPROJECT_MAP } from '@/lib/megaprojectDefs'
+import { dispatchAnomalyResolved, dispatchGeneratorUnlock, dispatchMegaprojectComplete, dispatchPrestigeComplete, dispatchRelicDiscovered, dispatchResearchComplete } from '@/lib/dialogueDispatcher'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -176,6 +178,15 @@ export function tick(): void {
   }
   nextState.stats = updatedStats
 
+  // Mark tutorial dirty at the 5-minute milestone for tutorial_end evaluation
+  if (
+    !store.tutorial.tutorialCompleted &&
+    Math.floor(store.stats.totalSessionPlaytime / 10) <
+      Math.floor((store.stats.totalSessionPlaytime + 0.1) / 10)
+  ) {
+    markTutorialDirty()
+  }
+
   // Apply all state changes in a single setState call
   useGameStore.setState((s) => ({ ...s, ...nextState }))
 
@@ -189,9 +200,9 @@ export function tick(): void {
     checkEraTransition(currentState)
   }
 
-  // 11. Deferred: tutorial beats (dirty flag) - wired in Commit 14.1
+  // 11. Deferred: tutorial beats
   if (consumeTutorialDirty()) {
-    // checkTutorialBeats() called in Commit 14.1
+    checkTutorialBeats(useGameStore.getState())
   }
 
   // 12. Deferred: achievements check - wired in Commit 19.2
@@ -443,8 +454,10 @@ export function resolveAnomaly(interactionScore: number): void {
   const store = useGameStore.getState()
   if (!store.activeAnomalyType) return
 
-  const { ANOMALY_DEFINITIONS, OPERATION_ANOMALY_DEFINITIONS } =
-    require('@/lib/anomalyDefs')
+  const {
+    ANOMALY_DEFINITIONS,
+    OPERATION_ANOMALY_DEFINITIONS
+  } = require('@/lib/anomalyDefs')
   const allDefs = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS]
   const def = allDefs.find((d: any) => d.type === store.activeAnomalyType)
   if (!def) return
@@ -458,18 +471,22 @@ export function resolveAnomaly(interactionScore: number): void {
   const newDust = store.artifactDust + reward.dustDropped
 
   // Unlock relic if dropped
-  const newUnlocked = reward.relicDropped > 0 &&
+  const newUnlocked =
+    reward.relicDropped > 0 &&
     !store.unlockedRelics.includes(reward.relicDropped)
-    ? [...store.unlockedRelics, reward.relicDropped]
-    : store.unlockedRelics
+      ? [...store.unlockedRelics, reward.relicDropped]
+      : store.unlockedRelics
 
-  if (reward.relicDropped > 0 && !store.unlockedRelics.includes(reward.relicDropped)) {
+  if (
+    reward.relicDropped > 0 &&
+    !store.unlockedRelics.includes(reward.relicDropped)
+  ) {
     useUIStore.getState().pushAlert({
       priority: 2,
       variant: 'unlock',
       title: 'Relic Discovered',
       message: `A new relic has been added to your collection.`,
-      autoDismissMs: 5000,
+      autoDismissMs: 5000
     })
   }
 
@@ -480,7 +497,10 @@ export function resolveAnomaly(interactionScore: number): void {
       if (!slot.nodeId || slot.timerRemaining <= 0) return slot
       return {
         ...slot,
-        timerRemaining: Math.max(0, slot.timerRemaining - reward.researchTimeReduction),
+        timerRemaining: Math.max(
+          0,
+          slot.timerRemaining - reward.researchTimeReduction
+        )
       }
     })
   }
@@ -496,15 +516,22 @@ export function resolveAnomaly(interactionScore: number): void {
     activeResearchSlots: updatedSlots,
     stats: {
       ...s.stats,
-      totalAnomaliesResolved: s.stats.totalAnomaliesResolved + 1,
-    },
+      totalAnomaliesResolved: s.stats.totalAnomaliesResolved + 1
+    }
   }))
 
   // Return to idle BGM
   useMusicStore.getState().setContext('idle')
 
   markUnlocksDirty()
+  markUnlocksDirty()
   markAchievementsDirty()
+
+  dispatchAnomalyResolved(reward.wasMaxReward)
+
+  if (reward.relicDropped > 0) {
+    dispatchRelicDiscovered()
+  }
 
   if (rpGain > 0n) {
     useGameStore.getState().recalcPPS()
@@ -682,13 +709,16 @@ export function triggerTierI(): void {
   useMusicStore.getState().setContext('prestige')
   setTimeout(() => useMusicStore.getState().setContext('idle'), 3000)
 
-  useUIStore.getState().pushAlert({
-    priority: 0,
-    variant: 'prestige',
-    title: 'Reality Recalibrated',
-    message: `Earned ${arGained} Arkalon Resonance. Rebuilding in parallel dimension.`,
-    autoDismissMs: 6000,
-  })
+    dispatchPrestigeComplete(1)
+    useUIStore.getState().triggerPrestigeAnimation()
+
+    useUIStore.getState().pushAlert({
+      priority: 0,
+      variant: 'prestige',
+      title: 'Reality Recalibrated',
+      message: `Earned ${arGained} Arkalon Resonance. Rebuilding in parallel dimension.`,
+      autoDismissMs: 6000
+    })
 
   if (firstPrestige) {
     useUIStore.getState().pushAlert({
@@ -740,12 +770,15 @@ export function triggerTierII(): void {
   useMusicStore.getState().setContext('prestige')
   setTimeout(() => useMusicStore.getState().setContext('idle'), 3000)
 
+  dispatchPrestigeComplete(2)
+  useUIStore.getState().triggerPrestigeAnimation()
+
   useUIStore.getState().pushAlert({
     priority: 0,
     variant: 'prestige',
     title: 'Timeline Severed',
     message: `Earned ${cfGained} Chronal Fractures. New timeline initializing.`,
-    autoDismissMs: 6000,
+    autoDismissMs: 6000
   })
 }
 
@@ -786,12 +819,15 @@ export function triggerTierIII(): void {
   useMusicStore.getState().setContext('prestige')
   setTimeout(() => useMusicStore.getState().setContext('idle'), 4000)
 
+  dispatchPrestigeComplete(3)
+  useUIStore.getState().triggerPrestigeAnimation()
+
   useUIStore.getState().pushAlert({
     priority: 0,
     variant: 'prestige',
     title: 'Singular Synthesis Complete',
     message: `Earned ${osGained} Omni-Spars. The Omega Construct begins.`,
-    autoDismissMs: 6000,
+    autoDismissMs: 6000
   })
 }
 
@@ -1058,34 +1094,37 @@ export function deactivateMegaproject(): void {
 // Checks if the active megaproject has received enough RP to complete
 // Called from the tick loop
 export function checkMegaprojectCompletion(): void {
-  const store = useGameStore.getState();
-  if (!store.activeMegaprojectId) return;
+  const store = useGameStore.getState()
+  if (!store.activeMegaprojectId) return
 
-  const cost = getEffectiveConstructionCost(store.activeMegaprojectId, store);
-  if (store.megaprojectRPAbsorbed < cost) return;
+  const cost = getEffectiveConstructionCost(store.activeMegaprojectId, store)
+  if (store.megaprojectRPAbsorbed < cost) return
 
-  const id = store.activeMegaprojectId;
-  const rewardPatch = applyMegaprojectReward(id, store);
+  const id = store.activeMegaprojectId
+  const rewardPatch = applyMegaprojectReward(id, store)
 
   useGameStore.setState((s) => ({
     ...rewardPatch,
     activeMegaprojectId: null,
     megaprojectRPAbsorbed: 0n,
     megaprojectAllocationPercent: 0,
-    completedMegaprojects: [...s.completedMegaprojects, id],
-  }));
+    completedMegaprojects: [...s.completedMegaprojects, id]
+  }))
 
-  useGameStore.getState().recalcPPS();
-  markUnlocksDirty();
+  useGameStore.getState().recalcPPS()
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
 
-  const def = MEGAPROJECT_MAP[id];
+  dispatchMegaprojectComplete(id)
+
+  const def = MEGAPROJECT_MAP[id]
   useUIStore.getState().pushAlert({
     priority: 0,
     variant: 'unlock',
     title: `${def?.name ?? 'Megaproject'} Complete`,
     message: def?.reward ?? 'Megaproject reward applied.',
-    autoDismissMs: 8000,
-  });
+    autoDismissMs: 8000
+  })
 }
 
 // Module purchase action
@@ -1162,11 +1201,17 @@ export function buyGenerator(
 
   useGameStore.setState((s) => ({
     researchPoints: s.researchPoints - totalCost,
-    generators: newGenerators,
+    generators: newGenerators
   }))
 
   markUnlocksDirty()
   markTutorialDirty()
+
+  // Fire dialogue on first purchase of each generator type
+  const prevQty = store.generators[generatorIndex]?.quantity ?? 0n
+  if (prevQty === 0n && count > 0) {
+    dispatchGeneratorUnlock(generatorIndex)
+  }
 
   // Recalculate PPS since generator quantities changed
   useGameStore.getState().recalcPPS()
@@ -1286,6 +1331,14 @@ function handleResearchCompletions(
       totalResearchNodesCompleted: newCompleted.length
     }
   }))
+
+  // Recalculate PPS since research nodes affect production
+  // Fire research completion dialogue for notable nodes
+  for (const nodeId of newCompleted) {
+    if (!store.completedResearchNodes.includes(nodeId)) {
+      dispatchResearchComplete(nodeId)
+    }
+  }
 
   // Recalculate PPS since research nodes affect production
   useGameStore.getState().recalcPPS()

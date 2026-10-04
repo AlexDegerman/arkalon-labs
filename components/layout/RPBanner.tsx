@@ -1,11 +1,11 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useAnimatedBigInt } from '@/hooks/useAnimatedBigInt'
 import { formatPoints, formatRate } from '@/lib/format'
 import { getCurrentEra } from '@/lib/eraThresholds'
 import { useProgressionTier } from '@/hooks/useProgressionTier'
+import TutorialHighlight from '@/components/tutorial/TutorialHighlight'
 
 export default function RPBanner() {
   const researchPoints = useGameStore((s) => s.researchPoints)
@@ -17,7 +17,7 @@ export default function RPBanner() {
   // Apply data-tier attribute to <html> based on lifetime points
   useProgressionTier(lifetimePoints)
 
-  const { displayRef, classRef } = useAnimatedBigInt(researchPoints)
+  const displayRef = useAnimatedBigInt(researchPoints)
   const era = getCurrentEra(lifetimePoints)
 
   // Projected AR for prestige hint
@@ -28,28 +28,27 @@ export default function RPBanner() {
 
   return (
     <div className="px-3 py-2 border-b border-(--border-default) bg-(--bg-surface) shrink-0">
-      {/* Main RP display */}
-      <div className="flex items-baseline gap-2 flex-wrap">
-        <span
-          ref={classRef}
-          className="text-2xl lg:text-3xl font-bold font-mono leading-none"
-        >
-          <span
-            ref={displayRef}
-            aria-live="polite"
-            aria-label="Research Points"
-          >
-            {formatPoints(researchPoints)}
+      {/* Main RP display - highlighted on first_buy beat */}
+      <TutorialHighlight targetId="rp-banner">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <span className="text-2xl lg:text-3xl font-bold font-mono leading-none">
+            <span
+              ref={displayRef}
+              aria-live="polite"
+              aria-label="Research Points"
+            >
+              {formatPoints(researchPoints)}
+            </span>
+            <span className="text-sm font-normal text-(--text-secondary) ml-1">
+              RP
+            </span>
           </span>
-          <span className="text-sm font-normal text-(--text-secondary) ml-1">
-            RP
-          </span>
-        </span>
 
-        <span className="text-sm font-mono text-(--text-accent)">
-          +{formatRate(pps)}
-        </span>
-      </div>
+          <span className="text-sm font-mono text-(--text-accent)">
+            +{formatRate(pps)}
+          </span>
+        </div>
+      </TutorialHighlight>
 
       {/* Era badge and secondary info */}
       <div className="flex items-center gap-2 mt-1 flex-wrap">

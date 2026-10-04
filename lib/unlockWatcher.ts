@@ -36,7 +36,7 @@ const UNLOCK_CONDITIONS: Record<FeatureKey, (s: GameState) => boolean> = {
 }
 
 // Alert messages shown when a feature first unlocks
-const UNLOCK_MESSAGES: Record<FeatureKey, { title: string message: string }> =
+const UNLOCK_MESSAGES: Record<FeatureKey, { title: string; message: string }> =
   {
     techMatrix: {
       title: 'Technology Matrix Online',
@@ -213,6 +213,7 @@ const announcedEras = new Set<number>()
 // Called by era progression checks (wired from tick in Commit 3.4 extension)
 export function checkEraTransition(state: GameState): void {
   const { ERA_THRESHOLDS } = require('@/constants/game')
+  const { dispatchEraTransition } = require('@/lib/dialogueDispatcher')
   const pushAlert = useUIStore.getState().pushAlert
 
   for (const era of ERA_THRESHOLDS) {
@@ -222,19 +223,197 @@ export function checkEraTransition(state: GameState): void {
 
     announcedEras.add(era.era)
 
+    dispatchEraTransition(era.era)
+
     pushAlert({
       priority: 2,
       variant: 'unlock',
       title: `Era ${era.era}: ${era.name}`,
       message: `Research output has reached a new dimensional threshold.`,
-      autoDismissMs: 6000
+      autoDismissMs: 6000,
     })
   }
 }
 
-// Extended in Commit 14.1 with full beat sequence
-export function checkTutorialBeats(_state: GameState): void {
-  // Implemented in Commit 14.1
+// Tutorial beat definitions
+interface TutorialBeat {
+  id: string
+  // Returns true when this beat should fire
+  condition: (state: GameState) => boolean
+  // Target element ID to highlight (null = no highlight)
+  highlightTarget: string | null
+  // Dialogue trigger ID to push
+  dialogueTriggerId: string
+}
+
+const TUTORIAL_BEATS: TutorialBeat[] = [
+  {
+    id: 'boot',
+    condition: (s) =>
+      s.lifetimePoints === 0n &&
+      s.researchPoints <= 15n &&
+      !s.tutorial.tutorialBeatsCompleted.includes('boot'),
+    highlightTarget: 'generator-0-buy',
+    dialogueTriggerId: 'boot',
+  },
+  {
+    id: 'first_buy',
+    condition: (s) =>
+      s.generators[0].quantity >= 1n &&
+      !s.tutorial.tutorialBeatsCompleted.includes('first_buy'),
+    highlightTarget: 'rp-banner',
+    dialogueTriggerId: 'first_buy',
+  },
+  {
+    id: 'tech_preview',
+    condition: (s) =>
+      s.generators[0].quantity >= 7n &&
+      s.generators[0].quantity < 10n &&
+      !s.unlocks.techMatrix &&
+      !s.tutorial.tutorialBeatsCompleted.includes('tech_preview'),
+    highlightTarget: 'workspace-tab-research',
+    dialogueTriggerId: 'tech_preview',
+  },
+  {
+    id: 'tech_unlock',
+    condition: (s) =>
+      s.unlocks.techMatrix &&
+      !s.tutorial.tutorialBeatsCompleted.includes('tech_unlock'),
+    highlightTarget: 'workspace-tab-research',
+    dialogueTriggerId: 'tech_unlock',
+  },
+  {
+    id: 'first_research',
+    condition: (s) =>
+      s.activeResearchSlots.some((slot) => slot.nodeId !== null) &&
+      !s.tutorial.tutorialBeatsCompleted.includes('first_research'),
+    highlightTarget: 'research-active-slot',
+    dialogueTriggerId: 'first_research',
+  },
+  {
+    id: 'first_complete',
+    condition: (s) =>
+      s.completedResearchNodes.length >= 1 &&
+      !s.tutorial.tutorialBeatsCompleted.includes('first_complete'),
+    highlightTarget: 'research-queue',
+    dialogueTriggerId: 'first_complete',
+  },
+  {
+    id: 'stats_unlock',
+    condition: (s) =>
+      s.unlocks.statistics &&
+      !s.tutorial.tutorialBeatsCompleted.includes('stats_unlock'),
+    highlightTarget: 'workspace-tab-stats',
+    dialogueTriggerId: 'stats_unlock',
+  },
+  {
+    id: 'modules_unlock',
+    condition: (s) =>
+      s.unlocks.modules &&
+      !s.tutorial.tutorialBeatsCompleted.includes('modules_unlock'),
+    highlightTarget: 'workspace-tab-modules',
+    dialogueTriggerId: 'modules_unlock',
+  },
+  {
+    id: 'anomaly_unlock',
+    condition: (s) =>
+      s.unlocks.anomalies &&
+      !s.tutorial.tutorialBeatsCompleted.includes('anomaly_unlock'),
+    highlightTarget: 'anomaly-bar',
+    dialogueTriggerId: 'anomaly_unlock',
+  },
+  {
+    id: 'first_anomaly',
+    condition: (s) =>
+      s.activeAnomalyType !== null &&
+      !s.tutorial.tutorialBeatsCompleted.includes('first_anomaly'),
+    highlightTarget: 'anomaly-overlay',
+    dialogueTriggerId: 'anomaly_quantum_surge', // contextual per type handled below
+  },
+  {
+    id: 'tutorial_end',
+    condition: (s) =>
+      !s.tutorial.tutorialCompleted &&
+      s.stats.totalSessionPlaytime >= 300 &&
+      s.tutorial.tutorialBeatsCompleted.length >= 8,
+    highlightTarget: null,
+    dialogueTriggerId: 'tutorial_complete',
+  },
+]
+
+// Track which beats have been dispatched this session to avoid re-firing
+const firedBeats = new Set<string>()
+
+export function checkTutorialBeats(state: GameState): void {
+  if (state.tutorial.tutorialCompleted) return
+
+  const { dispatchTutorialBeat } = require('@/lib/dialogueDispatcher')
+  const completedBeats = state.tutorial.tutorialBeatsCompleted
+
+  let newBeat: string | null = null
+  let newHighlight: string | null = null
+  let newDialogueTrigger: string | null = null
+  let completeTutorial = false
+
+  for (const beat of TUTORIAL_BEATS) {
+    if (completedBeats.includes(beat.id)) continue
+    if (firedBeats.has(beat.id)) continue
+
+    if (!beat.condition(state)) continue
+
+    // This beat should fire
+    newBeat = beat.id
+    newHighlight = beat.highlightTarget
+
+    // For first_anomaly, use the active anomaly type's dialogue
+    if (beat.id === 'first_anomaly' && state.activeAnomalyType) {
+      const { ANOMALY_DIALOGUE_MAP } = require('@/lib/arkalonDialogue')
+      newDialogueTrigger =
+        ANOMALY_DIALOGUE_MAP[state.activeAnomalyType] ??
+        beat.dialogueTriggerId
+    } else {
+      newDialogueTrigger = beat.dialogueTriggerId
+    }
+
+    if (beat.id === 'tutorial_end') {
+      completeTutorial = true
+    }
+
+    firedBeats.add(beat.id)
+    break // Fire only one beat per tick
+  }
+
+  if (!newBeat) return
+
+  // Update tutorial state
+  useGameStore.setState((s) => ({
+    tutorial: {
+      ...s.tutorial,
+      tutorialBeatsCompleted: [...s.tutorial.tutorialBeatsCompleted, newBeat!],
+      tutorialHighlightTarget: newHighlight,
+      tutorialCompleted: completeTutorial || s.tutorial.tutorialCompleted,
+    },
+  }))
+
+  // Push dialogue
+  if (newDialogueTrigger) {
+    dispatchTutorialBeat(newDialogueTrigger)
+  }
+
+  // Clear highlight after 8 seconds
+  if (newHighlight) {
+    setTimeout(() => {
+      useGameStore.setState((s) => {
+        // Only clear if still pointing at the same target
+        if (s.tutorial.tutorialHighlightTarget === newHighlight) {
+          return {
+            tutorial: { ...s.tutorial, tutorialHighlightTarget: null },
+          }
+        }
+        return {}
+      })
+    }, 8000)
+  }
 }
 
 // Extended in Commit 19.2 with full achievement list

@@ -33,11 +33,20 @@ function ArkalonTerminalMobile() {
 function MobileArkalonTab() {
   const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
   const interactiveArkalon = useGameStore((s) => s.unlocks.interactiveArkalon)
-  const sphereState = activeAnomaly ? ('anomaly' as const) : ('idle' as const)
+  const prestigeAnimating = useUIStore((s) => s.prestigeAnimating)
+
+  const sphereState = prestigeAnimating
+    ? ('prestige' as const)
+    : activeAnomaly
+      ? ('anomaly' as const)
+      : ('idle' as const)
 
   function handleClick() {
     if (!interactiveArkalon) return
     applyArkalonClickBoost()
+    import('@/lib/dialogueDispatcher').then(({ dispatchArkalonClick }) => {
+      dispatchArkalonClick()
+    })
   }
 
   return (

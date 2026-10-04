@@ -43,6 +43,7 @@ export default function WorkspaceTabBar() {
         return (
           <button
             key={tab.id}
+            id={`workspace-tab-${tab.id}`}
             role="tab"
             aria-selected={isActive}
             aria-controls={`workspace-panel-${tab.id}`}

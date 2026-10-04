@@ -18,6 +18,8 @@ import {
 import type { BulkBuyAmount } from '@/constants/game'
 import GeneratorIcon from '@/components/generators/svg/GeneratorIcon'
 import BuyButton from '@/components/generators/BuyButton'
+import TutorialArrow from '../tutorial/TutorialArrow'
+import TutorialHighlight from '../tutorial/TutorialHighlight'
 
 interface Props {
   generatorIndex: number
@@ -105,9 +107,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
           <span
             className={[
               'text-xs font-mono',
-              affordable
-                ? 'text-(--status-success)'
-                : 'text-(--text-secondary)'
+              affordable ? 'text-(--status-success)' : 'text-(--text-secondary)'
             ].join(' ')}
           >
             {formatPoints(cost)} RP
@@ -131,14 +131,19 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
         )}
       </div>
 
-      {/* Buy button */}
+      {/* Buy button - highlighted during tutorial boot beat */}
       <div className="shrink-0">
-        <BuyButton
-          cost={cost}
-          canAfford={affordable}
-          onClick={handleBuy}
-          label={bulkAmount === 'max' ? 'MAX' : `x${bulkAmount}`}
-        />
+        {generatorIndex === 0 && (
+          <TutorialArrow targetId="generator-0-buy" direction="above" />
+        )}
+        <TutorialHighlight targetId={`generator-${generatorIndex}-buy`}>
+          <BuyButton
+            cost={cost}
+            canAfford={affordable}
+            onClick={handleBuy}
+            label={bulkAmount === 'max' ? 'MAX' : `x${bulkAmount}`}
+          />
+        </TutorialHighlight>
       </div>
     </div>
   )

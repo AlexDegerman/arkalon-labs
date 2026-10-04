@@ -25,6 +25,9 @@ interface UIStore {
   updateModalOpen: boolean
   updateModalVersion: string
 
+  // Arkalon sphere prestige animation trigger
+  prestigeAnimating: boolean
+
   setMusicEnabled: (enabled: boolean) => void
   setMusicVolume: (volume: number) => void
   setSfxEnabled: (enabled: boolean) => void
@@ -36,6 +39,7 @@ interface UIStore {
   setSettingsPanelOpen: (open: boolean) => void
   setWelcomeModalOpen: (open: boolean) => void
   setUpdateModalOpen: (open: boolean, version?: string) => void
+  triggerPrestigeAnimation: () => void
 }
 
 let alertIdCounter = 0
@@ -53,6 +57,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   welcomeModalOpen: false,
   updateModalOpen: false,
   updateModalVersion: '',
+  prestigeAnimating: false,
 
   setMusicEnabled: (musicEnabled) => set({ musicEnabled }),
   setMusicVolume: (musicVolume) =>
@@ -98,5 +103,10 @@ export const useUIStore = create<UIStore>((set, get) => ({
   setSettingsPanelOpen: (settingsPanelOpen) => set({ settingsPanelOpen }),
   setWelcomeModalOpen: (welcomeModalOpen) => set({ welcomeModalOpen }),
   setUpdateModalOpen: (open, version = '') =>
-    set({ updateModalOpen: open, updateModalVersion: version })
+    set({ updateModalOpen: open, updateModalVersion: version }),
+
+  triggerPrestigeAnimation: () => {
+    set({ prestigeAnimating: true })
+    setTimeout(() => set({ prestigeAnimating: false }), 2000)
+  }
 }))

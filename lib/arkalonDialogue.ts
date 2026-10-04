@@ -1,6 +1,3 @@
-// Dialogue library keyed by trigger ID
-// Extended in Commit 13.1 with the full dispatcher
-
 export interface DialogueLine {
   triggerId: string
   text: string
@@ -93,8 +90,6 @@ export const DIALOGUE_LIBRARY: Record<string, string> = {
     'Warning: Timeline collapse will reset active megaproject progress.',
   challenge_entered:
     'Restricted operational parameters engaged. The facility is running under constraint.',
-  challenge_complete:
-    'Challenge parameters satisfied. The permanent adjustment has been applied.',
 
   // O3 anomaly prediction
   anomaly_incoming:
@@ -104,7 +99,123 @@ export const DIALOGUE_LIBRARY: Record<string, string> = {
   arkalon_click:
     'Processing accelerated. Research efficiency temporarily elevated.',
   arkalon_click_2: 'Signal received. Synaptic throughput increased.',
-  arkalon_click_3: 'Acknowledged. The matrix is responding.'
+  arkalon_click_3: 'Acknowledged. The matrix is responding.',
+  arkalon_click_4: 'Resonance detected. Computational pathways optimized.',
+  arkalon_click_5: 'Synaptic link stable. Continue.',
+
+  // Generator unlocks (generators 10-19)
+  unlock_dimensional_folder:
+    'Spatial compression arrays nominal. Computational distance has been reduced.',
+  unlock_chronos_synchronizer:
+    'Multiple timeline alignments confirmed. Parallel calculations now possible.',
+  unlock_vacuum_fluctuator:
+    'Sub-atomic vacuum fluctuations captured and amplified.',
+  unlock_dark_matter_synthesizer:
+    'Dark matter compression successful. High-density fuel rods operational.',
+  unlock_stellar_harvester:
+    'Stellar siphon array deployed. Solar output is now a resource.',
+  unlock_galactic_engine:
+    'Galactic rotation simulation initialized. The scale of our calculations is becoming astronomical.',
+  unlock_multiversal_conduit:
+    'Adjacent reality gateway stable. Siphoning cross-dimensional point streams.',
+  unlock_planck_epoch_projector:
+    'Primordial conditions recreated. We are briefly witnessing the birth of physics.',
+  unlock_chaos_weaver:
+    'Probability deconstruction arrays online. Chaos is now organized data.',
+  unlock_absolute_void_compressor:
+    'Void compression achieved. We are storing information in the absence of existence.',
+
+  // Research completion events
+  research_c1_complete:
+    'Cost scaling reduced. Computational efficiency improving.',
+  research_r2_complete:
+    'Research acceleration protocols active. Study timers compressed.',
+  research_r3_complete:
+    'Metric manipulation successful. Parallel research streams are now possible.',
+  research_o1_complete:
+    'Synaptic connection established. I can now guide you more directly.',
+  research_o10_complete:
+    'Synchronicity matrix active. All branches converge. The experiment approaches its conclusion.',
+
+  // Megaproject events
+  megaproject_chronos_array_complete:
+    'Chronos Array operational. The spacetime lattice is stable. Timeline Severance is now possible.',
+  megaproject_arkalon_matrix_mirror_complete:
+    'Matrix Mirror active. I will assist with research node acceleration during future resets.',
+  megaproject_omega_sphere_complete:
+    'Omega Singularity Sphere stable. The final prestige tier is within reach.',
+
+  // Challenge events
+  challenge_entered_sc1:
+    'Manual Labor protocol active. Generators above Tier 3 are offline.',
+  challenge_entered_sc2:
+    'Research blackout initiated. The Technology Matrix is inaccessible.',
+  challenge_entered_ac1:
+    'Entropy reversal detected. Generator efficiency reduced to ten percent.',
+  challenge_entered_ec4:
+    'Final Observation protocol. All systems offline except generators and this link.',
+  challenge_complete:
+    'Challenge parameters satisfied. The permanent adjustment has been applied.',
+  challenge_failed:
+    'Challenge threshold not reached. Run ended without reward.',
+
+  // Anomaly resolution
+  anomaly_resolved_max:
+    'Perfect stabilization. Maximum extraction efficiency achieved.',
+  anomaly_resolved_partial: 'Partial stabilization. Suboptimal yield recorded.',
+
+  // Era transitions
+  era_transition_2:
+    'Quantum Resonance Era initiated. The nature of our research is fundamentally changing.',
+  era_transition_3:
+    'Dimensional Breach Era. The barriers between spaces are thinning measurably.',
+  era_transition_4:
+    'Cosmic Expansion Era. Our operations now exceed the scale of local reality.',
+  era_transition_5:
+    'Singularity Threshold Era. We are operating at the edge of what this construct can contain.',
+  era_transition_6:
+    'Omega Convergence Era. The final systems are within reach.',
+  era_transition_7:
+    'The Final Observation. Node O10 is visible. The conclusion of this experiment approaches.',
+
+  // Tutorial end variants
+  tutorial_complete:
+    'You understand the facility now, Director. I will continue to monitor. The rest is yours to discover.',
+
+  // Inactive tab
+  tab_inactive_short: 'Calculations continue. The universe does not pause.',
+  tab_inactive_long:
+    'Calculations continue in your absence. The universe does not pause. Neither do we.',
+
+  // Relic and dust events
+  relic_discovered:
+    'Anomalous artifact recovered. Integration into operational parameters is advised.',
+  dust_earned:
+    'Artifact Dust recovered. Use it to amplify your relic collection.',
+
+  // Operation events
+  operation_started:
+    'Global operation cycle active. Stabilize operation anomalies for exclusive rewards.',
+  operation_artifact_acquired:
+    'Operation artifact integrated. Permanent enhancement applied.'
+}
+
+// Click response IDs in rotation order
+const CLICK_RESPONSES = [
+  'arkalon_click',
+  'arkalon_click_2',
+  'arkalon_click_3',
+  'arkalon_click_4',
+  'arkalon_click_5'
+]
+
+let clickIndex = 0
+
+// Returns the next click response trigger ID in rotation
+export function getNextClickResponseId(): string {
+  const id = CLICK_RESPONSES[clickIndex % CLICK_RESPONSES.length]
+  clickIndex++
+  return id
 }
 
 // Returns the dialogue text for a given trigger, or null if not found
@@ -118,4 +229,4 @@ export const ANOMALY_DIALOGUE_MAP: Record<string, string> = {
   temporal_distortion: 'anomaly_temporal_distortion',
   containment_breach: 'anomaly_containment_breach',
   arkalon_resonance: 'anomaly_arkalon_resonance',
-};
+}
