@@ -16,6 +16,7 @@ import {
 } from '@/lib/dirtyFlags'
 import type { GameState } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
+import { checkEraTransition } from '@/lib/unlockWatcher'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -127,7 +128,9 @@ export function tick(): void {
 
   // 10. Deferred: unlock check (dirty flag)
   if (consumeUnlocksDirty()) {
-    checkUnlocks(useGameStore.getState())
+    const currentState = useGameStore.getState()
+    checkUnlocks(currentState)
+    checkEraTransition(currentState)
   }
 
   // 11. Deferred: tutorial beats (dirty flag) - wired in Commit 14.1

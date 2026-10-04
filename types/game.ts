@@ -236,6 +236,9 @@ export interface GameState {
   // Automation
   automation: AutomationState
 
+  // Achievements earned (string IDs)
+  achievements: string[]
+
   // Cached (read-only for tick loop)
   cachedPointsPerSecond: bigint
 

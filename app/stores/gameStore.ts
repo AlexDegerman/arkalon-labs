@@ -180,6 +180,8 @@ export function makeInitialState(): GameState {
 
     automation: DEFAULT_AUTOMATION,
 
+    achievements: [],
+
     cachedPointsPerSecond: 0n,
 
     activeChallengeRestrictions: null
