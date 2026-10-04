@@ -16,11 +16,11 @@ import {
   RESEARCH_DESK_MILESTONE_CAP
 } from '@/constants/game'
 import type { BulkBuyAmount } from '@/constants/game'
-import GeneratorIcon from '@/components/generators/svg/GeneratorIcon'
+import GeneratorIcon from '@/components/generators/GeneratorIcon'
 import BuyButton from '@/components/generators/BuyButton'
 import TutorialArrow from '../tutorial/TutorialArrow'
 import TutorialHighlight from '../tutorial/TutorialHighlight'
-
+import { getStageForQuantity } from '@/hooks/useGeneratorStage'
 interface Props {
   generatorIndex: number
   bulkAmount: BulkBuyAmount
@@ -33,15 +33,7 @@ function getMilestoneInterval(index: number, quantity: bigint): number {
   return MILESTONE_INTERVAL
 }
 
-function getStage(quantity: bigint): 1 | 2 | 3 | 4 | 5 | 6 {
-  const q = Number(quantity)
-  if (q >= 250) return 6
-  if (q >= 100) return 5
-  if (q >= 50) return 4
-  if (q >= 25) return 3
-  if (q >= 10) return 2
-  return 1
-}
+
 
 function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   const def = GENERATORS[generatorIndex]
@@ -59,7 +51,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
 
   if (!def) return null
 
-  const stage = getStage(quantity)
+  const stage = getStageForQuantity(quantity)
   const interval = getMilestoneInterval(generatorIndex, quantity)
   const milestoneStr = formatMilestoneTarget(quantity, interval)
   const timeToAfford = affordable
