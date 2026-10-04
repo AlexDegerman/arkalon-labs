@@ -35,27 +35,27 @@ export default function OperationsWorkspace() {
     <div className="flex flex-col gap-4 p-3 h-full overflow-y-auto scrollbar-dark">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-mono text-[var(--text-secondary)] uppercase tracking-wide">
+        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
           Anomalous Operations
         </p>
-        <p className="text-[0.65rem] text-[var(--text-secondary)]">
+        <p className="text-[0.65rem] text-(--text-secondary)">
           Join global 90-day operation cycles. Stabilize operation anomalies to
           earn Operation Points and permanent cosmic relics.
         </p>
       </div>
 
       {/* Current cycle card */}
-      <div className="card rounded-lg p-3 flex flex-col gap-3 border-[var(--border-accent)]">
+      <div className="card rounded-lg p-3 flex flex-col gap-3 border-(--border-accent)">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-bold text-[var(--text-accent)] font-mono uppercase tracking-wide">
+            <span className="text-xs font-bold text-(--text-accent) font-mono uppercase tracking-wide">
               {currentCycle.name}
             </span>
-            <span className="text-[0.65rem] text-[var(--text-secondary)]">
+            <span className="text-[0.65rem] text-(--text-secondary)">
               Cycle {cycleNumber} of {OPERATION_CYCLES.length} (repeating)
             </span>
           </div>
-          <span className="chip border-[var(--border-accent)] text-[var(--border-accent)] text-[0.6rem]">
+          <span className="chip border-(--border-accent) text-(--border-accent) text-[0.6rem]">
             {daysRemaining}d remaining
           </span>
         </div>
@@ -70,13 +70,13 @@ export default function OperationsWorkspace() {
 
         {/* Anomaly preview */}
         <div className="flex flex-col gap-0.5">
-          <p className="text-[0.65rem] text-[var(--text-secondary)] uppercase tracking-wide font-mono">
+          <p className="text-[0.65rem] text-(--text-secondary) uppercase tracking-wide font-mono">
             Operation Anomaly
           </p>
-          <p className="text-xs text-[var(--text-primary)]">
+          <p className="text-xs text-(--text-primary)">
             {cycleAnomaly?.name ?? currentCycle.anomalyType}
           </p>
-          <p className="text-[0.65rem] text-[var(--text-secondary)]">
+          <p className="text-[0.65rem] text-(--text-secondary)">
             {currentCycle.visual}. Replaces 20% of standard anomaly spawns.
           </p>
         </div>
@@ -85,18 +85,18 @@ export default function OperationsWorkspace() {
       {/* Points balance */}
       <div className="card rounded-lg p-3 flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-mono text-[var(--text-secondary)]">
+          <span className="text-xs font-mono text-(--text-secondary)">
             Operation Points
           </span>
-          <span className="text-lg font-bold font-mono text-[var(--text-accent)]">
+          <span className="text-lg font-bold font-mono text-(--text-accent)">
             {operationPoints.toLocaleString()}
           </span>
         </div>
         <div className="flex flex-col items-end gap-0.5">
-          <span className="text-[0.65rem] font-mono text-[var(--text-secondary)]">
+          <span className="text-[0.65rem] font-mono text-(--text-secondary)">
             Artifacts owned
           </span>
-          <span className="text-xs font-mono text-[var(--text-primary)]">
+          <span className="text-xs font-mono text-(--text-primary)">
             {artifactsUnlocked.length}/4
           </span>
         </div>
@@ -105,7 +105,7 @@ export default function OperationsWorkspace() {
       {/* Anomaly not yet unlocked hint */}
       {!anomaliesUnlocked && (
         <div className="glass rounded p-3">
-          <p className="text-xs text-[var(--status-warning)]">
+          <p className="text-xs text-(--status-warning)">
             Complete a research node (C1, E1, R1, or O1) to unlock anomaly
             events. Operation anomalies will then spawn alongside standard ones.
           </p>
