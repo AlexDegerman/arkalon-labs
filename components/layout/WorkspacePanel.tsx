@@ -9,6 +9,7 @@ import ModulesWorkspace from '../modules/ModulesWorkspace'
 import RelicsTab from '../relics/RelicsTab'
 import PrestigeWorkspace from '../prestige/PrestigeWorkspace'
 import ExcavationWorkspace from '../excavation/ExcavationWorkspace'
+import MegaprojectsWorkspace from '../megaprojects/MegaprojectsWorkspace'
 
 // Placeholder panels - replaced by real implementations in later commits
 function PlaceholderPanel({ label }: { label: string }) {
@@ -52,7 +53,7 @@ export default function WorkspacePanel() {
     ),
     megaprojects: (
       <FeatureLockOverlay feature={FEATURE_MAP.megaprojects}>
-        <PlaceholderPanel label="Megaprojects" />
+        <MegaprojectsWorkspace />
       </FeatureLockOverlay>
     ),
     operations: (
