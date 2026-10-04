@@ -160,22 +160,22 @@ export function tick(): void {
 
 // Starts studying a research node in the first available slot
 export function startResearch(nodeId: string): void {
-  const store = useGameStore.getState();
+  const store = useGameStore.getState()
 
-  if (!isNodeAvailable(nodeId, store)) return;
-  if (isNodeCompleted(nodeId, store)) return;
-  if (isNodeActive(nodeId, store)) return;
-  if (isNodeQueued(nodeId, store)) return;
+  if (!isNodeAvailable(nodeId, store)) return
+  if (isNodeCompleted(nodeId, store)) return
+  if (isNodeActive(nodeId, store)) return
+  if (isNodeQueued(nodeId, store)) return
 
-  const node = RESEARCH_NODE_MAP[nodeId];
-  if (!node) return;
+  const node = RESEARCH_NODE_MAP[nodeId]
+  if (!node) return
 
-  const cost = getNodeCost(nodeId, store);
-  if (store.researchPoints < cost) return;
+  const cost = getNodeCost(nodeId, store)
+  if (store.researchPoints < cost) return
 
   // Infinite nodes complete instantly (no timer)
   if (node.isInfinite) {
-    const newLevel = (store.infiniteResearchLevels[nodeId] ?? 0) + 1;
+    const newLevel = (store.infiniteResearchLevels[nodeId] ?? 0) + 1
     useGameStore.setState((s) => ({
       researchPoints: s.researchPoints - cost,
       infiniteResearchLevels: {
@@ -189,109 +189,109 @@ export function startResearch(nodeId: string): void {
         ...s.stats,
         totalResearchNodesCompleted: s.completedResearchNodes.length + 1,
       },
-    }));
-    useGameStore.getState().recalcPPS();
-    markUnlocksDirty();
-    return;
+    }))
+    useGameStore.getState().recalcPPS()
+    markUnlocksDirty()
+    return
   }
 
   // Check parallel slot rules: slots from different branches
-  const slotCount = getActiveSlotCount(store);
+  const slotCount = getActiveSlotCount(store)
   const filledSlots = store.activeResearchSlots
     .slice(0, slotCount)
-    .filter((s) => s.nodeId !== null);
+    .filter((s) => s.nodeId !== null)
 
   // For parallel slots, verify different branch requirement
   for (const slot of filledSlots) {
-    if (!slot.nodeId) continue;
-    const activeNode = RESEARCH_NODE_MAP[slot.nodeId];
+    if (!slot.nodeId) continue
+    const activeNode = RESEARCH_NODE_MAP[slot.nodeId]
     if (activeNode && activeNode.branch === node.branch) {
       // Same branch already being studied - queue it instead
-      queueResearch(nodeId);
-      return;
+      queueResearch(nodeId)
+      return
     }
   }
 
-  const slotIndex = getAvailableSlotIndex(store);
+  const slotIndex = getAvailableSlotIndex(store)
   if (slotIndex === -1) {
     // No empty slot - queue it
-    queueResearch(nodeId);
-    return;
+    queueResearch(nodeId)
+    return
   }
 
-  const studyTime = getEffectiveStudyTime(nodeId, store);
+  const studyTime = getEffectiveStudyTime(nodeId, store)
 
   useGameStore.setState((s) => {
-    const newSlots = [...s.activeResearchSlots];
+    const newSlots = [...s.activeResearchSlots]
     // Ensure slot array is large enough
     while (newSlots.length <= slotIndex) {
-      newSlots.push({ nodeId: null, timerRemaining: 0 });
+      newSlots.push({ nodeId: null, timerRemaining: 0 })
     }
-    newSlots[slotIndex] = { nodeId, timerRemaining: studyTime };
+    newSlots[slotIndex] = { nodeId, timerRemaining: studyTime }
 
     return {
       researchPoints: s.researchPoints - cost,
       activeResearchSlots: newSlots,
-    };
-  });
+    }
+  })
 
-  markTutorialDirty();
+  markTutorialDirty()
 }
 
 // Adds a node to the research queue
 export function queueResearch(nodeId: string): void {
-  const store = useGameStore.getState();
+  const store = useGameStore.getState()
 
-  if (!isNodeAvailable(nodeId, store)) return;
-  if (isNodeCompleted(nodeId, store)) return;
-  if (isNodeActive(nodeId, store)) return;
-  if (isNodeQueued(nodeId, store)) return;
+  if (!isNodeAvailable(nodeId, store)) return
+  if (isNodeCompleted(nodeId, store)) return
+  if (isNodeActive(nodeId, store)) return
+  if (isNodeQueued(nodeId, store)) return
 
   // Determine queue max size (expanded by SC10 challenge completions)
-  const sc10Tiers = store.challengeRecords['SC10']?.completedTiers ?? 0;
-  const queueMax = RESEARCH_QUEUE_MAX_BASE + sc10Tiers;
+  const sc10Tiers = store.challengeRecords['SC10']?.completedTiers ?? 0
+  const queueMax = RESEARCH_QUEUE_MAX_BASE + sc10Tiers
 
-  if (store.researchQueue.length >= queueMax) return;
+  if (store.researchQueue.length >= queueMax) return
 
   useGameStore.setState((s) => ({
     researchQueue: [...s.researchQueue, nodeId],
-  }));
+  }))
 }
 
 // Removes a node from the research queue
 export function dequeueResearch(nodeId: string): void {
   useGameStore.setState((s) => ({
     researchQueue: s.researchQueue.filter((id) => id !== nodeId),
-  }));
+  }))
 }
 
 // Reorders the research queue by moving nodeId to a new index
 export function reorderQueue(nodeId: string, toIndex: number): void {
-  const store = useGameStore.getState();
-  const queue = [...store.researchQueue];
-  const fromIndex = queue.indexOf(nodeId);
-  if (fromIndex === -1) return;
+  const store = useGameStore.getState()
+  const queue = [...store.researchQueue]
+  const fromIndex = queue.indexOf(nodeId)
+  if (fromIndex === -1) return
 
-  queue.splice(fromIndex, 1);
-  queue.splice(toIndex, 0, nodeId);
+  queue.splice(fromIndex, 1)
+  queue.splice(toIndex, 0, nodeId)
 
-  useGameStore.setState({ researchQueue: queue });
+  useGameStore.setState({ researchQueue: queue })
 }
 
 // Called by Arkalon sphere click (O2 effect): reduces active timer by 5%
 export function applyArkalonClickBoost(): void {
-  const store = useGameStore.getState();
-  if (!store.completedResearchNodes.includes('O2')) return;
+  const store = useGameStore.getState()
+  if (!store.completedResearchNodes.includes('O2')) return
 
   useGameStore.setState((s) => ({
     activeResearchSlots: s.activeResearchSlots.map((slot) => {
-      if (!slot.nodeId || slot.timerRemaining <= 0) return slot;
+      if (!slot.nodeId || slot.timerRemaining <= 0) return slot
       return {
         ...slot,
         timerRemaining: slot.timerRemaining * 0.95,
-      };
+      }
     }),
-  }));
+  }))
 }
 
 // Generator purchase action

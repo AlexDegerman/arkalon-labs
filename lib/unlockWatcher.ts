@@ -36,7 +36,7 @@ const UNLOCK_CONDITIONS: Record<FeatureKey, (s: GameState) => boolean> = {
 }
 
 // Alert messages shown when a feature first unlocks
-const UNLOCK_MESSAGES: Record<FeatureKey, { title: string; message: string }> =
+const UNLOCK_MESSAGES: Record<FeatureKey, { title: string message: string }> =
   {
     techMatrix: {
       title: 'Technology Matrix Online',
@@ -148,7 +148,7 @@ function handleUnlockSideEffects(key: FeatureKey, state: GameState): void {
       if (!state.unlockedRelics.includes(1)) {
         useGameStore.setState((s) => ({
           unlockedRelics: [...s.unlockedRelics, 1],
-          relicLevels: { ...s.relicLevels, 1: 1 }
+          relicLevels: { ...s.relicLevels, 1: 1 },
         }))
       }
       break
@@ -161,7 +161,7 @@ function handleUnlockSideEffects(key: FeatureKey, state: GameState): void {
         title: 'Saturation Threshold Reached',
         message:
           'The current construct has reached physical saturation. Reality Recalibration is now possible.',
-        autoDismissMs: 8000
+        autoDismissMs: 8000,
       })
       break
 
@@ -170,6 +170,43 @@ function handleUnlockSideEffects(key: FeatureKey, state: GameState): void {
   }
 }
 
+// Checks if research slot array needs expanding due to R3 or CF Deep Research Slots
+// Called from checkResearchSlotExpansion after each research completion
+export function checkResearchSlotExpansion(state: GameState): void {
+  const { getActiveSlotCount } = require('@/lib/researchNodes')
+  const needed = getActiveSlotCount(state)
+  const current = state.activeResearchSlots.length
+
+  if (needed <= current) return
+
+  // Grow slot array to needed size, padding with empty slots
+  useGameStore.setState((s) => {
+    const newSlots = [...s.activeResearchSlots]
+    while (newSlots.length < needed) {
+      newSlots.push({ nodeId: null, timerRemaining: 0 })
+    }
+    return { activeResearchSlots: newSlots }
+  })
+
+  // Announce the new slot
+  if (needed === 2) {
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'unlock',
+      title: 'Parallel Research Unlocked',
+      message: 'Node R3 complete. Two research projects can now run simultaneously from different branches.',
+      autoDismissMs: 5000,
+    })
+  } else if (needed === 3) {
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'unlock',
+      title: 'Third Research Slot Unlocked',
+      message: 'Deep Research Slots active. A third parallel research project is now available.',
+      autoDismissMs: 5000,
+    })
+  }
+}
 // Tracks which era dialogue has already been announced this session
 const announcedEras = new Set<number>()
 

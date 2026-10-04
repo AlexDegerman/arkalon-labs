@@ -107,7 +107,7 @@ function computeGeneratorOutput(
 
   // Challenge restriction: no base output
   if (state.activeChallengeRestrictions?.noBaseGeneratorOutput) {
-    // Only relics provide production in this mode; base = 0
+    // Only relics provide production in this mode base = 0
     // Relic effects are applied as a separate pass (Phase 9)
     return 0n
   }
@@ -132,7 +132,7 @@ function computeGeneratorOutput(
     superrecursiveCoreLevel
   )
   const milestoneScale = milestoneMultiplier(gen.quantity, interval)
-  // milestoneScale is already multiplied by SCALE_DENOM; apply:
+  // milestoneScale is already multiplied by SCALE_DENOM apply:
   baseOutput = (baseOutput * milestoneScale) / SCALE_DENOM
 
   // Efficiency module multiplier (float -> bigint approximation)
@@ -170,57 +170,57 @@ function computeTechMultiplierForGenerator(
   generatorIndex: number,
   state: GameState
 ): number {
-  return getTechMultiplierForGenerator(generatorIndex, state);
+  return getTechMultiplierForGenerator(generatorIndex, state)
 }
 
 // Computes the AR production bonus
 // Super-Symmetry: +10% per unspent AR held (capped at AR_PRODUCTION_CAP)
 // PHI_AR_PRODUCTION: +10% per unspent AR (base)
 function computeARBonus(state: GameState): number {
-  const unspentAR = Math.min(state.arkalonResonance, AR_PRODUCTION_CAP);
-  if (unspentAR === 0) return 1;
+  const unspentAR = Math.min(state.arkalonResonance, AR_PRODUCTION_CAP)
+  if (unspentAR === 0) return 1
 
   // Base AR efficiency per unit
-  let perARBonus = PHI_AR_PRODUCTION;
+  let perARBonus = PHI_AR_PRODUCTION
 
   // O_INF: +5% AR multiplier strength per level
-  const oInfLevel = state.infiniteResearchLevels['O_INF'] ?? 0;
+  const oInfLevel = state.infiniteResearchLevels['O_INF'] ?? 0
   if (oInfLevel > 0) {
-    perARBonus *= 1 + 0.05 * oInfLevel;
+    perARBonus *= 1 + 0.05 * oInfLevel
   }
 
   // O7: +1% AR effectiveness per total prestige completed
   const totalPrestiges =
     state.stats.totalPrestigesTier1 +
     state.stats.totalPrestigesTier2 +
-    state.stats.totalPrestigesTier3;
+    state.stats.totalPrestigesTier3
   if (
     state.completedResearchNodes.includes('O7') &&
     totalPrestiges > 0
   ) {
-    perARBonus *= 1 + 0.01 * totalPrestiges;
+    perARBonus *= 1 + 0.01 * totalPrestiges
   }
 
-  let arBonus = 1 + perARBonus * unspentAR;
+  let arBonus = 1 + perARBonus * unspentAR
 
   // Super-Symmetry: additional +10% per unspent AR
   if (state.arUpgrades.super_symmetry > 0) {
-    arBonus += 0.1 * unspentAR;
+    arBonus += 0.1 * unspentAR
   }
 
   // E5: +0.5% per unspent AR
   if (state.completedResearchNodes.includes('E5')) {
-    arBonus += 0.005 * unspentAR;
+    arBonus += 0.005 * unspentAR
   }
 
   // Resonance Amplification CF upgrade: +1.5x per CF held on AR yields
   // (affects prestige reward, not production multiplier directly)
 
-  return arBonus;
+  return arBonus
 }
 
 // Computes relic passive multipliers
-// Full relic effect integration in Commit 9.2; stub returns 1 until then
+// Full relic effect integration in Commit 9.2 stub returns 1 until then
 function computeRelicMultiplier(_state: GameState): number {
   return 1
 }
@@ -249,53 +249,53 @@ function computeGeneratorPrimingBonus(state: GameState): number {
 // Called only when inputs change - NEVER from the tick loop
 // Returns total RP/sec as bigint (in whole RP, not milliRP)
 export function recalculatePPS(state: GameState): bigint {
-  const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener;
+  const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener
 
   // Superrecursive Core relic level (relic ID 11, index 10)
   const superrecursiveCoreLevel =
     state.unlockedRelics.includes(11) &&
     state.relicSlots.some((s) => s.relicId === 11)
       ? (state.relicLevels[11] ?? 0)
-      : 0;
+      : 0
 
-  const arBonus = computeARBonus(state);
-  const relicMultiplier = computeRelicMultiplier(state);
-  const lambda = computeLambda(state);
-  const primingBonus = computeGeneratorPrimingBonus(state);
+  const arBonus = computeARBonus(state)
+  const relicMultiplier = computeRelicMultiplier(state)
+  const lambda = computeLambda(state)
+  const primingBonus = computeGeneratorPrimingBonus(state)
 
-  let totalMilliRP = 0n;
+  let totalMilliRP = 0n
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0 i < 20 i++) {
     // Per-generator tech multiplier (replaces global multiplier)
-    const techMult = computeTechMultiplierForGenerator(i, state);
+    const techMult = computeTechMultiplierForGenerator(i, state)
     const output = computeGeneratorOutput(
       i,
       state,
       techMult,
       milestoneSharpenerLevel,
       superrecursiveCoreLevel
-    );
-    totalMilliRP += output;
+    )
+    totalMilliRP += output
   }
 
   // Apply global multipliers as float then convert
-  let totalFloat = Number(totalMilliRP);
-  totalFloat *= arBonus;
-  totalFloat *= relicMultiplier;
-  totalFloat *= lambda;
-  totalFloat *= primingBonus;
+  let totalFloat = Number(totalMilliRP)
+  totalFloat *= arBonus
+  totalFloat *= relicMultiplier
+  totalFloat *= lambda
+  totalFloat *= primingBonus
 
   // Apply production exponent bonus: output ^ (1 + bonus)
   // Only applied when bonus > 0 to avoid unnecessary Math.pow call
-  const exponentBonus = getProductionExponentBonus(state);
+  const exponentBonus = getProductionExponentBonus(state)
   if (exponentBonus > 0 && totalFloat > 1) {
-    totalFloat = Math.pow(totalFloat, 1 + exponentBonus);
+    totalFloat = Math.pow(totalFloat, 1 + exponentBonus)
   }
 
   // Convert from milliRP/sec to RP/sec (divide by 1000)
-  const totalRP = BigInt(Math.floor(totalFloat / 1000));
+  const totalRP = BigInt(Math.floor(totalFloat / 1000))
 
-  return totalRP;
+  return totalRP
 }
 
 // Returns the effective cost of a generator purchase accounting for

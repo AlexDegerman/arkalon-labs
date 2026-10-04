@@ -109,9 +109,9 @@ export const RESEARCH_QUEUE_MAX_BASE = 4
 export const INACTIVE_TAB_THRESHOLD_SECONDS = 1800 // 30 min
 
 // Bulk buy options
-export const BULK_BUY_OPTIONS = [1, 10, 100] as const;
-export type BulkBuyAmount = (typeof BULK_BUY_OPTIONS)[number] | 'max';
+export const BULK_BUY_OPTIONS = [1, 10, 100] as const
+export type BulkBuyAmount = (typeof BULK_BUY_OPTIONS)[number] | 'max'
 
 // Auto-buy tick interval (every N ticks = every N*100ms)
-export const AUTO_BUY_BASIC_TICKS = 50;    // every 5 seconds
-export const AUTO_BUY_OPTIMAL_TICKS = 20;  // every 2 seconds
+export const AUTO_BUY_BASIC_TICKS = 50    // every 5 seconds
+export const AUTO_BUY_OPTIMAL_TICKS = 20  // every 2 seconds
