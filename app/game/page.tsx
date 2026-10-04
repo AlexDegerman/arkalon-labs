@@ -5,11 +5,20 @@ import FooterBar from '@/components/layout/FooterBar'
 import MobileScreen from '@/components/layout/MobileScreen'
 import MobileNav from '@/components/layout/MobileNav'
 import FacilityAlertQueue from '@/components/ui/FacilityAlertQueue'
+import MiniStatStrip from '@/components/layout/MiniStatStrip'
+import RPBanner from '@/components/layout/RPBanner'
+import UpdateModal from '@/components/modals/UpdateModal'
+import WelcomeModal from '@/components/modals/WelcomeModal'
+import GameBootstrap from '@/components/layout/GameBootstrap'
 
 export default function GamePage() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[var(--bg-primary)]">
+    <div className="flex flex-col h-screen overflow-hidden bg-(--bg-primary)">
       <FacilityAlertQueue />
+      <WelcomeModal />
+      <UpdateModal />
+      <GameBootstrap />
+
       {/* PC header */}
       <header className="hidden lg:flex items-center justify-between px-4 py-2 border-b border-(--border-default) bg-(--bg-surface) shrink-0">
         <div className="flex items-center gap-3">
@@ -21,12 +30,13 @@ export default function GamePage() {
             Primary Command Engine
           </span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-xs text-(--text-secondary)">
-            Era I - Foundational Research
-          </span>
-        </div>
       </header>
+
+      {/* PC RP banner (below header, above columns) */}
+      <div className="hidden lg:block">
+        <RPBanner />
+        <MiniStatStrip />
+      </div>
 
       {/* Three-column layout - desktop only */}
       <div

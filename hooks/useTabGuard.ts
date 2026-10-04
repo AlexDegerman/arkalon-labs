@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 // Detects duplicate browser tabs using BroadcastChannel.
-// Calls the callback when another active tab is detected.
-export function useTabGuard(onDuplicateTab?: () => void) {
+// Returns boolean flag and calls optional callback when another active tab is detected.
+export function useTabGuard(onDuplicateTab?: () => void): boolean {
+  const [isDuplicate, setIsDuplicate] = useState(false)
+
   useEffect(() => {
     if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return
 
@@ -17,6 +19,7 @@ export function useTabGuard(onDuplicateTab?: () => void) {
         channel.postMessage({ type: 'tab-exists' })
       }
       if (event.data?.type === 'tab-exists') {
+        setIsDuplicate(true)
         onDuplicateTab?.()
       }
     }
@@ -25,4 +28,6 @@ export function useTabGuard(onDuplicateTab?: () => void) {
       channel.close()
     }
   }, [onDuplicateTab])
+
+  return isDuplicate
 }
