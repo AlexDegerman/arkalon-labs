@@ -28,6 +28,7 @@ import { RESEARCH_NODE_MAP } from '@/constants/research'
 import { RESEARCH_QUEUE_MAX_BASE } from '@/constants/game'
 import type { GameState } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
+import { useUIStore } from './uiStore'
 
 export { markUnlocksDirty, markTutorialDirty, markAchievementsDirty }
 
@@ -337,30 +338,106 @@ export function buyGenerator(
 function handleResearchCompletions(
   slots: GameState['activeResearchSlots']
 ): void {
-  const store = useGameStore.getState()
-  let changed = false
-  let newCompleted = [...store.completedResearchNodes]
-  let newQueue = [...store.researchQueue]
-  const newSlots = [...store.activeResearchSlots]
+  const store = useGameStore.getState();
+  let changed = false;
+  let newCompleted = [...store.completedResearchNodes];
+  let newQueue = [...store.researchQueue];
+  const newSlots = [...store.activeResearchSlots];
+  const autoResearchEnabled = store.arUpgrades.auto_research_queue > 0;
+  const pushAlert = (useUIStore as any).getState().pushAlert;
 
   slots.forEach((slot, idx) => {
-    if (!slot.nodeId || slot.timerRemaining > 0) return
+    if (!slot.nodeId || slot.timerRemaining > 0) return;
 
-    // Node completed
-    if (!newCompleted.includes(slot.nodeId)) {
-      newCompleted.push(slot.nodeId)
+    const completedNodeId = slot.nodeId;
+
+    // Mark as completed
+    if (!newCompleted.includes(completedNodeId)) {
+      newCompleted.push(completedNodeId);
     }
 
-    // Advance queue into this slot if available
-    const nextNodeId = newQueue.shift() ?? null
-    newSlots[idx] = { nodeId: nextNodeId, timerRemaining: 0 }
-    changed = true
-    markUnlocksDirty()
-    markTutorialDirty()
-    markAchievementsDirty()
-  })
+    // Auto-advance: try to pull the next node from the queue
+    let nextNodeId: string | null = null;
 
-  if (!changed) return
+    if (newQueue.length > 0) {
+      // Find next queue item that can start in this slot
+      // Constraint: must be different branch from other active slots
+      const otherActiveSlots = newSlots.filter(
+        (s, i) => i !== idx && s.nodeId !== null
+      );
+      const activeBranches = new Set(
+        otherActiveSlots
+          .map((s) => {
+            if (!s.nodeId) return null;
+            const { RESEARCH_NODE_MAP: map } = require('@/constants/research');
+            return map[s.nodeId]?.branch ?? null;
+          })
+          .filter(Boolean)
+      );
+
+      const queueIndex = newQueue.findIndex((id) => {
+        const { RESEARCH_NODE_MAP: map } = require('@/constants/research');
+        const node = map[id];
+        if (!node) return false;
+        // Check branch conflict for parallel slots
+        if (activeBranches.has(node.branch)) return false;
+        return true;
+      });
+
+      if (queueIndex !== -1) {
+        const candidateId = newQueue[queueIndex];
+        const { RESEARCH_NODE_MAP: map } = require('@/constants/research');
+        const candidateNode = map[candidateId];
+
+        if (candidateNode) {
+          // Check affordability for auto-start
+          const currentStore = useGameStore.getState();
+          const cost = getNodeCost(candidateId, currentStore);
+
+          if (currentStore.researchPoints >= cost || !autoResearchEnabled) {
+            // Start the node
+            nextNodeId = candidateId;
+            newQueue.splice(queueIndex, 1);
+
+            // Compute study time from updated state
+            const studyTime = getEffectiveStudyTime(candidateId, {
+              ...currentStore,
+              completedResearchNodes: newCompleted,
+            });
+            newSlots[idx] = {
+              nodeId: nextNodeId,
+              timerRemaining: studyTime,
+            };
+          } else {
+            // Unaffordable - fire alert if auto-research is enabled
+            if (autoResearchEnabled) {
+              pushAlert({
+                priority: 2,
+                variant: 'info',
+                title: 'Research Queue Paused',
+                message: `Cannot afford ${candidateNode.label}. Queue will resume when affordable.`,
+                autoDismissMs: 4000,
+              });
+            }
+            newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+          }
+        } else {
+          newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+        }
+      } else {
+        newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+      }
+    } else {
+      newSlots[idx] = { nodeId: null, timerRemaining: 0 };
+    }
+
+    changed = true;
+    markUnlocksDirty();
+    markTutorialDirty();
+    markAchievementsDirty();
+  });
+
+  if (!changed) return;
 
   useGameStore.setState((s) => ({
     completedResearchNodes: newCompleted,
@@ -368,10 +445,10 @@ function handleResearchCompletions(
     activeResearchSlots: newSlots,
     stats: {
       ...s.stats,
-      totalResearchNodesCompleted: newCompleted.length
-    }
-  }))
+      totalResearchNodesCompleted: newCompleted.length,
+    },
+  }));
 
   // Recalculate PPS since research nodes affect production
-  useGameStore.getState().recalcPPS()
+  useGameStore.getState().recalcPPS();
 }
