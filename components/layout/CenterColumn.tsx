@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import ArkalonSphere from '@/components/arkalon/ArkalonSphere'
 import ArkalonTerminal from '@/components/arkalon/ArkalonTerminal'
 import { useArkalonDialogue } from '@/hooks/useArkalonDialogue'
-import { ANOMALY_DIALOGUE_MAP } from '@/lib/arkalonDialogue'
 import { applyArkalonClickBoost } from '@/app/stores/gameActions'
 import { formatCountdown } from '@/lib/format'
 import type { ArkalonState } from '@/components/arkalon/ArkalonSphere'
@@ -26,21 +25,8 @@ export default function CenterColumn() {
   const prestige1Done = useGameStore((s) => s.stats.totalPrestigesTier1 > 0)
   const prestigeAnimating = useUIStore((s) => s.prestigeAnimating)
 
-  const { lines, pushDialogue } = useArkalonDialogue()
-  const prevAnomalyRef = useRef<string | null>(null)
+  const { lines } = useArkalonDialogue()
   const clickCooldownRef = useRef(false)
-
-  // Trigger anomaly-specific dialogue when a new anomaly spawns
-  useEffect(() => {
-    if (activeAnomaly && activeAnomaly !== prevAnomalyRef.current) {
-      prevAnomalyRef.current = activeAnomaly
-      const triggerId = ANOMALY_DIALOGUE_MAP[activeAnomaly]
-      if (triggerId) pushDialogue(triggerId)
-    }
-    if (!activeAnomaly) {
-      prevAnomalyRef.current = null
-    }
-  }, [activeAnomaly, pushDialogue])
 
   // Determine sphere visual state
   // prestige animation takes priority over anomaly

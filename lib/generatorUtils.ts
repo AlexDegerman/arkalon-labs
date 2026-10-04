@@ -138,15 +138,20 @@ export function getGeneratorTooltipData(
   const cost = generatorEffectiveCost(generatorIndex, gen.quantity, state)
   // Base output is stored as milliRP/sec * 1000
   const baseOutputRPS = def.baseOutput / 1000n
-  const pps = state.cachedPointsPerSecond
+  // Per-generator output = baseOutput * quantity / 1000 (milliRP to RP)
+  const perGenOutput =
+    gen.quantity > 0n ? (def.baseOutput * gen.quantity) / 1000n : 0n
 
   return {
     name: def.name,
     description: def.description,
     baseCost: formatPoints(def.baseCost),
     currentCost: formatPoints(cost),
-    baseOutput: `${formatPoints(baseOutputRPS)}/s`,
-    currentOutput: gen.quantity > 0n ? `${formatRate(pps)}` : '0/s',
+    baseOutput: `${formatPoints(baseOutputRPS)}/s per unit`,
+    currentOutput:
+      gen.quantity > 0n
+        ? `${formatRate(perGenOutput)} (base, pre-multiplier)`
+        : '0/s',
     milestoneString: getMilestoneString(generatorIndex, gen.quantity),
     costEfficiency: getCostEfficiencyString(generatorIndex, state),
     timeToAfford: getTimeToAffordString(generatorIndex, state),

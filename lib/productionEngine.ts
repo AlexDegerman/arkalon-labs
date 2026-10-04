@@ -92,24 +92,20 @@ function computeSynergyMultiplier(
   let bonus = 0;
 
   for (const synergy of MODULE_SYNERGIES) {
-    if (synergy.targetIndex !== targetIndex) continue;
+    if (synergy.targetIndex !== targetIndex) continue
 
-    const sourceGen = state.generators[synergy.sourceIndex];
-    if (!sourceGen || sourceGen.synergyLevel === 0) continue;
+    const sourceGen = state.generators[synergy.sourceIndex]
+    if (!sourceGen || sourceGen.synergyLevel === 0) continue
 
-    const sourceQty = Number(sourceGen.quantity);
+    const sourceQty = Number(sourceGen.quantity)
     // bonusPerSourcePerLevel * synergyLevel * sourceQuantity
     let synergyBonus =
-      sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel;
+      sourceQty * synergy.bonusPerSourcePerLevel * sourceGen.synergyLevel
 
     // Matter-Data Bridge relic (ID 13): +5% cross-generator synergy per level
-    // Applied in Phase 9; stub here
-    const bridgeLevel = 0;
-    if (bridgeLevel > 0) {
-      synergyBonus *= 1 + 0.05 * bridgeLevel;
-    }
+    // Relic effect applied globally via computeRelicProductionMultiplier
 
-    bonus += synergyBonus;
+    bonus += synergyBonus
   }
 
   return 1 + bonus;
@@ -237,7 +233,6 @@ function computeGeneratorOutput(
 }
 
   // Per-generator tech multiplier - delegates to researchEffects.ts
-  // Static import at top of file ensures no dynamic require() in hot path
   function computeTechMultiplierForGenerator(
     generatorIndex: number,
     state: GameState

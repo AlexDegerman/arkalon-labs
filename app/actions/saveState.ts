@@ -3,9 +3,11 @@
 import 'server-only'
 import { cookies } from 'next/headers'
 import pool from '@/lib/db'
+import type { SerializedSave } from '@/lib/saveGame'
 
-export interface SavePayload {
-  save: Record<string, unknown>
+interface SavePayload {
+  sessionToken: string
+  save: SerializedSave
   lastSavedTime: number
   lifetimePoints: string
   currentPoints: string

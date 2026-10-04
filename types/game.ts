@@ -36,7 +36,8 @@ export type ResearchBranch = 'computation' | 'energy' | 'reality' | 'arkalon'
 export type ModuleType = 'efficiency' | 'cost_reduction' | 'synergy'
 
 // Notation mode for number display
-export type NotationMode = 'suffix' | 'scientific' | 'engineering' | 'logarithm'
+// Single source of truth - imported by lib/format.ts
+export type NotationMode = 'suffix' | 'scientific' | 'engineering' | 'logarithm';
 
 // BGM context
 export type BGMContext = 'idle' | 'anomaly' | 'prestige' | 'operation'

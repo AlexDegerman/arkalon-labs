@@ -26,7 +26,7 @@ const SAVE_KEY = 'arkalon_labs_save'
 const SAVE_VERSION = 1
 
 // Serialized save shape (all bigints as strings)
-interface SerializedSave {
+export interface SerializedSave {
   version: number
   savedAt: number
   researchPoints: string

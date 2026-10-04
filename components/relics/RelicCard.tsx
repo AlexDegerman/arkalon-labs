@@ -24,13 +24,17 @@ function RelicCard({ relicId }: Props) {
   const level = useGameStore((s) => s.relicLevels[relicId] ?? 0)
   const dust = useGameStore((s) => s.artifactDust)
   const relicSlots = useGameStore((s) => s.relicSlots)
-  const store = useGameStore.getState()
+  const challengeRecords = useGameStore((s) => s.challengeRecords)
+  const activeChallengeRestrictions = useGameStore(
+    (s) => s.activeChallengeRestrictions
+  )
 
-  const equipped = isRelicEquipped(relicId, store)
-  const slotCount = getRelicSlotCount(store)
+  const equipped = relicSlots.some((s) => s.relicId === relicId)
+  const sc11Tiers = challengeRecords['SC11']?.completedTiers ?? 0
+  const slotCount = Math.min(6, 3 + sc11Tiers)
   const hasAvailableSlot = relicSlots
     .slice(0, slotCount)
-    .some((s) => canEquipToSlot(s))
+    .some((s) => s.relicId === null && s.cooldownRemaining <= 0)
 
   const atCap = level >= RELIC_LEVEL_CAP
   const upgradeCost = atCap ? 0 : getRelicUpgradeCost(relicId, level)

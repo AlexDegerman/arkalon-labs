@@ -135,22 +135,22 @@ export function tick(): void {
   nextState.relicSlots = updatedRelicSlots
 
   // 4. Decrement anomaly timer
+  let anomalyExpired = false
   if (store.activeAnomalyType && store.anomalyTimeRemaining > 0) {
     const nextTimer = Math.max(0, store.anomalyTimeRemaining - 0.1)
     nextState.anomalyTimeRemaining = nextTimer
     if (nextTimer === 0) {
-      // Timer expired - dismiss without reward after state update
-      setTimeout(() => dismissAnomaly(), 0)
+      anomalyExpired = true
     }
   }
 
   // 5. Decrement anomaly spawn check timer
+  let anomalySpawnReady = false
   if (store.unlocks.anomalies && !store.activeAnomalyType) {
     const nextSpawnTimer = Math.max(0, store.timeToNextAnomalyCheck - 0.1)
     nextState.timeToNextAnomalyCheck = nextSpawnTimer
     if (nextSpawnTimer === 0 && store.timeToNextAnomalyCheck > 0) {
-      // Timer just hit zero - fire spawn check after state update
-      setTimeout(() => checkAnomalySpawn(), 0)
+      anomalySpawnReady = true
     }
   }
 
@@ -174,14 +174,11 @@ export function tick(): void {
     nextState.probes = updatedProbes
 
     // Check for newly completed scans after timer update
-    const hasCompletions = updatedProbes.some(
+    var probeCompletionsReady = updatedProbes.some(
       (p) =>
         (p.status === 'scanning' && p.timerRemaining <= 0) ||
         (p.status === 'repairing' && p.repairTimerRemaining <= 0)
     )
-    if (hasCompletions) {
-      setTimeout(() => processProbeCompletions(), 0)
-    }
   }
 
   // 7. Megaproject RP absorption
@@ -192,9 +189,13 @@ export function tick(): void {
     nextState.megaprojectRPAbsorbed = newAbsorbed
 
     // Check completion after update
-    const cost = getEffectiveConstructionCost(store.activeMegaprojectId, store)
-    if (newAbsorbed >= cost) {
-      setTimeout(() => checkMegaprojectCompletion(), 0)
+    var megaprojectCompletionReady = false
+    const megaCost = getEffectiveConstructionCost(
+      store.activeMegaprojectId,
+      store
+    )
+    if (newAbsorbed >= megaCost) {
+      megaprojectCompletionReady = true
     }
   }
 
@@ -216,6 +217,17 @@ export function tick(): void {
 
   // Apply all state changes in a single setState call
   useGameStore.setState((s) => ({ ...s, ...nextState }))
+
+  // Post-tick synchronous dispatches (after state is committed)
+  if (anomalyExpired) dismissAnomaly()
+  if (anomalySpawnReady) checkAnomalySpawn()
+  if (typeof probeCompletionsReady !== 'undefined' && probeCompletionsReady)
+    processProbeCompletions()
+  if (
+    typeof megaprojectCompletionReady !== 'undefined' &&
+    megaprojectCompletionReady
+  )
+    checkMegaprojectCompletion()
 
   // 9. Deferred: check research completions
   handleResearchCompletions(updatedSlots)
@@ -1853,9 +1865,10 @@ function handleResearchCompletions(
   }))
 
   // Recalculate PPS since research nodes affect production
-  // Fire research completion dialogue for notable nodes
+  // Fire research completion dialogue only for nodes that completed THIS tick
+  const previouslyCompleted = new Set(store.completedResearchNodes)
   for (const nodeId of newCompleted) {
-    if (!store.completedResearchNodes.includes(nodeId)) {
+    if (!previouslyCompleted.has(nodeId)) {
       dispatchResearchComplete(nodeId)
     }
   }
