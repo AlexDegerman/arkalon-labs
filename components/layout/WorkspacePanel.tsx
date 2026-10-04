@@ -11,7 +11,7 @@ import ModulesWorkspace from '../modules/ModulesWorkspace'
 function PlaceholderPanel({ label }: { label: string }) {
   return (
     <div className="flex items-center justify-center h-32 p-4">
-      <p className="terminal text-[var(--text-secondary)] text-xs text-center">
+      <p className="terminal text-(--text-secondary) text-xs text-center">
         {label} panel - implemented in later phase
       </p>
     </div>

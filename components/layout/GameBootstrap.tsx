@@ -1,42 +1,19 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useGameLoop } from '@/hooks/useGameLoop'
 import { useTabGuard } from '@/hooks/useTabGuard'
+import { useSaveGame } from '@/hooks/useSaveGame'
 
-// Handles game initialization and starts the game loop
+// Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
 export default function GameBootstrap() {
   const initialized = useGameStore((s) => s._initialized)
-  const setInitialized = useGameStore((s) => s.setInitialized)
-  const applyState = useGameStore((s) => s.applyState)
   const isDuplicate = useTabGuard()
-  const bootedRef = useRef(false)
 
-  useEffect(() => {
-    if (bootedRef.current) return
-    bootedRef.current = true
-
-    // Load from localStorage (cloud load wired in Commit 7.3)
-    try {
-      const saved = localStorage.getItem('arkalon_labs_save')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // Deserialize bigint strings - full deserializer in Commit 7.1
-        if (parsed.researchPoints) {
-          applyState({
-            researchPoints: BigInt(parsed.researchPoints),
-            lifetimePoints: BigInt(parsed.lifetimePoints ?? '0')
-          })
-        }
-      }
-    } catch {
-      // Corrupted save - start fresh
-    }
-
-    setInitialized(true)
-  }, [applyState, setInitialized])
+  // useSaveGame handles: localStorage load on mount, offline calc,
+  // local save interval every 5s, and exposes save status
+  const { lastSaveLabel } = useSaveGame()
 
   // Start game loop once initialized and not a duplicate tab
   useGameLoop(initialized && !isDuplicate)
