@@ -12,52 +12,46 @@ export interface GeneratorDefinition {
   // Actual RP/sec = baseOutput / 1000n
   // e.g. 500 = 0.5 RP/sec, 4000 = 4.0 RP/sec
 }
-
 export const GENERATORS: GeneratorDefinition[] = [
   {
     index: 0,
     name: 'Research Desk',
-    description:
-      'Low-level data entry, manual ledger calculations, and basic physical observations.',
+    description: 'Low-level data entry, manual ledger calculations, and basic physical observations.',
     baseCost: 15n,
-    growthFactor: 1.15,
-    baseOutput: 500n // 0.5 RP/sec
+    growthFactor: 1.13,
+    baseOutput: 500n,
   },
   {
     index: 1,
     name: 'Server Cluster',
-    description:
-      'Parallel computing towers processing raw thermodynamic and environmental data.',
-    baseCost: 120n,
-    growthFactor: 1.13,
-    baseOutput: 4_000n // 4.0 RP/sec
+    description: 'Parallel computing towers processing raw thermodynamic and environmental data.',
+    baseCost: 100n,
+    growthFactor: 1.12,
+    baseOutput: 5_000n,
   },
   {
     index: 2,
     name: 'Quantum Computer',
-    description:
-      'Superposition processing arrays resolving intricate probability vectors.',
-    baseCost: 1_000n,
-    growthFactor: 1.11,
-    baseOutput: 32_000n // 32.0 RP/sec
+    description: 'Superposition processing arrays resolving intricate probability vectors.',
+    baseCost: 800n,
+    growthFactor: 1.10,
+    baseOutput: 40_000n,
   },
   {
     index: 3,
     name: 'Neural Core',
-    description:
-      'Self-improving biological-silicon network nodes modeled on Arkalon synaptic configurations.',
-    baseCost: 12_000n,
+    description: 'Self-improving biological-silicon network nodes modeled on Arkalon synaptic configurations.',
+    baseCost: 10_000n,
     growthFactor: 1.09,
-    baseOutput: 250_000n // 250.0 RP/sec
+    baseOutput: 300_000n,
   },
   {
     index: 4,
     name: 'Reality Engine',
-    description:
-      'Localized micro-manipulators that alter regional physical constants.',
-    baseCost: 150_000n,
+    description: 'Localized micro-manipulators that alter regional physical constants.',
+    baseCost: 120_000n,
     growthFactor: 1.08,
-    baseOutput: 1_800_000n // 1,800.0 RP/sec
+    baseOutput: 2_200_000n,
   },
   {
     index: 5,
