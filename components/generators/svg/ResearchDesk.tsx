@@ -13,6 +13,7 @@ interface Props {
 export default function ResearchDesk({ stage, color, size }: Props) {
   const cx = size / 2
   const cy = size / 2
+  // All coordinates designed on a 48x48 grid; s scales to actual render size
   const s = size / 48
 
   return (

@@ -15,7 +15,7 @@ interface Props {
 export default function ArkalonInterface({ stage, color, size }: Props) {
   const cx = size / 2
   const cy = size / 2
-  const s = size / 48
+  const s = size / 48 // base grid: 48x48
 
   return (
     <svg

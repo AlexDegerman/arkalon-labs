@@ -155,6 +155,7 @@ export function tick(): void {
   }
 
   // 6. Decrement probe timers and process completions
+  let probeCompletionsReady = false
   if (store.probes.length > 0) {
     const updatedProbes = store.probes.map((probe) => {
       if (probe.status === 'scanning' && probe.timerRemaining > 0) {
@@ -174,7 +175,7 @@ export function tick(): void {
     nextState.probes = updatedProbes
 
     // Check for newly completed scans after timer update
-    var probeCompletionsReady = updatedProbes.some(
+    probeCompletionsReady = updatedProbes.some(
       (p) =>
         (p.status === 'scanning' && p.timerRemaining <= 0) ||
         (p.status === 'repairing' && p.repairTimerRemaining <= 0)
@@ -182,6 +183,7 @@ export function tick(): void {
   }
 
   // 7. Megaproject RP absorption
+  let megaprojectCompletionReady = false
   if (store.activeMegaprojectId && store.megaprojectAllocationPercent > 0) {
     const allocFraction = BigInt(store.megaprojectAllocationPercent)
     const absorbed = (pps * allocFraction) / 1000n // per 100ms tick
@@ -189,7 +191,6 @@ export function tick(): void {
     nextState.megaprojectRPAbsorbed = newAbsorbed
 
     // Check completion after update
-    var megaprojectCompletionReady = false
     const megaCost = getEffectiveConstructionCost(
       store.activeMegaprojectId,
       store
@@ -221,14 +222,9 @@ export function tick(): void {
   // Post-tick synchronous dispatches (after state is committed)
   if (anomalyExpired) dismissAnomaly()
   if (anomalySpawnReady) checkAnomalySpawn()
-  if (typeof probeCompletionsReady !== 'undefined' && probeCompletionsReady)
-    processProbeCompletions()
-  if (
-    typeof megaprojectCompletionReady !== 'undefined' &&
-    megaprojectCompletionReady
-  )
-    checkMegaprojectCompletion()
-
+  if (probeCompletionsReady) processProbeCompletions()
+  if (megaprojectCompletionReady) checkMegaprojectCompletion()
+    
   // 9. Deferred: check research completions
   handleResearchCompletions(updatedSlots)
 

@@ -14,7 +14,7 @@ interface Props {
 export default function InfiniteSimulation({ stage, color, size }: Props) {
   const cx = size / 2
   const cy = size / 2
-  const s = size / 48
+  const s = size / 48 // base grid: 48x48
 
   // Nested universe circles
   const circles = [20, 15, 10, 6, 3].map((r, i) => r * s)

@@ -14,7 +14,7 @@ interface Props {
 export default function GalacticEngine({ stage, color, size }: Props) {
   const cx = size / 2
   const cy = size / 2
-  const s = size / 48
+  const s = size / 48 // base grid: 48x48
 
   // Spiral arm points
   function spiralArm(startAngle: number, points: number) {

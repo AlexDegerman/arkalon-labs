@@ -13,7 +13,7 @@ interface Props {
 export default function ChaosWeaver({ stage, color, size }: Props) {
   const cx = size / 2
   const cy = size / 2
-  const s = size / 48
+  const s = size / 48 // base grid: 48x48
 
   // Chaotic probability lines - semi-random but deterministic
   const chaosLines = Array.from({ length: 8 }, (_, i) => {

@@ -135,8 +135,20 @@ export function useSaveGame() {
         }
       }
 
+      // Ensure operation cycle is current for all players (cloud and local-only)
+      const CYCLE_DURATION_MS = 90 * 24 * 3600 * 1000
+      const clientCycleNumber = Math.floor(Date.now() / CYCLE_DURATION_MS) + 1
+      const currentCycle = useGameStore.getState().currentOperationCycle
+      if (
+        clientCycleNumber !== currentCycle &&
+        useGameStore.getState().unlocks.anomalousOperations
+      ) {
+        const { checkOperationCycle } = await import('@/app/stores/gameActions')
+        checkOperationCycle(clientCycleNumber)
+      }
+
       useGameStore.getState().setInitialized(true)
-      setSaveStatus(cloudState ? 'synced' : 'offline')
+      setSaveStatus(token ? 'synced' : 'offline')
     }
 
     boot()

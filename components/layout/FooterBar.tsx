@@ -7,11 +7,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 // Timer-based updates (anomaly countdown, save time) go through FooterBarLive
 // via direct DOM writes to avoid per-tick re-renders
 
-interface Props {
-  lastSaveLabel?: string
-}
-
-function FooterBar({ lastSaveLabel = '--' }: Props) {
+function FooterBar() {
   const operationCycle = useGameStore((s) => s.currentOperationCycle)
   const prestige1Done = useGameStore((s) => s.stats.totalPrestigesTier1 > 0)
   const anomaliesUnlocked = useGameStore((s) => s.unlocks.anomalies)
@@ -34,7 +30,7 @@ function FooterBar({ lastSaveLabel = '--' }: Props) {
         id="footer-save-status"
         className="text-xs font-mono text-(--text-secondary) shrink-0"
       >
-        Save: {lastSaveLabel}
+        Save: --
       </span>
     </footer>
   )

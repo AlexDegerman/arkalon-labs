@@ -14,7 +14,7 @@ interface Props {
 export default function ExistenceCompiler({ stage, color, size }: Props) {
   const cx = size / 2
   const cy = size / 2
-  const s = size / 48
+  const s = size / 48 // base grid: 48x48
 
   // Binary-like vertical lines representing data being compiled
   const dataLines = Array.from({ length: 7 }, (_, i) => cx - 12 * s + i * 4 * s)
