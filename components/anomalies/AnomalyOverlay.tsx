@@ -13,6 +13,7 @@ import {
   ANOMALY_DEFINITIONS,
   OPERATION_ANOMALY_DEFINITIONS
 } from '@/lib/anomalyDefs'
+import { ChronoFreezeFlux, SolarFlareOverload, GravitySinkCollapse, MatrixInversion } from './OperationAnomalies'
 
 // Returns the label for an anomaly type
 function getAnomalyLabel(type: string): string {
@@ -35,6 +36,14 @@ function getInteractionComponent(type: string): React.ComponentType | null {
       return ContainmentBreach
     case 'arkalon_resonance':
       return ArkalonResonanceAnomaly
+    case 'operation_chrono_freeze':
+      return ChronoFreezeFlux
+    case 'operation_solar_flare':
+      return SolarFlareOverload
+    case 'operation_gravity_sink':
+      return GravitySinkCollapse
+    case 'operation_matrix_inversion':
+      return MatrixInversion
     default:
       return null
   }

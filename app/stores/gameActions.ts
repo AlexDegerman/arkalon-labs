@@ -524,7 +524,12 @@ export function resolveAnomaly(interactionScore: number): void {
   // Return to idle BGM
   useMusicStore.getState().setContext('idle')
 
-  markUnlocksDirty()
+  // Award operation points for operation anomalies
+  const isOperationAnomaly = store.activeAnomalyType?.startsWith('operation_')
+  if (isOperationAnomaly && store.activeAnomalyType) {
+    earnOperationPoints(store.activeAnomalyType, interactionScore)
+  }
+
   markUnlocksDirty()
   markAchievementsDirty()
 
