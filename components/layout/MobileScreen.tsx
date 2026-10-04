@@ -2,6 +2,7 @@
 
 import { useActiveTab } from '@/hooks/useActiveTab'
 import MobileMoreDrawer from '@/components/layout/MobileMoreDrawer'
+import ArkalonSphere from '../arkalon/ArkalonSphere'
 
 export default function MobileScreen() {
   const { mobileTab, moreDrawerOpen, setMoreDrawerOpen } = useActiveTab()
@@ -19,11 +20,16 @@ export default function MobileScreen() {
 
       {/* Arkalon tab */}
       {mobileTab === 'arkalon' && (
-        <div className="h-full overflow-y-auto p-3 flex flex-col items-center gap-4">
-          <div className="w-24 h-24 rounded-full border border-(--border-accent) opacity-30 mt-8" />
-          <p className="terminal text-(--text-secondary) text-xs">
-            Arkalon core renders here in Phase 2
-          </p>
+        <div className="h-full overflow-y-auto p-4 flex flex-col items-center gap-6 scrollbar-dark">
+          <div className="mt-6">
+            <ArkalonSphere state="idle" interactive={false} size={140} />
+          </div>
+          {/* Terminal console renders here in Commit 2.3 */}
+          <div className="w-full glass rounded p-3">
+            <p className="terminal text-(--text-secondary) text-xs">
+              &gt; System standby...
+            </p>
+          </div>
         </div>
       )}
 

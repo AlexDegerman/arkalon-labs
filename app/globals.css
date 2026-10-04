@@ -376,8 +376,32 @@ pre {
 }
 
 @keyframes arkalon-prestige {
-  0% { transform: scale(1); }
+  0% { transform: scale(1); opacity: 1; }
   100% { transform: scale(0) rotate(720deg); opacity: 0; }
+}
+
+.arkalon-sphere-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transform-origin: center;
+}
+
+.arkalon-sphere-wrap[role="button"] {
+  cursor: pointer;
+}
+
+.arkalon-idle-anim {
+  animation: arkalon-breathe 4s ease-in-out infinite;
+}
+
+.arkalon-anomaly-anim {
+  animation: arkalon-anomaly 0.6s ease-in-out infinite;
+}
+
+.arkalon-prestige-anim {
+  animation: arkalon-prestige 1.5s ease-in-out forwards;
 }
 
 /* Tutorial highlight ring */
