@@ -73,6 +73,279 @@ pre {
   border: 1px solid var(--border-default);
 }
 
+/* Elevated surface card */
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+}
+
+.card-elevated {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+}
+
+/* Affordable state - green border glow */
+.affordable {
+  border-color: var(--status-success) !important;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.2);
+}
+
+/* Locked/unaffordable state */
+.locked {
+  border-color: var(--status-locked) !important;
+  opacity: 0.6;
+}
+
+/* Neon accent border */
+.accent-border {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 8px var(--glow-primary);
+}
+
+/* Progress bar track */
+.progress-track {
+  background-color: var(--bg-elevated);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+/* Progress bar fill - width set via inline style */
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--border-accent);
+  transition: width 0.3s ease;
+}
+
+.progress-fill-success {
+  background-color: var(--status-success);
+}
+
+.progress-fill-warning {
+  background-color: var(--status-warning);
+}
+
+/* Scrollbar styling for dark panels */
+.scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+}
+
+.scrollbar-dark::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background-color: var(--border-default);
+  border-radius: 9999px;
+}
+
+.scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background-color: var(--border-accent);
+}
+
+/* Section divider */
+.section-divider {
+  border-top: 1px solid var(--border-default);
+  margin: 0.75rem 0;
+}
+
+/* Status dot */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.status-dot-active {
+  background-color: var(--border-accent);
+}
+
+.status-dot-success {
+  background-color: var(--status-success);
+}
+
+.status-dot-warning {
+  background-color: var(--status-warning);
+}
+
+.status-dot-locked {
+  background-color: var(--status-locked);
+}
+
+/* Workspace tab bar */
+.workspace-tab {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.workspace-tab:hover {
+  color: var(--text-primary);
+}
+
+.workspace-tab-active {
+  color: var(--text-accent);
+  border-bottom-color: var(--border-accent);
+}
+
+.workspace-tab-locked {
+  color: var(--status-locked);
+  cursor: default;
+}
+
+/* Chip / badge */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  border: 1px solid currentColor;
+  line-height: 1.4;
+}
+
+/* Era badge */
+.era-badge {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-accent);
+  color: var(--text-accent);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Generator card affordable shimmer */
+@keyframes shimmer-affordable {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Rarity tier border animations */
+
+@keyframes holy-fire-upward {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15, 1.2) translateY(-2px);
+  }
+}
+
+.badge-aura-wrapper {
+  position: relative;
+  display: inline-flex;
+  padding-top: 4px;
+}
+
+.badge-aura-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 5%;
+  right: 5%;
+  height: 110%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 50% 50% 0 0;
+}
+
+/* Common */
+.aura-common::before {
+  background: radial-gradient(ellipse at bottom, rgba(148, 163, 184, 0.3) 0%, transparent 80%);
+  animation: holy-fire-upward 6s ease-in-out infinite;
+  opacity: 0.3;
+  filter: blur(10px);
+}
+
+/* Rare */
+.aura-rare::before {
+  background: radial-gradient(ellipse at bottom, rgba(59, 130, 246, 0.5) 0%, transparent 85%);
+  animation: holy-fire-upward 5s ease-in-out infinite;
+  opacity: 0.5;
+  filter: blur(8px) drop-shadow(0 -1px 4px rgba(59, 130, 246, 0.3));
+}
+
+/* Epic */
+.aura-epic::before {
+  background: radial-gradient(ellipse at bottom, rgba(168, 85, 247, 0.6) 0%, rgba(168, 85, 247, 0.3) 45%, transparent 100%);
+  animation: holy-fire-upward 4s ease-in-out infinite;
+  filter: drop-shadow(0 -1px 6px rgba(168, 85, 247, 0.5));
+}
+
+/* Legendary */
+.aura-legendary::before {
+  background: radial-gradient(ellipse at bottom, rgba(234, 88, 12, 0.8) 0%, rgba(245, 158, 11, 0.5) 45%, rgba(251, 191, 36, 0.15) 85%, transparent 100%);
+  animation: holy-fire-upward 3s ease-in-out infinite;
+  filter: drop-shadow(0 -1px 10px rgba(245, 158, 11, 0.7));
+}
+
+/* Mythical */
+.aura-mythical::before {
+  background: radial-gradient(
+    ellipse at bottom,
+    rgba(220, 38, 38, 0.95) 0%,
+    rgba(239, 68, 68, 0.6) 35%,
+    rgba(220, 38, 38, 0.2) 75%,
+    transparent 100%
+  );
+  animation: holy-fire-upward 2s ease-in-out infinite;
+  filter: drop-shadow(0 -2px 14px rgba(220, 38, 38, 0.85));
+}
+
+/* God King aura: rainbow oil-slick, stronger than mythical */
+.aura-godking {
+  position: relative;
+}
+
+.aura-godking::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse at bottom,
+    rgba(168, 85, 247, 0.9) 0%,
+    rgba(236, 72, 153, 0.7) 20%,
+    rgba(234, 179, 8, 0.6) 40%,
+    rgba(34, 197, 94, 0.4) 60%,
+    rgba(59, 130, 246, 0.3) 80%,
+    transparent 100%
+  );
+  animation: holy-fire-upward 1.5s ease-in-out infinite, godking-hue 4s linear infinite;
+  filter: drop-shadow(0 -3px 18px rgba(168, 85, 247, 1)) drop-shadow(0 -1px 10px rgba(236, 72, 153, 0.8));
+}
+
+@keyframes godking-hue {
+  0% {
+    filter: drop-shadow(0 -3px 18px rgba(168, 85, 247, 1)) drop-shadow(0 -1px 10px rgba(236, 72, 153, 0.8)) hue-rotate(0deg);
+  }
+  100% {
+    filter: drop-shadow(0 -3px 18px rgba(168, 85, 247, 1)) drop-shadow(0 -1px 10px rgba(236, 72, 153, 0.8)) hue-rotate(360deg);
+  }
+}
+
 /* Terminal text */
 .terminal {
   font-family: var(--font-mono);
