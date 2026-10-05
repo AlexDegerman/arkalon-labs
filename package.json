@@ -14,6 +14,7 @@
     "pg": "^8.13.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
     "zod": "^3.24.1",
     "zustand": "^5.0.2"
   },
@@ -25,5 +26,10 @@
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "@esbuild/linux-x64": "^0.28.2",
+    "@rollup/rollup-linux-x64-gnu": "^4.63.5",
+    "@rollup/rollup-linux-x64-musl": "^4.63.5"
   }
 }

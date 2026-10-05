@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { ArkalonNetworkWidget } from '@/components/ui/ArkalonNetworkWidget'
@@ -14,6 +14,11 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
   display: 'swap'
 })
+
+export const viewport: Viewport = {
+  themeColor: '#0a0e17',
+  colorScheme: 'dark'
+}
 
 export const metadata: Metadata = {
   title: 'Arkalon Laboratories',

@@ -1,41 +1,37 @@
 # syntax=docker/dockerfile:1
 
-# Stage 1: deps 
-FROM node:22-alpine AS deps
+# ---- deps stage ----
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install dependencies first (cached unless package.json changes)
 COPY package.json package-lock.json* ./
-RUN npm ci --prefer-offline
+RUN npm ci --frozen-lockfile
 
-# Stage 2: builder
-FROM node:22-alpine AS builder
+# ---- builder stage ----
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next.js telemetry opt-out
+# Build-time public environment variables
+ENV NEXT_PUBLIC_APP_URL=https://labs.rpsleague.fi
 ENV NEXT_TELEMETRY_DISABLED=1
-
-# Build args injected at build time by CI
-ARG NEXT_PUBLIC_APP_VERSION=1.0.0
-ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
 
 RUN npm run build
 
-# Stage 3: runner
-FROM node:22-alpine AS runner
+# ---- runner stage ----
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create a non-root user for security
-RUN addgroup --system --gid 1001 nodejs \
- && adduser  --system --uid 1001 nextjs
+# Non-root user for container security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Copy only the standalone output
+# Copy standalone output and static assets
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
@@ -43,8 +39,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 
 EXPOSE 3000
+
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# next.config.ts sets output: 'standalone'
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 CMD ["node", "server.js"]

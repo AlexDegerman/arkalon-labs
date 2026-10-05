@@ -12,7 +12,12 @@ interface LoadResult {
 
 export async function loadState(): Promise<LoadResult> {
   const cookieStore = await cookies()
-  const playerId = cookieStore.get('arkalon_core_id')?.value
+  let playerId = cookieStore.get('arkalon_core_id')?.value
+
+  // Local development mock fallback when running without Network Hub
+  if (!playerId && process.env.NODE_ENV === 'development') {
+    playerId = '11111111-1111-4111-8111-111111111111'
+  }
 
   if (!playerId) {
     return { success: false, error: 'Unauthorized: No active Arkalon session' }
