@@ -1,10 +1,17 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
+import { Dices, ExternalLink } from 'lucide-react'
 import { makeInitialState, useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
-import { exportSave, importSave, clearLocalStorageSave, saveToLocalStorage } from '@/lib/saveGame'
+import {
+  exportSave,
+  importSave,
+  clearLocalStorageSave,
+  saveToLocalStorage
+} from '@/lib/saveGame'
 import { setNotationMode, setDecimalPrecision } from '@/lib/format'
+import { rerollPlayerName } from '@/app/actions/rerollPlayerName'
 import VolumeControls from '@/components/ui/VolumeControls'
 import type { NotationMode } from '@/types/game'
 
@@ -30,6 +37,11 @@ type ConfirmState = 'idle' | 'confirm1' | 'confirm2' | 'typing'
 export default function SettingsPanel() {
   const { settingsPanelOpen, setSettingsPanelOpen } = useUIStore()
   const settings = useGameStore((s) => s.settings)
+
+  const [displayName, setDisplayName] = useState<string>('Director')
+  const [justRerolled, setJustRerolled] = useState(false)
+  const [isRerolling, startReroll] = useTransition()
+
   const [exportText, setExportText] = useState('')
   const [importText, setImportText] = useState('')
   const [importError, setImportError] = useState('')
@@ -38,7 +50,40 @@ export default function SettingsPanel() {
   const [resetInput, setResetInput] = useState('')
   const resetInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('arkalon_labs_display_name')
+      if (stored) setDisplayName(stored)
+    } catch {}
+
+    function onPlayerReady(e: Event) {
+      const customEvent = e as CustomEvent<string>
+      if (customEvent.detail) {
+        setDisplayName(customEvent.detail)
+      }
+    }
+
+    window.addEventListener('arkalon_player_ready', onPlayerReady)
+    return () =>
+      window.removeEventListener('arkalon_player_ready', onPlayerReady)
+  }, [])
+
   if (!settingsPanelOpen) return null
+
+  function handleReroll() {
+    if (isRerolling) return
+    startReroll(async () => {
+      const res = await rerollPlayerName()
+      if (res.success && res.nickname) {
+        setDisplayName(res.nickname)
+        try {
+          localStorage.setItem('arkalon_labs_display_name', res.nickname)
+        } catch {}
+        setJustRerolled(true)
+        setTimeout(() => setJustRerolled(false), 800)
+      }
+    })
+  }
 
   function updateSetting<K extends keyof typeof settings>(
     key: K,
@@ -47,7 +92,6 @@ export default function SettingsPanel() {
     useGameStore.setState((s) => ({
       settings: { ...s.settings, [key]: value }
     }))
-    // Sync notation mode to format.ts module state
     if (key === 'notationMode') {
       setNotationMode(value as NotationMode)
     }
@@ -62,9 +106,7 @@ export default function SettingsPanel() {
     setExportText(b64)
     try {
       navigator.clipboard.writeText(b64)
-    } catch {
-      // Manual copy fallback - text is shown in textarea
-    }
+    } catch {}
   }
 
   function handleImport() {
@@ -118,7 +160,6 @@ export default function SettingsPanel() {
         setResetInput('')
         return
       }
-      // Perform hard reset
       clearLocalStorageSave()
       useGameStore.getState().applyState(makeInitialState())
       setResetConfirm('idle')
@@ -126,6 +167,11 @@ export default function SettingsPanel() {
       setSettingsPanelOpen(false)
     }
   }
+
+  const returnUrl =
+    typeof window !== 'undefined'
+      ? window.location.href
+      : 'https://labs.rpsleague.fi/game'
 
   return (
     <div
@@ -138,7 +184,7 @@ export default function SettingsPanel() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-(--border-default) shrink-0">
           <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-            Settings
+            Facility Configuration
           </p>
           <button
             onClick={() => setSettingsPanelOpen(false)}
@@ -151,13 +197,75 @@ export default function SettingsPanel() {
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto scrollbar-dark p-4 flex flex-col gap-5">
+          {/* Arkalon Core Master Identity & Recovery Section */}
+          <div className="flex flex-col gap-2 rounded-lg border border-(--border-default) bg-(--bg-surface) p-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-(--text-secondary) font-mono">
+              Arkalon Core Identity
+            </p>
+
+            <div
+              className="w-full rounded border px-3 py-2 flex items-center justify-between gap-2 transition-all duration-200"
+              style={{
+                backgroundColor: justRerolled
+                  ? 'rgba(45, 212, 191, 0.12)'
+                  : 'var(--bg-elevated)',
+                borderColor: justRerolled
+                  ? 'var(--border-accent)'
+                  : 'var(--border-default)'
+              }}
+            >
+              <span
+                className="flex-1 whitespace-nowrap tracking-tight font-bold font-mono text-xs text-(--text-accent)"
+                style={{
+                  fontSize:
+                    displayName.length > 18
+                      ? '10px'
+                      : displayName.length > 13
+                        ? '12px'
+                        : '14px'
+                }}
+              >
+                {isRerolling ? '...' : displayName}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleReroll}
+                disabled={isRerolling}
+                title="Reroll procedural nickname"
+                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-accent) cursor-pointer transition-all disabled:opacity-50"
+              >
+                <Dices
+                  size={12}
+                  className={isRerolling ? 'animate-spin' : ''}
+                />
+                <span>REROLL</span>
+              </button>
+            </div>
+
+            <p className="text-[10px] leading-relaxed text-(--text-secondary)">
+              Your account is anchored across the Arkalon Network. Reveal your
+              master recovery code on the Hub.
+            </p>
+
+            <div className="flex gap-2 pt-1">
+              <a
+                href={`https://network.rpsleague.fi/settings?tab=identity&returnTo=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded py-2 text-xs font-mono font-bold bg-(--border-accent)/10 border border-(--border-accent)/40 text-(--border-accent) hover:bg-(--border-accent)/20 transition-colors"
+              >
+                <span>Reveal Recovery Code</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+          </div>
+
           {/* Volume controls */}
           <VolumeControls />
 
           {/* Display settings */}
           <div className="flex flex-col gap-3">
             <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-              Display
+              Display & Notation
             </p>
 
             {/* Notation mode */}
@@ -252,18 +360,17 @@ export default function SettingsPanel() {
             </div>
           </div>
 
-          {/* Save management */}
+          {/* Local Save File Management */}
           <div className="flex flex-col gap-3">
             <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-              Save Management
+              Local Save Data (File Backup)
             </p>
 
-            {/* Manual save */}
             <button
               onClick={handleManualSave}
               className="w-full py-2 text-xs font-mono rounded border border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary) hover:text-(--text-primary) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)"
             >
-              Save Now
+              Save to Local Storage Now
             </button>
 
             {/* Export */}
@@ -272,7 +379,7 @@ export default function SettingsPanel() {
                 onClick={handleExport}
                 className="w-full py-2 text-xs font-mono rounded border border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary) hover:text-(--text-primary) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)"
               >
-                Export Save (copies to clipboard)
+                Export Save String (Clipboard)
               </button>
               {exportText && (
                 <textarea
@@ -292,12 +399,12 @@ export default function SettingsPanel() {
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 rows={3}
-                placeholder="Paste save string here..."
+                placeholder="Paste base64 save string here..."
                 className="w-full bg-(--bg-elevated) border border-(--border-default) rounded p-2 text-[0.6rem] font-mono text-(--text-primary) resize-none focus:outline-none focus:border-(--border-accent) placeholder:text-(--text-secondary)"
                 aria-label="Import save data"
               />
               {importError && (
-                <p className="text-[0.65rem] text-#ef4444">{importError}</p>
+                <p className="text-[0.65rem] text-[#ef4444]">{importError}</p>
               )}
               {importSuccess && (
                 <p className="text-[0.65rem] text-(--status-success)">
@@ -323,8 +430,9 @@ export default function SettingsPanel() {
             <div className="flex flex-col gap-1.5 mt-2">
               {resetConfirm === 'typing' ? (
                 <>
-                  <p className="text-[0.65rem] text-#ef4444">
-                    Type RESET to confirm. This cannot be undone.
+                  <p className="text-[0.65rem] text-[#ef4444]">
+                    Type RESET to confirm. This clears all local progress and
+                    cannot be undone.
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -334,11 +442,11 @@ export default function SettingsPanel() {
                       onChange={(e) => setResetInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleReset()}
                       placeholder="Type RESET"
-                      className="flex-1 bg-(--bg-elevated) border border-#ef4444 rounded px-3 py-1.5 text-xs font-mono text-(--text-primary) focus:outline-none"
+                      className="flex-1 bg-(--bg-elevated) border border-[#ef4444] rounded px-3 py-1.5 text-xs font-mono text-(--text-primary) focus:outline-none"
                     />
                     <button
                       onClick={handleReset}
-                      className="px-3 py-1.5 text-xs font-mono rounded border border-#ef4444 text-#ef4444 hover:bg-#ef4444/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-#ef4444"
+                      className="px-3 py-1.5 text-xs font-mono rounded border border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444]"
                     >
                       Confirm
                     </button>
@@ -349,14 +457,14 @@ export default function SettingsPanel() {
                   onClick={handleReset}
                   className={[
                     'w-full py-2 text-xs font-mono rounded border transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-#ef4444',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444]',
                     resetConfirm !== 'idle'
-                      ? 'border-#ef4444 text-#ef4444 bg-#ef4444/10'
-                      : 'border-(--border-default) text-(--text-secondary) hover:border-#ef4444 hover:text-#ef4444'
+                      ? 'border-[#ef4444] text-[#ef4444] bg-[#ef4444]/10'
+                      : 'border-(--border-default) text-(--text-secondary) hover:border-[#ef4444] hover:text-[#ef4444]'
                   ].join(' ')}
                 >
                   {resetConfirm === 'idle'
-                    ? 'Hard Reset'
+                    ? 'Hard Reset Facility'
                     : resetConfirm === 'confirm1'
                       ? 'Click again to confirm'
                       : 'Are you sure? Click once more'}
