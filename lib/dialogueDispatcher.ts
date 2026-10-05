@@ -1,6 +1,6 @@
 // Centralized dialogue event dispatcher
 // Maps game events to Arkalon dialogue trigger IDs
-// Called from gameActions.ts and unlockWatcher.ts to push lines to uiStore
+// Called from app/stores/actions/* and unlockWatcher.ts to push lines to uiStore
 
 import { useMusicStore } from '@/app/stores/musicStore'
 import { useUIStore } from '@/app/stores/uiStore'

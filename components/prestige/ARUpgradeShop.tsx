@@ -1,7 +1,7 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyPrestigeUpgrade } from '@/app/stores/gameActions'
+import { buyPrestigeUpgrade } from '@/app/stores/actions'
 import { AR_UPGRADES, getUpgradeCost } from '@/lib/prestigeUpgradeDefs'
 
 export default function ARUpgradeShop() {

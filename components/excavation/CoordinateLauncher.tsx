@@ -1,7 +1,7 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { buildProbe } from '@/app/stores/gameActions'
+import { buildProbe } from '@/app/stores/actions'
 import { meetsProbeGateRequirements, canBuildProbe } from '@/lib/excavationDefs'
 import { formatPoints } from '@/lib/format'
 import { PROBE_COST_RP, MAX_PROBES } from '@/constants/game'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { startResearch } from '@/app/stores/gameActions'
+import { startResearch } from '@/app/stores/actions'
 import { RESEARCH_NODES, INF_NODE_COST_SCALING } from '@/constants/research'
 import { getNodeCost, isNodeAvailable } from '@/lib/researchNodes'
 import { formatPoints, infNodeCostAtLevel } from '@/lib/format'

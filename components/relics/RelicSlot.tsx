@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { unequipRelic } from '@/app/stores/gameActions'
+import { unequipRelic } from '@/app/stores/actions'
 import { RELIC_MAP } from '@/constants/relics'
 import { getRelicEffectAtLevel } from '@/lib/relicDefs'
 import { formatCountdown } from '@/lib/format'

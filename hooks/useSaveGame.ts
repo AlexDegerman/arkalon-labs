@@ -20,7 +20,7 @@ import {
 } from '@/constants/game'
 import { saveState } from '@/app/actions/saveState'
 import { loadState } from '@/app/actions/loadState'
-import { checkOperationCycle } from '@/app/stores/gameActions'
+import { checkOperationCycle } from '@/app/stores/actions'
 import { useUIStore } from '@/app/stores/uiStore'
 import { formatPoints, formatDuration } from '@/lib/format'
 
@@ -137,12 +137,12 @@ export function useSaveGame() {
       const CYCLE_DURATION_MS = 90 * 24 * 3600 * 1000
       const clientCycleNumber = Math.floor(Date.now() / CYCLE_DURATION_MS) + 1
       const currentCycle = useGameStore.getState().currentOperationCycle
-    if (
-      clientCycleNumber !== currentCycle &&
-      useGameStore.getState().unlocks.anomalousOperations
-    ) {
-      checkOperationCycle(clientCycleNumber)
-    }
+      if (
+        clientCycleNumber !== currentCycle &&
+        useGameStore.getState().unlocks.anomalousOperations
+      ) {
+        checkOperationCycle(clientCycleNumber)
+      }
 
       useGameStore.getState().setInitialized(true)
       setSaveStatus(cloudState ? 'synced' : 'offline')

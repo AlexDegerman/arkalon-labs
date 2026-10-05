@@ -2,7 +2,7 @@
 
 import { memo, useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyGenerator } from '@/app/stores/gameActions'
+import { buyGenerator } from '@/app/stores/actions'
 import { canAfford, nextCost } from '@/lib/generatorCosts'
 import { formatPoints } from '@/lib/format'
 import { GENERATORS } from '@/constants/generators'
@@ -88,9 +88,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
           <span
             className={[
               'text-xs font-mono',
-              affordable
-                ? 'text-(--status-success)'
-                : 'text-(--text-secondary)'
+              affordable ? 'text-(--status-success)' : 'text-(--text-secondary)'
             ].join(' ')}
           >
             {formatPoints(cost)} RP

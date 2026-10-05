@@ -6,7 +6,7 @@ import {
   triggerTierI,
   triggerTierII,
   triggerTierIII
-} from '@/app/stores/gameActions'
+} from '@/app/stores/actions'
 import {
   calculateARGain,
   calculateCFGain,

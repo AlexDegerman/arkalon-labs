@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { equipRelic, upgradeRelic } from '@/app/stores/gameActions'
+import { equipRelic, upgradeRelic } from '@/app/stores/actions'
 import { RELIC_MAP } from '@/constants/relics'
 import {
   getRelicUpgradeCost,
@@ -36,8 +36,7 @@ function RelicCard({ relicId }: Props) {
   const atCap = level >= RELIC_LEVEL_CAP
   const upgradeCost = atCap ? 0 : getRelicUpgradeCost(relicId, level)
   const canAffordUpgrade = dust >= upgradeCost && !atCap
-  const canEquip =
-    !equipped && hasAvailableSlot && level > 0 && !relicsDisabled
+  const canEquip = !equipped && hasAvailableSlot && level > 0 && !relicsDisabled
 
   return (
     <div

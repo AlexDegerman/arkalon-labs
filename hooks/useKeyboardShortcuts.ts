@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyGenerator } from '@/app/stores/gameActions'
+import { buyGenerator } from '@/app/stores/actions'
 import { useActiveTab } from '@/hooks/useActiveTab'
 import { useUIStore } from '@/app/stores/uiStore'
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { launchProbe } from '@/app/stores/gameActions'
+import { launchProbe } from '@/app/stores/actions'
 import { ZONE_DEFINITIONS, ZONE_MAP } from '@/lib/excavationDefs'
 import { formatCountdown, formatDuration } from '@/lib/format'
 import ProgressBar from '@/components/ui/ProgressBar'
@@ -12,7 +12,6 @@ interface Props {
 }
 
 function ProbeCard({ probe }: Props) {
-
   const isIdle = probe.status === 'idle'
   const isScanning = probe.status === 'scanning'
   const isRepairing = probe.status === 'repairing'

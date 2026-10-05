@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { enterChallenge, exitChallenge } from '@/app/stores/gameActions'
+import { enterChallenge, exitChallenge } from '@/app/stores/actions'
 import { CHALLENGE_MAP } from '@/constants/challenges'
 import { formatPoints } from '@/lib/format'
 import ChallengeProgress from '@/components/challenges/ChallengeProgress'

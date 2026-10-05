@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { startResearch } from '@/app/stores/gameActions'
+import { startResearch } from '@/app/stores/actions'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import {
   isNodeAvailable,

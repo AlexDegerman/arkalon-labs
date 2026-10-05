@@ -1,6 +1,6 @@
 // Shared dirty flags for deferred per-tick checks
 // Kept in a separate module to avoid circular imports between
-// gameActions.ts and any module that needs to signal a re-check
+// app/stores/actions/* and any module that needs to signal a re-check
 
 let _unlocksDirty = false
 let _tutorialDirty = false

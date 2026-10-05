@@ -1,7 +1,7 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { dequeueResearch, reorderQueue } from '@/app/stores/gameActions'
+import { dequeueResearch, reorderQueue } from '@/app/stores/actions'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import { RESEARCH_QUEUE_MAX_BASE } from '@/constants/game'
 

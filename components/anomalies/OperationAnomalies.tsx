@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import {
-  resolveAnomaly,
-  updateAnomalyInteraction
-} from '@/app/stores/gameActions'
+import { resolveAnomaly, updateAnomalyInteraction } from '@/app/stores/actions'
 
 // Chrono-Freeze Flux: Match frequency spikes with slider
 export function ChronoFreezeFlux() {
@@ -52,55 +49,54 @@ export function ChronoFreezeFlux() {
   const alignPercent = Math.round((alignedTime / baseDuration.current) * 100)
 
   return (
-  <div className="flex flex-col gap-4">
-    <p className="text-xs text-(--text-secondary)">
-      Keep the slider matched to the frequency spike.
-    </p>
-    <div className="relative w-full" style={{ height: '56px' }}>
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 bg-(--bg-elevated) rounded border border-(--border-default)" />
-      {/* Frequency spike indicator */}
-      <div
-        className="absolute top-1/2 -translate-y-1/2 w-1 h-8 rounded transition-none"
-        style={{
-          left: `calc(${spikePosition * 100}% - 2px)`,
-          background: isAligned
-            ? 'var(--status-success)'
-            : 'var(--text-accent)',
-          boxShadow: `0 0 8px ${isAligned ? 'var(--status-success)' : 'var(--text-accent)'}`
-        }}
-        aria-hidden="true"
-      />
-      <input
-        type="range"
-        min={0}
-        max={100}
-        value={Math.round(sliderValue * 100)}
-        onChange={(e) => setSliderValue(Number(e.target.value) / 100)}
-        className="absolute inset-0 w-full opacity-0 cursor-pointer"
-        style={{ height: '56px' }}
-        aria-label="Frequency alignment slider"
-      />
-      <div
-        className={`absolute top-1/2 -translate-y-1/2 size-4 h-8 rounded border-2 transition-colors`}
-        style={{
-          left: `calc(${sliderValue * 100}% - 8px)`,
-          background: isAligned
-            ? 'var(--status-success)'
-            : 'var(--text-secondary)',
-          borderColor: isAligned
-            ? 'var(--status-success)'
-            : 'var(--text-secondary)'
-        }}
-        aria-hidden="true"
-      />
+    <div className="flex flex-col gap-4">
+      <p className="text-xs text-(--text-secondary)">
+        Keep the slider matched to the frequency spike.
+      </p>
+      <div className="relative w-full" style={{ height: '56px' }}>
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 bg-(--bg-elevated) rounded border border-(--border-default)" />
+        {/* Frequency spike indicator */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-1 h-8 rounded transition-none"
+          style={{
+            left: `calc(${spikePosition * 100}% - 2px)`,
+            background: isAligned
+              ? 'var(--status-success)'
+              : 'var(--text-accent)',
+            boxShadow: `0 0 8px ${isAligned ? 'var(--status-success)' : 'var(--text-accent)'}`
+          }}
+          aria-hidden="true"
+        />
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={Math.round(sliderValue * 100)}
+          onChange={(e) => setSliderValue(Number(e.target.value) / 100)}
+          className="absolute inset-0 w-full opacity-0 cursor-pointer"
+          style={{ height: '56px' }}
+          aria-label="Frequency alignment slider"
+        />
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 size-4 h-8 rounded border-2 transition-colors`}
+          style={{
+            left: `calc(${sliderValue * 100}% - 8px)`,
+            background: isAligned
+              ? 'var(--status-success)'
+              : 'var(--text-secondary)',
+            borderColor: isAligned
+              ? 'var(--status-success)'
+              : 'var(--text-secondary)'
+          }}
+          aria-hidden="true"
+        />
+      </div>
+      <p className="text-xs font-mono text-(--text-secondary) text-center">
+        Aligned: <span className="text-(--text-accent)">{alignPercent}%</span> -
+        Reward: Freeze research + 3x generation
+      </p>
     </div>
-    <p className="text-xs font-mono text-(--text-secondary) text-center">
-      Aligned:{' '}
-      <span className="text-(--text-accent)">{alignPercent}%</span> -
-      Reward: Freeze research + 3x generation
-    </p>
-  </div>
-)
+  )
 }
 
 // Solar Flare Overload: Click floating energy flares

@@ -1,5 +1,5 @@
 // Intermediate payload produced by completed probe scans
-// Consumed by dust/relic reward handlers in gameActions.ts
+// Consumed by dust/relic reward handlers in excavationActions.ts
 
 export interface ProbeResultPayload {
   probeId: number

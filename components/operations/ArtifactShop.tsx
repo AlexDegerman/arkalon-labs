@@ -1,7 +1,7 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyOperationArtifact } from '@/app/stores/gameActions'
+import { buyOperationArtifact } from '@/app/stores/actions'
 import { OPERATION_ARTIFACTS } from '@/lib/operationDefs'
 import type { OperationArtifactId } from '@/types/game'
 

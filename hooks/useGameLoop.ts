@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { tick } from '@/app/stores/gameActions'
+import { tick } from '@/app/stores/actions'
 import { TICK_INTERVAL_MS } from '@/constants/game'
 
 // Maximum catch-up ticks per interval when the tab was inactive

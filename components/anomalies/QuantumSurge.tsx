@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import {
-  resolveAnomaly,
-  updateAnomalyInteraction
-} from '@/app/stores/gameActions'
+import { resolveAnomaly, updateAnomalyInteraction } from '@/app/stores/actions'
 
 const NODE_RELOCATE_INTERVAL = 3000 // ms - node moves every 3s
 const CAPTURE_WINDOW = 3000 // ms - capture within 3s of relocation
@@ -74,66 +71,65 @@ export default function QuantumSurge() {
   const multiplier = Math.min(5, 2 + captures)
 
   return (
-  <div className="flex flex-col gap-4">
-    <div className="flex items-center justify-between">
-      <p className="text-xs text-(--text-secondary)">
-        Click the shifting node. Capture within 3 seconds of each move.
-      </p>
-      <span className="chip border-(--text-accent) text-(--text-accent)">
-        {captures}/5 captures - {multiplier}x
-      </span>
-    </div>
-
-    {/* Interaction field */}
-    <div
-      ref={containerRef}
-      className="relative w-full rounded border border-#ef4444/40 bg-(--bg-elevated) overflow-hidden"
-      style={{ height: '200px' }}
-      aria-label="Quantum surge interaction field"
-    >
-      {/* Moving node */}
-      <button
-        onClick={handleCapture}
-        className={[
-          'absolute size-10 rounded-full border-2 border-(--text-accent) transition-all duration-500',
-          'flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-          captureFlash
-            ? 'bg-(--text-accent) scale-125'
-            : 'bg-(--text-accent)/20 hover:bg-(--text-accent)/40'
-        ].join(' ')}
-        style={{
-          left: `calc(${nodePos.x}% - 20px)`,
-          top: `calc(${nodePos.y}% - 20px)`
-        }}
-        aria-label="Capture quantum node"
-      >
-        <span className="text-xs font-mono font-bold text-(--text-accent)">
-          ◎
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-(--text-secondary)">
+          Click the shifting node. Capture within 3 seconds of each move.
+        </p>
+        <span className="chip border-(--text-accent) text-(--text-accent)">
+          {captures}/5 captures - {multiplier}x
         </span>
-      </button>
-
-      {/* Capture count visual */}
-      <div className="absolute bottom-2 left-2 flex gap-1">
-        {Array.from({ length: 5 }, (_, i) => (
-          <div
-            key={i}
-            className={[
-              'size-3 rounded-full border',
-              i < captures
-                ? 'bg-(--text-accent) border-(--text-accent)'
-                : 'bg-transparent border-(--border-default)'
-            ].join(' ')}
-            aria-hidden="true"
-          />
-        ))}
       </div>
-    </div>
 
-    <p className="text-xs font-mono text-(--text-secondary) text-center">
-      Multiplier:{' '}
-      <span className="text-(--text-accent)">{multiplier}x</span> passive
-      RP
-    </p>
-  </div>
+      {/* Interaction field */}
+      <div
+        ref={containerRef}
+        className="relative w-full rounded border border-#ef4444/40 bg-(--bg-elevated) overflow-hidden"
+        style={{ height: '200px' }}
+        aria-label="Quantum surge interaction field"
+      >
+        {/* Moving node */}
+        <button
+          onClick={handleCapture}
+          className={[
+            'absolute size-10 rounded-full border-2 border-(--text-accent) transition-all duration-500',
+            'flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+            captureFlash
+              ? 'bg-(--text-accent) scale-125'
+              : 'bg-(--text-accent)/20 hover:bg-(--text-accent)/40'
+          ].join(' ')}
+          style={{
+            left: `calc(${nodePos.x}% - 20px)`,
+            top: `calc(${nodePos.y}% - 20px)`
+          }}
+          aria-label="Capture quantum node"
+        >
+          <span className="text-xs font-mono font-bold text-(--text-accent)">
+            ◎
+          </span>
+        </button>
+
+        {/* Capture count visual */}
+        <div className="absolute bottom-2 left-2 flex gap-1">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div
+              key={i}
+              className={[
+                'size-3 rounded-full border',
+                i < captures
+                  ? 'bg-(--text-accent) border-(--text-accent)'
+                  : 'bg-transparent border-(--border-default)'
+              ].join(' ')}
+              aria-hidden="true"
+            />
+          ))}
+        </div>
+      </div>
+
+      <p className="text-xs font-mono text-(--text-secondary) text-center">
+        Multiplier: <span className="text-(--text-accent)">{multiplier}x</span>{' '}
+        passive RP
+      </p>
+    </div>
   )
 }

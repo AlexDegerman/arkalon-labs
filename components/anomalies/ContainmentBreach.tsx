@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { resolveAnomaly } from '@/app/stores/gameActions'
+import { resolveAnomaly } from '@/app/stores/actions'
 
 const SECTOR_COUNT = 5
 

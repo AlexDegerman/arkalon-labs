@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { dismissAnomaly } from '@/app/stores/gameActions'
+import { dismissAnomaly } from '@/app/stores/actions'
 import QuantumSurge from '@/components/anomalies/QuantumSurge'
 import TemporalDistortion from '@/components/anomalies/TemporalDistortion'
 import ContainmentBreach from '@/components/anomalies/ContainmentBreach'
@@ -14,7 +14,12 @@ import {
   getEffectiveDuration,
   OPERATION_ANOMALY_DEFINITIONS
 } from '@/lib/anomalyDefs'
-import { ChronoFreezeFlux, SolarFlareOverload, GravitySinkCollapse, MatrixInversion } from './OperationAnomalies'
+import {
+  ChronoFreezeFlux,
+  SolarFlareOverload,
+  GravitySinkCollapse,
+  MatrixInversion
+} from './OperationAnomalies'
 import { GameState } from '@/types/game'
 
 // Returns the label for an anomaly type
@@ -185,7 +190,7 @@ export function MobileAnomalyBar() {
           animated={false}
         />
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-4">
         {InteractionComponent && <InteractionComponent />}
       </div>

@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import {
-  resolveAnomaly,
-  updateAnomalyInteraction
-} from '@/app/stores/gameActions'
+import { resolveAnomaly, updateAnomalyInteraction } from '@/app/stores/actions'
 
 // Safe zone moves across the slider at a varying speed
 const SAFE_ZONE_WIDTH = 0.18 // fraction of total range

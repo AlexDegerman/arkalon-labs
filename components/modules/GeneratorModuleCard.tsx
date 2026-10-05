@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyModule } from '@/app/stores/gameActions'
+import { buyModule } from '@/app/stores/actions'
 import {
   getModuleUpgradeCost,
   getModuleLevelCap,
