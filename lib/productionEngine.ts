@@ -138,6 +138,12 @@ function computeGeneratorOutput(
 
   // AC6: only relics provide production
   if (state.activeChallengeRestrictions?.noBaseGeneratorOutput) {
+    const relicGenMult = getRelicPerGeneratorMultiplier(index, state)
+    if (relicGenMult > 1) {
+      return (
+        def.baseOutput * BigInt(Math.round(relicGenMult - 1)) * gen.quantity
+      )
+    }
     return 0n
   }
 
@@ -283,8 +289,8 @@ function computeGeneratorPrimingBonus(state: GameState): number {
 // Called only when inputs change - NEVER from the tick loop
 // Returns total RP/sec as bigint (in whole RP, not milliRP)
 export function recalculatePPS(state: GameState): bigint {
-    const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener
-    const superrecursiveCoreLevel = getSuperrecursiveCoreLevel(state)
+  const milestoneSharpenerLevel = state.arUpgrades.milestone_sharpener
+  const superrecursiveCoreLevel = getSuperrecursiveCoreLevel(state)
 
   const arBonus = computeARBonus(state)
   const relicMultiplier = computeRelicMultiplier(state)
@@ -317,18 +323,26 @@ export function recalculatePPS(state: GameState): bigint {
   const challengeMult = getChallengeProductionMultiplier(state)
   if (challengeMult !== 1) totalFloat *= challengeMult
 
-  // Apply production exponent bonus: output ^ (1 + bonus)
+  // Apply production exponent bonus: output ^ (1 + exponentBonus)
   // Includes research node bonus and relic (Tachyon Prism) bonus
   const exponentBonus =
     getProductionExponentBonus(state) +
     getRelicExponentBonus(state) +
     getChallengeExponentBonus(state)
   if (exponentBonus > 0 && totalFloat > 1) {
-    totalFloat = Math.pow(totalFloat, 1 + exponentBonus)
+    const log10Val = Math.log10(totalFloat) * (1 + exponentBonus)
+    if (log10Val >= 308) {
+      totalFloat = Number.MAX_VALUE
+    } else {
+      totalFloat = Math.pow(totalFloat, 1 + exponentBonus)
+    }
   }
 
   // Convert from milliRP/sec to RP/sec (divide by 1000)
-  const totalRP = BigInt(Math.floor(totalFloat / 1000))
+  const totalRP =
+    totalFloat > 0 && totalFloat < 1000
+      ? 1n
+      : BigInt(Math.floor(totalFloat / 1000))
 
   return totalRP
 }

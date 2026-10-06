@@ -153,15 +153,22 @@ export function processProbeCompletions(): void {
     }
   }
 
+  const newRelicLevels = { ...store.relicLevels }
+  for (const rId of newRelics) {
+    if (!newRelicLevels[rId]) {
+      newRelicLevels[rId] = 1
+    }
+  }
+
   useGameStore.setState((s) => ({
     probes: updatedProbes,
     artifactDust: s.artifactDust + totalDust,
     unlockedRelics:
       newRelics.length > 0
         ? [...new Set([...s.unlockedRelics, ...newRelics])]
-        : s.unlockedRelics
+        : s.unlockedRelics,
+    relicLevels: newRelicLevels
   }))
-
   if (newRelics.length > 0) {
     useUIStore.getState().pushAlert({
       priority: 2,

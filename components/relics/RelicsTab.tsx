@@ -13,7 +13,6 @@ export default function RelicsTab() {
   const unlockedRelics = useGameStore((s) => s.unlockedRelics)
 
   return (
-  return (
     <div className="flex flex-col gap-4 p-3 sm:p-4 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
       {/* Dust balance */}
       <div className="flex items-center justify-between">

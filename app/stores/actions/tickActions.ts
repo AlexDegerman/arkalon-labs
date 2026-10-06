@@ -29,6 +29,8 @@ import { tickAutomation } from './automationActions'
 import { triggerTierI, triggerTierII } from './prestigeActions'
 import type { GameState } from '@/types/game'
 
+let ppsRemainder = 0n
+
 // Single 100ms tick dispatched by useGameLoop
 // CRITICAL: reads only cachedPointsPerSecond - never calls recalculatePPS
 // All production formula computation happens only when inputs change
@@ -40,7 +42,9 @@ export function tick(): void {
 
   // Read the cached PPS - this is the ONLY production read in the tick
   const pps = store.cachedPointsPerSecond
-  const tickRP = pps / 10n // 100ms = 1/10 of a second
+  const totalThisTick = pps + ppsRemainder
+  const tickRP = totalThisTick / 10n // 100ms = 1/10 of a second
+  ppsRemainder = totalThisTick % 10n
 
   let nextState: Partial<GameState> = {}
 

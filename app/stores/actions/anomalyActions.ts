@@ -80,6 +80,12 @@ export function resolveAnomaly(interactionScore: number): void {
       ? [...store.unlockedRelics, reward.relicDropped]
       : store.unlockedRelics
 
+  const newLevels =
+    reward.relicDropped > 0 &&
+    !store.unlockedRelics.includes(reward.relicDropped)
+      ? { ...store.relicLevels, [reward.relicDropped]: 1 }
+      : store.relicLevels
+
   if (
     reward.relicDropped > 0 &&
     !store.unlockedRelics.includes(reward.relicDropped)
@@ -113,6 +119,7 @@ export function resolveAnomaly(interactionScore: number): void {
     lifetimePoints: s.lifetimePoints + rpGain,
     artifactDust: newDust,
     unlockedRelics: newUnlocked,
+    relicLevels: newLevels,
     activeAnomalyType: null,
     anomalyTimeRemaining: 0,
     anomalyInteractionValue: 0,

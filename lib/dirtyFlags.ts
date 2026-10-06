@@ -3,7 +3,7 @@
 // app/stores/actions/* and any module that needs to signal a re-check
 
 let _unlocksDirty = false
-let _tutorialDirty = false
+let _tutorialDirty = true
 let _achievementsDirty = false
 
 export function markUnlocksDirty(): void {

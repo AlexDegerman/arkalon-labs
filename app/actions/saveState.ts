@@ -48,7 +48,7 @@ function sanityCheckPoints(
   if (elapsedSeconds <= 0) return true
 
   // Max points that could have been earned = pps * elapsed * 1.5
-  const elapsedBn = BigInt(Math.ceil(elapsedSeconds))
+  const elapsedBn = BigInt(Math.ceil(elapsedSeconds)) + 3600n
   const sanityBn = BigInt(Math.round(SAVE_SANITY_MULTIPLIER * 10))
   const maxEarnable = (cachedPPS * elapsedBn * sanityBn) / 10n
 

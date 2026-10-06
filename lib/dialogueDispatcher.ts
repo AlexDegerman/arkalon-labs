@@ -148,4 +148,14 @@ export function dispatchTabInactive(durationSeconds: number): void {
 export function dispatchTutorialBeat(beatId: string): void {
   const triggerId = beatId
   pushLine(triggerId)
+  const text = getDialogue(triggerId)
+  if (text) {
+    useUIStore.getState().pushAlert({
+      priority: 4,
+      variant: 'arkalon',
+      title: 'Arkalon Communication',
+      message: text,
+      autoDismissMs: 7000
+    })
+  }
 }

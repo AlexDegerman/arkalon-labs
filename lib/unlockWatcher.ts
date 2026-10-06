@@ -255,11 +255,12 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
   {
     id: 'boot',
     condition: (s) =>
+      s.generators[0].quantity === 0n &&
       s.lifetimePoints === 0n &&
       s.researchPoints <= 15n &&
       !s.tutorial.tutorialBeatsCompleted.includes('boot'),
     highlightTarget: 'generator-0-buy',
-    dialogueTriggerId: 'boot',
+    dialogueTriggerId: 'boot'
   },
   {
     id: 'first_buy',
@@ -267,7 +268,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.generators[0].quantity >= 1n &&
       !s.tutorial.tutorialBeatsCompleted.includes('first_buy'),
     highlightTarget: 'rp-banner',
-    dialogueTriggerId: 'first_buy',
+    dialogueTriggerId: 'first_buy'
   },
   {
     id: 'tech_preview',
@@ -277,7 +278,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       !s.unlocks.techMatrix &&
       !s.tutorial.tutorialBeatsCompleted.includes('tech_preview'),
     highlightTarget: 'workspace-tab-research',
-    dialogueTriggerId: 'tech_preview',
+    dialogueTriggerId: 'tech_preview'
   },
   {
     id: 'tech_unlock',
@@ -285,7 +286,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.unlocks.techMatrix &&
       !s.tutorial.tutorialBeatsCompleted.includes('tech_unlock'),
     highlightTarget: 'workspace-tab-research',
-    dialogueTriggerId: 'tech_unlock',
+    dialogueTriggerId: 'tech_unlock'
   },
   {
     id: 'first_research',
@@ -293,7 +294,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.activeResearchSlots.some((slot) => slot.nodeId !== null) &&
       !s.tutorial.tutorialBeatsCompleted.includes('first_research'),
     highlightTarget: 'research-active-slot',
-    dialogueTriggerId: 'first_research',
+    dialogueTriggerId: 'first_research'
   },
   {
     id: 'first_complete',
@@ -301,7 +302,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.completedResearchNodes.length >= 1 &&
       !s.tutorial.tutorialBeatsCompleted.includes('first_complete'),
     highlightTarget: 'research-queue',
-    dialogueTriggerId: 'first_complete',
+    dialogueTriggerId: 'first_complete'
   },
   {
     id: 'stats_unlock',
@@ -309,7 +310,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.unlocks.statistics &&
       !s.tutorial.tutorialBeatsCompleted.includes('stats_unlock'),
     highlightTarget: 'workspace-tab-stats',
-    dialogueTriggerId: 'stats_unlock',
+    dialogueTriggerId: 'stats_unlock'
   },
   {
     id: 'modules_unlock',
@@ -317,7 +318,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.unlocks.modules &&
       !s.tutorial.tutorialBeatsCompleted.includes('modules_unlock'),
     highlightTarget: 'workspace-tab-modules',
-    dialogueTriggerId: 'modules_unlock',
+    dialogueTriggerId: 'modules_unlock'
   },
   {
     id: 'anomaly_unlock',
@@ -325,7 +326,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.unlocks.anomalies &&
       !s.tutorial.tutorialBeatsCompleted.includes('anomaly_unlock'),
     highlightTarget: 'anomaly-bar',
-    dialogueTriggerId: 'anomaly_unlock',
+    dialogueTriggerId: 'anomaly_unlock'
   },
   {
     id: 'first_anomaly',
@@ -333,7 +334,7 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.activeAnomalyType !== null &&
       !s.tutorial.tutorialBeatsCompleted.includes('first_anomaly'),
     highlightTarget: 'anomaly-overlay',
-    dialogueTriggerId: 'anomaly_quantum_surge', // contextual per type handled below
+    dialogueTriggerId: 'anomaly_quantum_surge' // contextual per type handled below
   },
   {
     id: 'tutorial_end',
@@ -342,8 +343,8 @@ const TUTORIAL_BEATS: TutorialBeat[] = [
       s.stats.totalSessionPlaytime >= 300 &&
       s.tutorial.tutorialBeatsCompleted.length >= 8,
     highlightTarget: null,
-    dialogueTriggerId: 'tutorial_complete',
-  },
+    dialogueTriggerId: 'tutorial_complete'
+  }
 ]
 
 // Track which beats have been dispatched this session to avoid re-firing
