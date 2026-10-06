@@ -30,7 +30,7 @@ export default function WorkspaceTabBar() {
 
   return (
     <div
-      className="flex items-end border-b border-(--border-default) overflow-x-auto scrollbar-dark shrink-0"
+      className="flex items-center border-b border-(--border-default) bg-(--bg-surface)/95 px-1 overflow-x-auto scrollbar-none shrink-0"
       role="tablist"
       aria-label="Workspace panels"
     >
@@ -49,9 +49,10 @@ export default function WorkspaceTabBar() {
             aria-controls={`workspace-panel-${tab.id}`}
             onClick={() => setWorkspaceTab(tab.id)}
             className={[
-              'workspace-tab',
-              isActive ? 'workspace-tab-active' : '',
-              !isUnlocked ? 'workspace-tab-locked' : ''
+              'px-3 py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all duration-150 whitespace-nowrap shrink-0 border-b-2 cursor-pointer',
+              isActive
+                ? 'border-(--border-accent) text-(--border-accent) bg-(--border-accent)/10 shadow-[inset_0_-2px_6px_rgba(0,240,255,0.2)]'
+                : 'border-transparent text-(--text-secondary) hover:text-(--text-primary)'
             ].join(' ')}
             title={
               !isUnlocked

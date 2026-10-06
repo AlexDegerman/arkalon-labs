@@ -59,7 +59,6 @@ function getInteractionComponent(type: string): React.ComponentType | null {
   }
 }
 
-// Desktop: centered modal overlay
 export default function AnomalyOverlay() {
   const activeType = useGameStore((s) => s.activeAnomalyType)
   const timeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
@@ -71,35 +70,36 @@ export default function AnomalyOverlay() {
 
   return (
     <div
-      className="hidden lg:flex fixed inset-0 z-30 items-center justify-center bg-black/50"
+      className="hidden lg:flex fixed inset-0 z-40 items-center justify-center bg-black/70 backdrop-blur-xs animate-[fade-in_0.15s_ease-out_both]"
       role="dialog"
       aria-modal="true"
       aria-label={`Anomaly: ${label}`}
     >
-      <div className="glass rounded-lg border border-[#ef4444] w-full max-w-lg mx-4 flex flex-col overflow-hidden shadow-2xl shadow-red-500/20">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#ef4444]/40">
+      <div className="card rounded-2xl border border-red-500/70 bg-(--bg-surface)/95 w-full max-w-lg mx-4 flex flex-col overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.25)] backdrop-blur-md">
+        {/* Top Highlight Stripe (Red/Magenta Anomaly Flare) */}
+        <div className="h-1.5 w-full shrink-0 bg-linear-to-r from-red-500 via-[#ff00dc] to-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]" />
+
+        <div className="flex items-center justify-between px-4 py-3 border-b border-red-500/30 bg-red-950/20">
           <div className="flex items-center gap-2">
-            <span className="status-dot bg-[#ef4444] dot-pulse" />
-            <span className="text-sm font-bold font-mono text-[#ef4444] uppercase tracking-widest">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+            <span className="text-xs sm:text-sm font-black font-mono text-red-400 uppercase tracking-widest">
               {label}
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-mono text-(--text-accent)">
+            <span className="text-xs sm:text-sm font-mono font-bold text-(--text-accent)">
               {formatCountdown(timeRemaining)}
             </span>
             <button
               onClick={() => dismissAnomaly()}
-              className="text-xs font-mono text-(--text-secondary) hover:text-(--text-primary) transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent) rounded px-1"
+              className="text-xs font-mono text-(--text-secondary) hover:text-(--text-primary) transition-colors p-1 cursor-pointer"
               aria-label="Dismiss anomaly"
             >
-              dismiss
+              ✕
             </button>
           </div>
         </div>
 
-        {/* Timer bar */}
         <div className="px-4 pt-3">
           <ProgressBar
             progress={
@@ -114,7 +114,6 @@ export default function AnomalyOverlay() {
           />
         </div>
 
-        {/* Interaction content */}
         <div className="p-4">
           {InteractionComponent && <InteractionComponent />}
         </div>
@@ -138,41 +137,42 @@ export function MobileAnomalyBar() {
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-[#ef4444]/10 border-y border-[#ef4444]/40 shrink-0"
+        className="w-full flex items-center justify-between px-3 py-2 bg-red-950/40 border-y border-red-500/40 shrink-0 font-mono transition-colors active:bg-red-900/40 cursor-pointer"
         aria-label={`Anomaly active: ${label}. Tap to expand.`}
       >
         <div className="flex items-center gap-2">
-          <span className="status-dot bg-[#ef4444] dot-pulse" />
-          <span className="text-xs font-bold font-mono text-[#ef4444] uppercase">
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-xs font-black text-red-400 uppercase tracking-wider">
             {label}
           </span>
         </div>
-        <span className="text-xs font-mono text-(--text-accent)">
-          {formatCountdown(timeRemaining)} - tap to interact
+        <span className="text-xs font-bold text-(--text-accent)">
+          {formatCountdown(timeRemaining)} · Tap to Stabilize
         </span>
       </button>
     )
   }
 
   return (
-    <div className="fixed inset-0 z-30 flex flex-col bg-(--bg-primary)">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#ef4444]/40 bg-(--bg-surface)">
+    <div className="fixed inset-0 z-50 flex flex-col bg-(--bg-primary) animate-[fade-in_0.15s_ease-out_both]">
+      <div className="h-1.5 w-full shrink-0 bg-linear-to-r from-red-500 via-[#ff00dc] to-red-500" />
+
+      <div className="flex items-center justify-between px-4 py-3 border-b border-red-500/30 bg-(--bg-surface)">
         <div className="flex items-center gap-2">
-          <span className="status-dot bg-[#ef4444] dot-pulse" />
-          <span className="text-sm font-bold font-mono text-[#ef4444] uppercase tracking-widest">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+          <span className="text-xs sm:text-sm font-black font-mono text-red-400 uppercase tracking-widest">
             {label}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-mono text-(--text-accent)">
+          <span className="text-xs font-mono font-bold text-(--text-accent)">
             {formatCountdown(timeRemaining)}
           </span>
           <button
             onClick={() => setExpanded(false)}
-            className="text-xs font-mono text-(--text-secondary) hover:text-(--text-primary) focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent) rounded px-1"
+            className="text-xs font-mono font-bold text-(--text-secondary) hover:text-(--text-primary) px-2 py-1 rounded bg-(--bg-elevated) border border-(--border-default)"
           >
-            collapse
+            Collapse
           </button>
         </div>
       </div>

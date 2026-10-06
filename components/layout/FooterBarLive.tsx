@@ -16,7 +16,7 @@ interface Props {
 const STATUS_LABELS: Record<string, string> = {
   synced: 'Synced',
   saving: 'Saving...',
-  error: 'Save error',
+  error: 'Save Error',
   offline: 'Offline',
   '--': '--'
 }
@@ -32,19 +32,17 @@ const STATUS_COLORS: Record<string, string> = {
 export default function FooterBarLive({ lastSaveLabel, saveStatus }: Props) {
   const rafRef = useRef<number>(0)
 
-  // Update save status label
   useEffect(() => {
     const el = document.getElementById('footer-save-status')
     if (!el) return
     const label =
       lastSaveLabel !== '--'
-        ? `${STATUS_LABELS[saveStatus]} ${lastSaveLabel}`
+        ? `${STATUS_LABELS[saveStatus]} (${lastSaveLabel})`
         : STATUS_LABELS[saveStatus]
     el.textContent = `Save: ${label}`
     el.style.color = STATUS_COLORS[saveStatus]
   }, [lastSaveLabel, saveStatus])
 
-  // Update anomaly label via rAF loop - reads from store directly
   useEffect(() => {
     let running = true
 
@@ -60,13 +58,17 @@ export default function FooterBarLive({ lastSaveLabel, saveStatus }: Props) {
 
         let label: string
         if (activeAnomaly) {
-          label = `Anomaly: ${formatCountdown(store.anomalyTimeRemaining)}`
+          label = `Anomaly Detected: ${formatCountdown(store.anomalyTimeRemaining)}`
+          el.style.color = '#ef4444'
         } else if (anomaliesUnlocked && o3) {
-          label = `Next: ${formatCountdown(store.timeToNextAnomalyCheck)}`
+          label = `Next Anomaly: ${formatCountdown(store.timeToNextAnomalyCheck)}`
+          el.style.color = 'var(--text-accent)'
         } else if (anomaliesUnlocked) {
-          label = 'Anomaly scan: active'
+          label = 'Anomaly Scan: Active'
+          el.style.color = 'var(--text-secondary)'
         } else {
-          label = 'Anomaly scan: standby'
+          label = 'Anomaly Scan: Standby'
+          el.style.color = 'var(--text-secondary)'
         }
 
         if (el.textContent !== label) {

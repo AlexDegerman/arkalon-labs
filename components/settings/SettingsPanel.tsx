@@ -175,39 +175,39 @@ export default function SettingsPanel() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-xs animate-[fade-in_0.15s_ease-out_both]"
       role="dialog"
       aria-modal="true"
       aria-label="Settings"
     >
-      <div className="glass bg-(--bg-elevated) rounded-t-xl sm:rounded-xl border border-(--border-default) w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-(--border-default) shrink-0">
-          <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
+      <div className="card bg-(--bg-elevated) rounded-t-2xl sm:rounded-2xl border border-(--border-default) w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden shadow-2xl backdrop-blur-md">
+        <div className="h-1.5 w-full shrink-0 bg-linear-to-r from-(--border-accent) via-white to-(--border-accent)" />
+
+        <div className="flex items-center justify-between px-4 py-3 border-b border-(--border-default) shrink-0 bg-(--bg-surface)">
+          <p className="text-xs font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
             Facility Configuration
           </p>
           <button
             onClick={() => setSettingsPanelOpen(false)}
-            className="text-(--text-secondary) hover:text-(--text-primary) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent) rounded"
+            className="text-(--text-secondary) hover:text-(--text-primary) p-1 rounded font-mono text-sm leading-none cursor-pointer"
             aria-label="Close settings"
           >
-            x
+            ✕
           </button>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto scrollbar-dark p-4 flex flex-col gap-5">
-          {/* Arkalon Core Master Identity & Recovery Section */}
-          <div className="flex flex-col gap-2 rounded-lg border border-(--border-default) bg-(--bg-surface) p-3">
-            <p className="text-[10px] font-black uppercase tracking-wider text-(--text-secondary) font-mono">
+        <div className="flex-1 overflow-y-auto scrollbar-dark p-4 flex flex-col gap-4">
+          {/* Identity Section */}
+          <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-surface) p-3">
+            <span className="text-[10px] font-black uppercase tracking-wider text-(--text-secondary) font-mono">
               Arkalon Core Identity
-            </p>
+            </span>
 
             <div
-              className="w-full rounded border px-3 py-2 flex items-center justify-between gap-2 transition-all duration-200"
+              className="w-full rounded-lg border px-3 py-2 flex items-center justify-between gap-2 transition-all duration-200"
               style={{
                 backgroundColor: justRerolled
-                  ? 'rgba(45, 212, 191, 0.12)'
+                  ? 'rgba(0, 240, 255, 0.12)'
                   : 'var(--bg-elevated)',
                 borderColor: justRerolled
                   ? 'var(--border-accent)'
@@ -233,7 +233,7 @@ export default function SettingsPanel() {
                 onClick={handleReroll}
                 disabled={isRerolling}
                 title="Reroll procedural nickname"
-                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-accent) cursor-pointer transition-all disabled:opacity-50"
+                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--border-accent) cursor-pointer transition-all disabled:opacity-50"
               >
                 <Dices
                   size={12}
@@ -243,97 +243,82 @@ export default function SettingsPanel() {
               </button>
             </div>
 
-            <p className="text-[10px] leading-relaxed text-(--text-secondary)">
+            <p className="text-[11px] text-(--text-secondary) leading-relaxed">
               Your account is anchored across the Arkalon Network. Reveal your
               master recovery code on the Hub.
             </p>
 
-            <div className="flex gap-2 pt-1">
-              <a
-                href={`https://network.rpsleague.fi/settings?tab=identity&returnTo=${encodeURIComponent(returnUrl)}`}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded py-2 text-xs font-mono font-bold bg-(--border-accent)/10 border border-(--border-accent)/40 text-(--border-accent) hover:bg-(--border-accent)/20 transition-colors"
-              >
-                <span>Reveal Recovery Code</span>
-                <ExternalLink size={12} />
-              </a>
-            </div>
+            <a
+              href={`https://network.rpsleague.fi/settings?tab=identity&returnTo=${encodeURIComponent(returnUrl)}`}
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-mono font-bold bg-(--border-accent)/10 border border-(--border-accent)/40 text-(--border-accent) hover:bg-(--border-accent)/20 transition-colors cursor-pointer"
+            >
+              <span>Reveal Recovery Code on Hub</span>
+              <ExternalLink size={12} />
+            </a>
           </div>
 
-          {/* Volume controls */}
           <VolumeControls />
 
-          {/* Display settings */}
-          <div className="flex flex-col gap-3">
-            <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
+          {/* Display & Notation */}
+          <div className="flex flex-col gap-2.5">
+            <span className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
               Display & Notation
-            </p>
+            </span>
 
-            {/* Notation mode */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs text-(--text-secondary)">
-                Number notation
-              </span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {NOTATION_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => updateSetting('notationMode', opt.value)}
-                    className={[
-                      'flex flex-col items-start px-2.5 py-2 rounded border text-left transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
-                      settings.notationMode === opt.value
-                        ? 'border-(--border-accent) bg-(--border-accent)/10'
-                        : 'border-(--border-default) hover:border-(--text-secondary)'
-                    ].join(' ')}
-                    aria-pressed={settings.notationMode === opt.value}
-                  >
-                    <span className="text-xs font-semibold text-(--text-primary)">
-                      {opt.label}
-                    </span>
-                    <span className="text-[0.6rem] font-mono text-(--text-secondary)">
-                      {opt.example}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Decimal precision */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs text-(--text-secondary)">
-                Decimal places
-              </span>
-              <div className="flex gap-1.5">
-                {PRECISION_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => updateSetting('decimalPrecision', opt.value)}
-                    className={[
-                      'flex-1 py-1.5 text-xs font-mono rounded border transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
-                      settings.decimalPrecision === opt.value
-                        ? 'border-(--border-accent) text-(--text-accent) bg-(--border-accent)/10'
-                        : 'border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary)'
-                    ].join(' ')}
-                    aria-pressed={settings.decimalPrecision === opt.value}
-                  >
+            <div className="grid grid-cols-2 gap-1.5">
+              {NOTATION_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => updateSetting('notationMode', opt.value)}
+                  className={[
+                    'flex flex-col items-start p-2 rounded-lg border text-left transition-all cursor-pointer select-none',
+                    settings.notationMode === opt.value
+                      ? 'border-(--border-accent) bg-(--border-accent)/10 shadow-[0_0_8px_rgba(0,240,255,0.15)]'
+                      : 'border-(--border-default) bg-(--bg-surface) hover:border-(--text-secondary)'
+                  ].join(' ')}
+                  aria-pressed={settings.notationMode === opt.value}
+                >
+                  <span className="text-xs font-bold text-(--text-primary)">
                     {opt.label}
-                  </button>
-                ))}
-              </div>
+                  </span>
+                  <span className="text-[10px] font-mono text-(--text-secondary)">
+                    {opt.example}
+                  </span>
+                </button>
+              ))}
             </div>
 
-            {/* Accessibility toggles */}
-            <div className="flex flex-col gap-1.5">
+            <div className="flex gap-1.5">
+              {PRECISION_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => updateSetting('decimalPrecision', opt.value)}
+                  className={[
+                    'flex-1 py-1.5 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer',
+                    settings.decimalPrecision === opt.value
+                      ? 'border-(--border-accent) text-(--border-accent) bg-(--border-accent)/10'
+                      : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary)'
+                  ].join(' ')}
+                  aria-pressed={settings.decimalPrecision === opt.value}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-1.5 pt-1">
               {[
-                { key: 'reducedMotion' as const, label: 'Reduced motion' },
-                { key: 'colorBlindMode' as const, label: 'Color-blind mode' }
+                { key: 'reducedMotion' as const, label: 'Reduced Motion' },
+                {
+                  key: 'colorBlindMode' as const,
+                  label: 'Color-Blind Accessibility'
+                }
               ].map(({ key, label }) => (
                 <label
                   key={key}
-                  className="flex items-center justify-between cursor-pointer"
+                  className="flex items-center justify-between p-2 rounded-lg bg-(--bg-surface) border border-(--border-default) cursor-pointer"
                 >
-                  <span className="text-xs text-(--text-secondary)">
+                  <span className="text-xs font-medium text-(--text-secondary)">
                     {label}
                   </span>
                   <button
@@ -341,8 +326,7 @@ export default function SettingsPanel() {
                     aria-checked={settings[key]}
                     onClick={() => updateSetting(key, !settings[key])}
                     className={[
-                      'relative size-9 h-5 rounded-full border transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+                      'relative w-9 h-5 rounded-full border transition-colors cursor-pointer',
                       settings[key]
                         ? 'bg-(--status-success) border-(--status-success)'
                         : 'bg-(--bg-elevated) border-(--border-default)'
@@ -350,7 +334,7 @@ export default function SettingsPanel() {
                   >
                     <span
                       className={[
-                        'absolute top-0.5 size-4 rounded-full bg-white transition-transform',
+                        'absolute top-0.5 w-4 h-4 rounded-full bg-black transition-transform',
                         settings[key] ? 'translate-x-4' : 'translate-x-0.5'
                       ].join(' ')}
                     />
@@ -360,77 +344,71 @@ export default function SettingsPanel() {
             </div>
           </div>
 
-          {/* Local Save File Management */}
-          <div className="flex flex-col gap-3">
-            <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-              Local Save Data (File Backup)
-            </p>
+          {/* Save Management */}
+          <div className="flex flex-col gap-2.5">
+            <span className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
+              Local File Backups
+            </span>
 
             <button
               onClick={handleManualSave}
-              className="w-full py-2 text-xs font-mono rounded border border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary) hover:text-(--text-primary) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)"
+              className="w-full py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer"
             >
               Save to Local Storage Now
             </button>
 
-            {/* Export */}
-            <div className="flex flex-col gap-1.5">
-              <button
-                onClick={handleExport}
-                className="w-full py-2 text-xs font-mono rounded border border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary) hover:text-(--text-primary) transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)"
-              >
-                Export Save String (Clipboard)
-              </button>
-              {exportText && (
-                <textarea
-                  readOnly
-                  value={exportText}
-                  rows={3}
-                  className="w-full bg-(--bg-elevated) border border-(--border-default) rounded p-2 text-[0.6rem] font-mono text-(--text-secondary) resize-none focus:outline-none"
-                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                  aria-label="Exported save data"
-                />
-              )}
-            </div>
-
-            {/* Import */}
-            <div className="flex flex-col gap-1.5">
+            <button
+              onClick={handleExport}
+              className="w-full py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer"
+            >
+              Export Save String (Clipboard)
+            </button>
+            {exportText && (
               <textarea
-                value={importText}
-                onChange={(e) => setImportText(e.target.value)}
-                rows={3}
-                placeholder="Paste base64 save string here..."
-                className="w-full bg-(--bg-elevated) border border-(--border-default) rounded p-2 text-[0.6rem] font-mono text-(--text-primary) resize-none focus:outline-none focus:border-(--border-accent) placeholder:text-(--text-secondary)"
-                aria-label="Import save data"
+                readOnly
+                value={exportText}
+                rows={2}
+                className="w-full bg-(--bg-surface) border border-(--border-default) rounded-lg p-2 text-[10px] font-mono text-(--text-secondary) resize-none focus:outline-none"
+                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
               />
-              {importError && (
-                <p className="text-[0.65rem] text-[#ef4444]">{importError}</p>
-              )}
-              {importSuccess && (
-                <p className="text-[0.65rem] text-(--status-success)">
-                  Save imported successfully.
-                </p>
-              )}
-              <button
-                onClick={handleImport}
-                disabled={!importText.trim()}
-                className={[
-                  'w-full py-2 text-xs font-mono rounded border transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
-                  importText.trim()
-                    ? 'border-(--text-accent) text-(--text-accent) hover:bg-(--text-accent)/10'
-                    : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
-                ].join(' ')}
-              >
-                Import Save
-              </button>
-            </div>
+            )}
 
-            {/* Hard reset */}
-            <div className="flex flex-col gap-1.5 mt-2">
+            <textarea
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              rows={2}
+              placeholder="Paste base64 save string here to import..."
+              className="w-full bg-(--bg-surface) border border-(--border-default) rounded-lg p-2 text-[10px] font-mono text-(--text-primary) resize-none focus:outline-none focus:border-(--border-accent) placeholder:text-(--text-secondary)/50"
+            />
+            {importError && (
+              <p className="text-[11px] text-red-400 font-mono">
+                {importError}
+              </p>
+            )}
+            {importSuccess && (
+              <p className="text-[11px] text-(--status-success) font-mono">
+                Save imported successfully.
+              </p>
+            )}
+
+            <button
+              onClick={handleImport}
+              disabled={!importText.trim()}
+              className={[
+                'w-full py-2 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer',
+                importText.trim()
+                  ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110'
+                  : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary)/40 cursor-not-allowed opacity-60'
+              ].join(' ')}
+            >
+              Import Save String
+            </button>
+
+            {/* Hard Reset */}
+            <div className="pt-2">
               {resetConfirm === 'typing' ? (
-                <>
-                  <p className="text-[0.65rem] text-[#ef4444]">
+                <div className="flex flex-col gap-2 p-3 rounded-lg border border-red-500/50 bg-red-950/20">
+                  <p className="text-[11px] text-red-400 font-mono">
                     Type RESET to confirm. This clears all local progress and
                     cannot be undone.
                   </p>
@@ -442,25 +420,24 @@ export default function SettingsPanel() {
                       onChange={(e) => setResetInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleReset()}
                       placeholder="Type RESET"
-                      className="flex-1 bg-(--bg-elevated) border border-[#ef4444] rounded px-3 py-1.5 text-xs font-mono text-(--text-primary) focus:outline-none"
+                      className="flex-1 bg-(--bg-surface) border border-red-500/60 rounded px-2.5 py-1.5 text-xs font-mono text-(--text-primary) focus:outline-none"
                     />
                     <button
                       onClick={handleReset}
-                      className="px-3 py-1.5 text-xs font-mono rounded border border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444]"
+                      className="px-3 py-1.5 text-xs font-mono font-bold rounded border border-red-500 bg-red-500 text-black cursor-pointer"
                     >
                       Confirm
                     </button>
                   </div>
-                </>
+                </div>
               ) : (
                 <button
                   onClick={handleReset}
                   className={[
-                    'w-full py-2 text-xs font-mono rounded border transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444]',
+                    'w-full py-2 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer',
                     resetConfirm !== 'idle'
-                      ? 'border-[#ef4444] text-[#ef4444] bg-[#ef4444]/10'
-                      : 'border-(--border-default) text-(--text-secondary) hover:border-[#ef4444] hover:text-[#ef4444]'
+                      ? 'border-red-500 bg-red-500/20 text-red-400'
+                      : 'border-red-500/30 bg-red-500/5 text-red-400 hover:bg-red-500/10'
                   ].join(' ')}
                 >
                   {resetConfirm === 'idle'

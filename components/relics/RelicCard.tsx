@@ -41,78 +41,73 @@ function RelicCard({ relicId }: Props) {
   return (
     <div
       className={[
-        'card rounded-lg p-3 flex flex-col gap-2',
-        equipped ? 'border-(--border-accent)' : ''
+        'card rounded-xl p-3 flex flex-col justify-between gap-2.5 border transition-all duration-150',
+        equipped
+          ? 'border-(--border-accent) bg-linear-to-b from-(--border-accent)/10 via-(--bg-surface) to-(--bg-surface) shadow-[0_0_15px_rgba(0,240,255,0.08)]'
+          : 'border-(--border-default) bg-(--bg-surface)'
       ].join(' ')}
     >
-      {/* Header */}
       <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="text-xs font-semibold text-(--text-primary) truncate">
-            {relic.name}
-          </span>
-          {equipped && (
-            <span className="text-[0.6rem] font-mono text-(--text-accent)">
-              Equipped
+        <div className="flex flex-col min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
+              {relic.name}
             </span>
-          )}
+            {equipped && (
+              <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.2 rounded border border-(--border-accent)/40 bg-(--border-accent)/15 text-(--border-accent)">
+                Equipped
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] text-(--text-secondary)/70 italic truncate mt-0.5">
+            {relic.sourceDescription}
+          </span>
         </div>
-        <span className="chip border-(--border-default) text-(--text-secondary) shrink-0 text-[0.6rem]">
+        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary) shrink-0">
           Lv{level}/{RELIC_LEVEL_CAP}
         </span>
       </div>
 
-      {/* Effect */}
-      <p className="text-[0.65rem] text-(--text-secondary) leading-snug">
+      <p className="text-[11px] font-medium text-(--text-secondary) leading-snug">
         {getRelicEffectAtLevel(relicId, level)}
       </p>
 
-      {/* Source */}
-      <p className="text-[0.6rem] text-(--text-secondary) opacity-60 italic">
-        {relic.sourceDescription}
-      </p>
-
-      {/* Action row */}
-      <div className="flex items-center gap-2 mt-auto pt-1">
-        {/* Equip/unequip */}
+      <div className="flex items-center gap-2 pt-2 border-t border-(--border-default)/50 mt-auto">
         {!equipped ? (
           <button
             onClick={() => equipRelic(relicId)}
             disabled={!canEquip}
             className={[
-              'flex-1 py-1 text-[0.65rem] font-mono rounded border transition-colors',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
+              'flex-1 py-1.5 text-xs font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none',
               canEquip
-                ? 'border-(--status-success) text-(--status-success) hover:bg-(--status-success)/10'
-                : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
+                ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) hover:bg-(--status-success) hover:text-black'
+                : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
           >
             {relicsDisabled
               ? 'Restricted'
               : !hasAvailableSlot
-                ? 'No slot'
+                ? 'No Slot'
                 : level === 0
-                  ? 'Need Lv1'
+                  ? 'Locked (Lv0)'
                   : 'Equip'}
           </button>
         ) : (
-          <div className="flex-1 py-1 text-[0.65rem] font-mono text-center text-(--text-accent)">
+          <div className="flex-1 py-1.5 text-xs font-mono font-bold uppercase text-center text-(--border-accent) bg-(--border-accent)/10 border border-(--border-accent)/30 rounded-lg">
             Active
           </div>
         )}
 
-        {/* Upgrade */}
         <button
           onClick={() => upgradeRelic(relicId)}
           disabled={!canAffordUpgrade}
           className={[
-            'flex-1 py-1 text-[0.65rem] font-mono rounded border transition-colors',
-            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
+            'flex-1 py-1.5 text-xs font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none',
             atCap
-              ? 'border-(--status-success) text-(--status-success) cursor-default'
+              ? 'border-(--status-success)/40 text-(--status-success) bg-(--status-success)/10 cursor-default'
               : canAffordUpgrade
-                ? 'border-(--text-accent) text-(--text-accent) hover:bg-(--text-accent)/10'
-                : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
+                ? 'border-amber-400 bg-amber-400 text-black hover:brightness-110 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
           ].join(' ')}
         >
           {atCap ? 'MAX' : `${formatPoints(BigInt(upgradeCost))} dust`}

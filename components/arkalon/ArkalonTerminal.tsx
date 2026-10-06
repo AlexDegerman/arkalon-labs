@@ -14,7 +14,7 @@ interface Props {
   maxLines?: number
 }
 
-const TYPEWRITER_SPEED = 24 // ms per character
+const TYPEWRITER_SPEED = 24
 let lineIdCounter = 0
 
 export default function ArkalonTerminal({ lines, maxLines = 3 }: Props) {
@@ -95,12 +95,12 @@ export default function ArkalonTerminal({ lines, maxLines = 3 }: Props) {
 
   return (
     <div
-      className="w-full glass rounded p-3 flex flex-col gap-1 min-h-18 font-mono text-[13px]"
+      className="w-full rounded-xl border border-(--border-default) bg-(--bg-surface)/95 p-3 flex flex-col gap-1 min-h-18 font-mono text-[13px] shadow-[inset_0_1px_4px_rgba(0,0,0,0.6)]"
       aria-live="polite"
       aria-label="Arkalon communications terminal"
     >
       {displayedLines.length === 0 ? (
-        <p className="text-(--text-secondary) opacity-50">
+        <p className="text-(--text-secondary)/50">
           &gt; Awaiting signal...
         </p>
       ) : (
@@ -114,7 +114,7 @@ export default function ArkalonTerminal({ lines, maxLines = 3 }: Props) {
             }`}
           >
             <span
-              className="text-(--text-accent) mr-1.5 select-none"
+              className="text-(--text-accent) mr-1.5 select-none font-bold"
               aria-hidden="true"
             >
               &gt;
@@ -122,7 +122,7 @@ export default function ArkalonTerminal({ lines, maxLines = 3 }: Props) {
             {line.displayedText}
             {!line.complete && (
               <span
-                className="cursor-blink inline-block w-1.5 h-3 ml-0.5 align-middle bg-(--text-accent)"
+                className="cursor-blink inline-block w-1.5 h-3.5 ml-0.5 align-middle bg-(--text-accent) shadow-[0_0_8px_rgba(0,240,255,0.8)]"
                 aria-hidden="true"
               />
             )}

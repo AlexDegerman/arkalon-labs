@@ -32,36 +32,45 @@ export default function VolumeControls() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
+    <div className="flex flex-col gap-3 p-3 rounded-xl bg-(--bg-surface) border border-(--border-default)">
+      <div className="flex items-center justify-between pb-1 border-b border-(--border-default)/50">
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
           Audio
         </p>
         <button
           onClick={toggleMute}
           className={[
-            'chip text-[0.6rem] border transition-colors',
-            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
+            'text-[10px] font-mono font-bold px-2 py-0.5 rounded border transition-all cursor-pointer',
             muted
-              ? 'border-[#ef4444] text-[#ef4444]'
-              : 'border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary)'
+              ? 'border-red-500/40 bg-red-500/10 text-red-400'
+              : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary)'
           ].join(' ')}
         >
-          {muted ? 'Muted' : 'Mute all'}
+          {muted ? 'MUTED' : 'MUTE ALL'}
         </button>
       </div>
 
       {[
-        { label: 'Music', field: 'volumeMusic' as const, value: volumeMusic },
-        { label: 'SFX', field: 'volumeSFX' as const, value: volumeSFX },
-        { label: 'Voice', field: 'volumeVoice' as const, value: volumeVoice }
+        {
+          label: 'Ambient BGM',
+          field: 'volumeMusic' as const,
+          value: volumeMusic
+        },
+        {
+          label: 'Telemetry SFX',
+          field: 'volumeSFX' as const,
+          value: volumeSFX
+        },
+        {
+          label: 'Oracle Voice',
+          field: 'volumeVoice' as const,
+          value: volumeVoice
+        }
       ].map(({ label, field, value }) => (
-        <div key={field} className="flex flex-col gap-1">
+        <div key={field} className="flex flex-col gap-1 font-mono text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-(--text-secondary)">
-              {label}
-            </span>
-            <span className="text-xs font-mono text-(--text-primary)">
+            <span className="text-(--text-secondary) text-[11px]">{label}</span>
+            <span className="text-(--text-primary) font-bold">
               {Math.round(value * 100)}%
             </span>
           </div>
@@ -71,11 +80,8 @@ export default function VolumeControls() {
             max={100}
             value={Math.round(value * 100)}
             onChange={(e) => setVolume(field, Number(e.target.value) / 100)}
-            className="w-full accent-(--border-accent) cursor-pointer"
+            className="w-full accent-(--border-accent) cursor-pointer h-1.5"
             aria-label={`${label} volume`}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={Math.round(value * 100)}
             disabled={muted}
           />
         </div>

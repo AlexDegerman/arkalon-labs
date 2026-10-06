@@ -25,16 +25,15 @@ export default function OperationsWorkspace() {
   const currentCycle = getCurrentCycle(cycleNumber)
   const { daysRemaining, progress } = getCycleProgress()
 
-  // Operation anomaly preview
   const cycleAnomaly = OPERATION_CYCLES.find(
     (c) => c.anomalyType === currentCycle.anomalyType
   )
 
   return (
-    <div className="flex flex-col gap-4 p-3 h-full overflow-y-auto scrollbar-dark">
+    <div className="flex flex-col gap-4 p-3 sm:p-4 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
+      <div className="flex flex-col gap-0.5 px-1">
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
           Anomalous Operations
         </p>
         <p className="text-[0.65rem] text-(--text-secondary)">
@@ -43,19 +42,19 @@ export default function OperationsWorkspace() {
         </p>
       </div>
 
-      {/* Current cycle card */}
-      <div className="card rounded-lg p-3 flex flex-col gap-3 border-(--border-accent)">
+      {/* Cycle Banner Card */}
+      <div className="card rounded-xl p-3.5 sm:p-4 flex flex-col gap-3 border border-(--border-accent)/60 bg-linear-to-b from-(--border-accent)/10 via-(--bg-surface) to-(--bg-surface)">
         <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-bold text-(--text-accent) font-mono uppercase tracking-wide">
+          <div className="flex flex-col">
+            <span className="text-xs sm:text-sm font-bold text-(--text-accent) font-mono uppercase tracking-wide">
               {currentCycle.name}
             </span>
-            <span className="text-[0.65rem] text-(--text-secondary)">
-              Cycle {cycleNumber} of {OPERATION_CYCLES.length} (repeating)
+            <span className="text-[10px] font-mono text-(--text-secondary)">
+              Iteration {cycleNumber} of {OPERATION_CYCLES.length}
             </span>
           </div>
-          <span className="chip border-(--border-accent) text-(--border-accent) text-[0.6rem]">
-            {daysRemaining}d remaining
+          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent)">
+            {daysRemaining} Days Left
           </span>
         </div>
 
@@ -67,53 +66,45 @@ export default function OperationsWorkspace() {
           showPercent
         />
 
-        {/* Anomaly preview */}
-        <div className="flex flex-col gap-0.5">
-          <p className="text-[0.65rem] text-(--text-secondary) uppercase tracking-wide font-mono">
+        <div className="p-2.5 rounded-lg bg-(--bg-elevated) border border-(--border-default) text-[11px] font-mono">
+          <span className="text-(--text-secondary) text-[10px] uppercase tracking-wider block mb-0.5">
             Operation Anomaly
-          </p>
-          <p className="text-xs text-(--text-primary)">
+          </span>
+          <span className="font-bold text-(--text-primary)">
             {cycleAnomaly?.name ?? currentCycle.anomalyType}
-          </p>
-          <p className="text-[0.65rem] text-(--text-secondary)">
-            {currentCycle.visual}. Replaces 20% of standard anomaly spawns.
+          </span>
+          <p className="text-[10px] text-(--text-secondary)/80 mt-0.5">
+            {currentCycle.visual} · Replaces 20% of standard spawns.
           </p>
         </div>
       </div>
 
-      {/* Points balance */}
-      <div className="card rounded-lg p-3 flex items-center justify-between">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-mono text-(--text-secondary)">
-            Operation Points
+      {/* Points Telemetry */}
+      <div className="card rounded-xl p-3 flex items-center justify-between border border-(--border-default) bg-(--bg-surface)">
+        <div className="flex flex-col">
+          <span className="text-[10px] font-mono text-(--text-secondary) uppercase tracking-wider">
+            Operations Points
           </span>
-          <span className="text-lg font-bold font-mono text-(--text-accent)">
-            {operationPoints.toLocaleString()}
-          </span>
-        </div>
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-[0.65rem] font-mono text-(--text-secondary)">
-            Artifacts owned
-          </span>
-          <span className="text-xs font-mono text-(--text-primary)">
-            {artifactsUnlocked.length}/4
+          <span className="text-lg font-black font-mono text-(--text-accent)">
+            {operationPoints.toLocaleString()} PTS
           </span>
         </div>
+        <span className="text-[10px] font-mono font-bold px-2 py-1 rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary)">
+          {artifactsUnlocked.length}/4 Artifacts
+        </span>
       </div>
-
+      
       {/* Anomaly not yet unlocked hint */}
       {!anomaliesUnlocked && (
-        <div className="glass rounded p-3">
-          <p className="text-xs text-(--status-warning)">
-            Complete a research node (C1, E1, R1, or O1) to unlock anomaly
-            events. Operation anomalies will then spawn alongside standard ones.
-          </p>
+        <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs font-mono">
+          Complete a research node (C1, E1, R1, or O1) to unlock anomaly events.
+          Operation anomalies will then spawn alongside standard ones.
         </div>
       )}
 
       <div className="section-divider" />
 
-      {/* Artifact shop */}
+      {/* Artifact Shop */}
       <ArtifactShop />
     </div>
   )

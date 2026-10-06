@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 80" width="100%" height="100%">
+  <defs>
+    <linearGradient id="lockup-electric-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="25%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#00f0ff"/>
+      <stop offset="75%" stop-color="#0077b6"/>
+      <stop offset="100%" stop-color="#003d66"/>
+    </linearGradient>
+    <filter id="lockup-glow" x="-10%" y="-20%" width="120%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#00f0ff" flood-opacity="0.85"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#ff00dc" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Left Emblem -->
+  <g transform="translate(40, 40) scale(0.38) translate(-100, -102)" filter="url(#lockup-glow)">
+    <path
+      d="
+        M 46 56
+        L 74 32
+        L 74 132
+        L 154 132
+        L 154 160
+        L 146 160
+        L 146 172
+        L 134 172
+        L 134 160
+        L 126 160
+        L 126 172
+        L 114 172
+        L 114 160
+        L 106 160
+        L 106 172
+        L 94 172
+        L 94 160
+        L 46 160
+        Z
+      "
+      fill="url(#lockup-electric-flow)"
+      stroke="#ff00dc"
+      stroke-width="1.5"
+    />
+  </g>
+
+  <!-- Typography matching .title-labs -->
+  <g fill="url(#lockup-electric-flow)" stroke="#ff00dc" stroke-width="0.5" filter="url(#lockup-glow)">
+    <text x="88" y="49" font-family="'JetBrains Mono', ui-monospace, monospace" font-weight="900" font-size="24" letter-spacing="3.5">ARKALON LABORATORIES</text>
+  </g>
+</svg>

@@ -17,12 +17,12 @@ export default function AllocationSlider({ effectivePPS }: Props) {
   const remainingPPS = effectivePPS > 0n ? effectivePPS - allocatedPPS : 0n
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-mono text-(--text-secondary)">
+    <div className="flex flex-col gap-2 p-2.5 rounded-lg bg-(--bg-elevated)/70 border border-(--border-default)">
+      <div className="flex items-center justify-between font-mono text-xs">
+        <span className="text-(--text-secondary) font-bold uppercase tracking-wider text-[10px]">
           Allocation
         </span>
-        <span className="text-xs font-mono text-(--text-accent) font-bold">
+        <span className="text-(--text-accent) font-black text-sm">
           {percent}%
         </span>
       </div>
@@ -34,23 +34,20 @@ export default function AllocationSlider({ effectivePPS }: Props) {
         step={5}
         value={percent}
         onChange={(e) => setMegaprojectAllocation(Number(e.target.value))}
-        className="w-full accent-(--border-accent) cursor-pointer"
+        className="w-full accent-(--border-accent) cursor-pointer h-1.5"
         aria-label="Megaproject allocation percentage"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={percent}
       />
 
-      <div className="flex items-center justify-between text-[0.65rem] font-mono">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-(--text-secondary)">To project</span>
-          <span className="text-(--text-accent)">
+      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono pt-1">
+        <div className="flex flex-col">
+          <span className="text-(--text-secondary)">To Construction Core:</span>
+          <span className="font-bold text-(--text-accent)">
             {formatPoints(allocatedPPS)}/s
           </span>
         </div>
-        <div className="flex flex-col gap-0.5 text-right">
-          <span className="text-(--text-secondary)">Remaining</span>
-          <span className="text-(--text-primary)">
+        <div className="flex flex-col text-right">
+          <span className="text-(--text-secondary)">Surplus to Balance:</span>
+          <span className="font-bold text-(--text-primary)">
             {formatPoints(remainingPPS)}/s
           </span>
         </div>

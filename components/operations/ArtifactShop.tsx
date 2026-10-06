@@ -11,7 +11,7 @@ export default function ArtifactShop() {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
+      <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest px-1">
         Permanent Artifacts
       </p>
       <div className="flex flex-col gap-2">
@@ -25,25 +25,28 @@ export default function ArtifactShop() {
             <div
               key={def.id}
               className={[
-                'card rounded-lg p-3 flex items-start gap-3',
-                owned ? 'border-(--status-success)' : ''
+                'card rounded-xl p-3 flex items-center justify-between gap-3 border transition-colors',
+                owned
+                  ? 'border-(--status-success)/40 bg-(--status-success)/5'
+                  : 'border-(--border-default) bg-(--bg-surface)'
               ].join(' ')}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-semibold text-(--text-primary) truncate">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="text-xs font-bold text-(--text-primary) truncate">
                     {def.name}
                   </span>
                   {owned && (
-                    <span className="chip border-(--status-success) text-(--status-success) text-[0.6rem] shrink-0">
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border border-(--status-success)/30 bg-(--status-success)/10 text-(--status-success)">
                       OWNED
                     </span>
                   )}
                 </div>
-                <p className="text-[0.65rem] text-(--text-secondary) leading-snug">
+                <p className="text-[11px] text-(--text-secondary) leading-snug">
                   {def.effect}
                 </p>
               </div>
+
               {!owned && (
                 <button
                   onClick={() =>
@@ -51,14 +54,13 @@ export default function ArtifactShop() {
                   }
                   disabled={!canAfford}
                   className={[
-                    'shrink-0 px-2 py-1 text-[0.65rem] font-mono rounded border transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
+                    'shrink-0 px-3 py-1.5 text-xs font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer',
                     canAfford
-                      ? 'border-(--text-accent) text-(--text-accent) hover:bg-(--text-accent)/10'
-                      : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
+                      ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_10px_rgba(0,240,255,0.25)]'
+                      : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
                   ].join(' ')}
                 >
-                  {def.cost} pts
+                  {def.cost} PTS
                 </button>
               )}
             </div>

@@ -18,7 +18,6 @@ function ProbeCard({ probe }: Props) {
 
   const zoneDef = probe.zone ? ZONE_MAP[probe.zone] : null
 
-  // Compute progress for scanning probes
   const scanProgress =
     isScanning && zoneDef
       ? Math.max(0, 1 - probe.timerRemaining / zoneDef.durationSeconds)
@@ -29,39 +28,39 @@ function ProbeCard({ probe }: Props) {
     : 0
 
   return (
-    <div className="card rounded-lg p-3 flex flex-col gap-2">
-      {/* Probe header */}
+    <div className="card rounded-xl p-3 sm:p-3.5 flex flex-col gap-2.5 border border-(--border-default) bg-(--bg-surface)">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span
             className={[
-              'status-dot',
+              'w-2 h-2 rounded-full shrink-0',
               isScanning
-                ? 'status-dot-active dot-pulse'
+                ? 'bg-(--border-accent) animate-pulse'
                 : isRepairing
-                  ? 'status-dot-warning'
-                  : 'status-dot-locked'
+                  ? 'bg-amber-400'
+                  : 'bg-(--status-locked)'
             ].join(' ')}
           />
-          <span className="text-xs font-mono font-semibold text-(--text-primary)">
+          <span className="text-xs font-mono font-bold text-(--text-primary)">
             Probe #{probe.id}
           </span>
           {zoneDef && (
-            <span className="chip border-(--border-default) text-(--text-secondary) text-[0.6rem]">
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary)">
               {zoneDef.label}
             </span>
           )}
         </div>
-        <span className="text-xs font-mono text-(--text-secondary)">
+        <span className="text-xs font-mono font-bold text-(--text-accent)">
           {isScanning
             ? formatCountdown(probe.timerRemaining)
             : isRepairing
               ? `Repair: ${formatCountdown(probe.repairTimerRemaining)}`
-              : 'Idle'}
+              : 'Standby'}
         </span>
       </div>
 
-      {/* Progress bar */}
+      {/* Progress Bars */}
       {isScanning && (
         <ProgressBar
           progress={scanProgress}
@@ -79,13 +78,13 @@ function ProbeCard({ probe }: Props) {
         />
       )}
 
-      {/* Zone selector for idle probes */}
+      {/* Zone selection deck */}
       {isIdle && (
-        <div className="flex flex-col gap-1.5">
-          <p className="text-[0.65rem] text-(--text-secondary)">
-            Select destination:
-          </p>
-          <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5 pt-1">
+          <span className="text-[10px] font-mono text-(--text-secondary) uppercase tracking-wider">
+            Select Target Coordinates:
+          </span>
+          <div className="flex flex-col gap-1.5">
             {ZONE_DEFINITIONS.map((zone) => (
               <button
                 key={zone.zone}
@@ -93,27 +92,28 @@ function ProbeCard({ probe }: Props) {
                   launchProbe(probe.id, zone.zone as ExcavationZone)
                 }
                 className={[
-                  'flex items-center justify-between px-2 py-1.5 rounded border text-xs',
-                  'transition-colors focus-visible:outline-none focus-visible:ring-1',
-                  'focus-visible:ring-(--border-accent)',
-                  'border-(--border-default) hover:border-(--text-secondary)',
-                  'text-(--text-secondary) hover:text-(--text-primary)'
+                  'flex items-center justify-between p-2 rounded-lg border text-xs font-mono transition-all cursor-pointer select-none',
+                  'border-(--border-default) bg-(--bg-elevated)/60 hover:border-(--border-accent) hover:bg-(--bg-elevated)'
                 ].join(' ')}
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{zone.label}</span>
-                  <span className="text-[0.6rem] opacity-70">
-                    {Math.round(zone.successRate * 100)}% success
+                  <span className="font-bold text-(--text-primary)">
+                    {zone.label}
+                  </span>
+                  <span className="text-[10px] text-(--text-secondary)/70">
+                    {Math.round(zone.successRate * 100)}% Success
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-[0.6rem]">
-                  <span>{formatDuration(zone.durationSeconds)}</span>
-                  <span className="text-(--text-accent)">
-                    {zone.dustYieldMin}-{zone.dustYieldMax} dust
+                <div className="flex items-center gap-2.5 text-[10px]">
+                  <span className="text-(--text-secondary)">
+                    {formatDuration(zone.durationSeconds)}
+                  </span>
+                  <span className="text-amber-400 font-bold">
+                    {zone.dustYieldMin}-{zone.dustYieldMax} Dust
                   </span>
                   {zone.relicDropChance > 0 && (
-                    <span className="text-(--status-warning)">
-                      {Math.round(zone.relicDropChance * 100)}% relic
+                    <span className="text-(--text-accent) font-bold">
+                      {Math.round(zone.relicDropChance * 100)}% Relic
                     </span>
                   )}
                 </div>
@@ -123,20 +123,18 @@ function ProbeCard({ probe }: Props) {
         </div>
       )}
 
-      {/* Scanning info */}
+      {/* Telemetry during scan */}
       {isScanning && zoneDef && (
-        <div className="flex items-center justify-between text-[0.65rem]">
-          <span className="text-(--text-secondary)">
-            Dust: {zoneDef.dustYieldMin}-{zoneDef.dustYieldMax}
+        <div className="flex items-center justify-between text-[11px] font-mono text-(--text-secondary) pt-1 border-t border-(--border-default)/50">
+          <span>
+            Yield: {zoneDef.dustYieldMin}-{zoneDef.dustYieldMax} Dust
           </span>
           {zoneDef.relicDropChance > 0 && (
-            <span className="text-(--status-warning)">
-              {Math.round(zoneDef.relicDropChance * 100)}% relic chance
+            <span className="text-(--text-accent)">
+              {Math.round(zoneDef.relicDropChance * 100)}% Relic Probability
             </span>
           )}
-          <span className="text-(--text-secondary)">
-            Success: {Math.round(zoneDef.successRate * 100)}%
-          </span>
+          <span>Success: {Math.round(zoneDef.successRate * 100)}%</span>
         </div>
       )}
     </div>

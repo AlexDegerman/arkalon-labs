@@ -21,7 +21,7 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden flex items-stretch border-t border-(--border-default) bg-(--bg-surface) shrink-0"
+      className="lg:hidden flex items-stretch border-t border-(--border-default) bg-(--bg-surface)/95 backdrop-blur-md shrink-0 z-30"
       aria-label="Main navigation"
     >
       {NAV_ITEMS.map((item) => {
@@ -31,18 +31,17 @@ export default function MobileNav() {
             key={item.id}
             onClick={() => setMobileTab(item.id)}
             className={[
-              'flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-xs transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--border-accent)',
+              'flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer',
               isActive
-                ? 'text-(--text-accent) border-t border-(--border-accent) -mt-px'
-                : 'text-(--text-secondary)'
+                ? 'text-(--border-accent) bg-(--border-accent)/10 border-t-2 border-(--border-accent) -mt-px shadow-[0_-4px_12px_rgba(0,240,255,0.2)]'
+                : 'text-(--text-secondary) hover:text-(--text-primary)'
             ].join(' ')}
             aria-current={isActive ? 'page' : undefined}
           >
             <span className="text-base leading-none" aria-hidden="true">
               {item.icon}
             </span>
-            <span className="font-sans">{item.label}</span>
+            <span>{item.label}</span>
           </button>
         )
       })}

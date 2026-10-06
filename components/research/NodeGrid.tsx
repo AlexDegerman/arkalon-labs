@@ -23,7 +23,6 @@ const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
   const node = RESEARCH_NODE_MAP[nodeId]
   if (!node) return null
 
-  // Narrow selectors: only subscribe to data this specific card needs
   const researchPoints = useGameStore((s) => s.researchPoints)
   const isCompleted = useGameStore((s) =>
     s.completedResearchNodes.includes(nodeId)
@@ -59,25 +58,39 @@ const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
     startResearch(nodeId)
   }
 
-  let borderClass = 'border-[var(--border-default)]'
-  let bgClass = ''
-  let statusLabel = ''
+  let borderClass = 'border-(--border-default)'
+  let bgClass = 'bg-(--bg-surface)'
+  let statusBadge: React.ReactNode = null
 
   if (completed && !node.isInfinite) {
-    borderClass = 'border-[var(--status-success)]'
-    bgClass = 'bg-[var(--status-success)]/5'
-    statusLabel = 'Complete'
+    borderClass = 'border-(--status-success)/40'
+    bgClass = 'bg-(--status-success)/5'
+    statusBadge = (
+      <span className="text-[9px] font-mono font-bold text-(--status-success) px-1.5 py-0.2 rounded border border-(--status-success)/30 bg-(--status-success)/10">
+        DONE
+      </span>
+    )
   } else if (active) {
-    borderClass = 'border-[var(--border-accent)] border-pulse'
-    statusLabel = 'Studying'
+    borderClass = 'border-(--border-accent)'
+    bgClass = 'bg-(--border-accent)/10 shadow-[0_0_12px_rgba(0,240,255,0.15)]'
+    statusBadge = (
+      <span className="text-[9px] font-mono font-bold text-(--border-accent) px-1.5 py-0.2 rounded border border-(--border-accent)/30 bg-(--border-accent)/10 animate-pulse">
+        ACTIVE
+      </span>
+    )
   } else if (queued) {
-    borderClass = 'border-[var(--status-warning)]'
-    statusLabel = 'Queued'
+    borderClass = 'border-amber-400/40'
+    bgClass = 'bg-amber-400/5'
+    statusBadge = (
+      <span className="text-[9px] font-mono font-bold text-amber-400 px-1.5 py-0.2 rounded border border-amber-400/30 bg-amber-400/10">
+        QUEUED
+      </span>
+    )
   } else if (!available) {
-    borderClass = 'border-[var(--status-locked)]'
-    bgClass = 'opacity-50'
+    borderClass = 'border-(--border-default)/50'
+    bgClass = 'opacity-50 bg-(--bg-surface)/40 cursor-not-allowed'
   } else if (canAffordNode) {
-    borderClass = 'border-[var(--status-success)]'
+    borderClass = 'border-(--border-accent)/60 hover:border-(--border-accent)'
   }
 
   return (
@@ -87,67 +100,41 @@ const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
         !available || (completed && !node.isInfinite) || active || queued
       }
       className={[
-        'card rounded-lg p-2.5 flex flex-col gap-1.5 text-left w-full',
-        'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
-        'disabled:cursor-default',
-        borderClass,
-        bgClass,
+        'card rounded-xl p-2.5 sm:p-3 flex flex-col justify-between gap-1.5 text-left w-full border transition-all duration-150',
         available && !completed && !active && !queued
-          ? 'hover:border-(--text-secondary) cursor-pointer'
-          : ''
+          ? 'hover:-translate-y-px cursor-pointer'
+          : '',
+        borderClass,
+        bgClass
       ].join(' ')}
-      aria-label={`${node.label}${statusLabel ? ` - ${statusLabel}` : ''}`}
+      aria-label={node.label}
     >
-      {/* Header row */}
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-xs font-semibold text-(--text-primary) leading-tight truncate">
+      <div className="flex items-start justify-between gap-1 w-full">
+        <span className="text-xs sm:text-sm font-bold text-(--text-primary) leading-tight truncate">
           {node.label}
         </span>
-        {statusLabel && (
-          <span
-            className={[
-              'chip shrink-0 text-[0.6rem]',
-              completed && !node.isInfinite
-                ? 'border-(--status-success) text-(--status-success)'
-                : active
-                  ? 'border-(--border-accent) text-(--border-accent)'
-                  : queued
-                    ? 'border-(--status-warning) text-(--status-warning)'
-                    : ''
-            ].join(' ')}
-          >
-            {statusLabel}
-          </span>
-        )}
+        {statusBadge}
       </div>
 
-      {/* Effect */}
-      <p className="text-[0.65rem] text-(--text-secondary) leading-snug line-clamp-2">
+      <p className="text-[11px] text-(--text-secondary) leading-snug line-clamp-2 my-auto">
         {node.effectDescription}
       </p>
 
-      {/* Cost / time row */}
-      <div className="flex items-center justify-between gap-1 mt-auto">
+      <div className="flex items-center justify-between text-[11px] font-mono pt-1 border-t border-(--border-default)/50 w-full">
         <span
-          className={[
-            'text-[0.65rem] font-mono',
+          className={
             canAffordNode
-              ? 'text-(--status-success)'
+              ? 'text-(--status-success) font-bold'
               : 'text-(--text-secondary)'
-          ].join(' ')}
+          }
         >
           {node.isInfinite
             ? `Lv${infLevel + 1}: ${formatPoints(infNextCost)} RP`
             : `${formatPoints(cost)} RP`}
         </span>
         {!node.isInfinite && studyTime > 0 && !completed && (
-          <span className="text-[0.65rem] font-mono text-(--text-secondary)">
-            {formatCountdown(studyTime)}
-          </span>
-        )}
-        {node.isInfinite && (
-          <span className="text-[0.65rem] font-mono text-(--text-secondary)">
-            Lv{infLevel}
+          <span className="text-(--text-secondary)">
+            ⏱ {formatCountdown(studyTime)}
           </span>
         )}
       </div>
@@ -160,13 +147,11 @@ interface Props {
 }
 
 function NodeGrid({ branch }: Props) {
-  // Only show standard (non-infinite) nodes in the grid
   const standardNodes = getBranchNodes(branch, false)
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Standard nodes 2-column grid */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {standardNodes.map((node) => (
           <NodeCard key={node.id} nodeId={node.id} />
         ))}

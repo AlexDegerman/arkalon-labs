@@ -19,56 +19,54 @@ export default function CoordinateLauncher() {
   const atMax = totalCount >= MAX_PROBES
 
   return (
-    <div className="card rounded-lg p-3 flex flex-col gap-3">
+    <div className="card rounded-xl p-3 sm:p-4 flex flex-col gap-3 border border-(--border-default) bg-(--bg-surface)">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-          Probe Bay
-        </p>
-        <span className="chip border-(--border-default) text-(--text-secondary) text-[0.6rem]">
-          {totalCount}/{MAX_PROBES} probes
+        <span className="text-xs font-bold text-(--text-primary)">
+          Probe Assembly Bay
+        </span>
+        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary)">
+          {totalCount}/{MAX_PROBES} Probes
         </span>
       </div>
 
-      {/* Gate requirement message */}
       {!meetsGate && (
-        <p className="text-[0.65rem] text-(--status-warning)">
-          Requires 100 Server Clusters and 10 Quantum Computers to build probes.
-        </p>
-      )}
-
-      {/* Probe stats */}
-      {totalCount > 0 && (
-        <div className="flex items-center gap-4 text-[0.65rem] font-mono">
-          <span className="text-(--text-secondary)">
-            Active: <span className="text-(--text-accent)">{activeCount}</span>
-          </span>
-          <span className="text-(--text-secondary)">
-            Idle: <span className="text-(--text-primary)">{idleCount}</span>
-          </span>
+        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono">
+          ⚠️ Requires 100 Server Clusters and 10 Quantum Computers to
+          manufacture probes.
         </div>
       )}
 
-      {/* Build button */}
-      {!atMax && (
+      {totalCount > 0 && (
+        <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+          <div className="p-2 rounded-lg bg-(--bg-elevated) border border-(--border-default) flex items-center justify-between">
+            <span className="text-(--text-secondary)">Active Scanning:</span>
+            <span className="font-bold text-(--text-accent)">
+              {activeCount}
+            </span>
+          </div>
+          <div className="p-2 rounded-lg bg-(--bg-elevated) border border-(--border-default) flex items-center justify-between">
+            <span className="text-(--text-secondary)">Stationary/Idle:</span>
+            <span className="font-bold text-(--text-primary)">{idleCount}</span>
+          </div>
+        </div>
+      )}
+
+      {!atMax ? (
         <button
           onClick={() => buildProbe()}
           disabled={!meetsGate || !canBuild}
           className={[
-            'w-full py-2 text-xs font-mono rounded border transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+            'w-full py-2.5 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer select-none',
             meetsGate && canBuild
-              ? 'border-(--status-success) text-(--status-success) hover:bg-(--status-success)/10'
-              : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
+              ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_12px_rgba(0,240,255,0.3)]'
+              : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
           ].join(' ')}
         >
-          Build Probe - {formatPoints(PROBE_COST_RP)} RP
-          {!meetsGate && ' (Requirements not met)'}
-          {meetsGate && rp < PROBE_COST_RP && ' (Insufficient RP)'}
+          Construct Sub-Space Probe · {formatPoints(PROBE_COST_RP)} RP
         </button>
-      )}
-      {atMax && (
-        <p className="text-[0.65rem] text-(--text-secondary) text-center">
-          Maximum probe count reached ({MAX_PROBES}).
+      ) : (
+        <p className="text-[11px] font-mono text-(--text-secondary)/80 text-center py-1">
+          Assembly bay at maximum capacity ({MAX_PROBES} probes active).
         </p>
       )}
     </div>

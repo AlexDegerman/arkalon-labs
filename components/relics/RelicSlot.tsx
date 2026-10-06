@@ -29,50 +29,51 @@ function RelicSlot({ slotIndex }: Props) {
   return (
     <div
       className={[
-        'card rounded-lg p-3 flex items-start gap-3 min-h-20 transition-colors',
-        relic ? 'border-(--border-accent)' : 'border-dashed',
+        'card rounded-xl p-3 flex items-center justify-between gap-3 min-h-18 transition-all',
+        relic
+          ? 'border-(--border-accent)/60 bg-linear-to-r from-(--border-accent)/10 via-(--bg-surface) to-(--bg-surface)'
+          : 'border-dashed border-(--border-default)/70 bg-(--bg-surface)/40',
         onCooldown ? 'opacity-70' : ''
       ].join(' ')}
     >
-      {/* Slot number */}
-      <div className="flex flex-col items-center shrink-0">
-        <span className="text-xs font-mono text-(--text-secondary)">
-          Slot {slotIndex + 1}
-        </span>
-        {onCooldown && (
-          <span className="text-[0.6rem] font-mono text-(--status-warning) mt-0.5">
-            {formatCountdown(slot.cooldownRemaining)}
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex flex-col items-center justify-center w-8 h-8 rounded-lg bg-(--bg-elevated) border border-(--border-default) shrink-0 font-mono">
+          <span className="text-[10px] text-(--text-secondary) font-bold">
+            #{slotIndex + 1}
           </span>
-        )}
+        </div>
+
+        {isEmpty ? (
+          <p className="text-xs font-mono text-(--text-secondary)/60">
+            {onCooldown
+              ? `Socket recalibrating... (${formatCountdown(slot.cooldownRemaining)})`
+              : 'Empty Socket Node · Select relic below'}
+          </p>
+        ) : relic ? (
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
+                {relic.name}
+              </span>
+              <span className="text-[9px] font-mono font-black text-(--text-accent) px-1.5 py-0.2 rounded border border-(--border-accent)/40 bg-(--border-accent)/10 shrink-0">
+                Lv{level}
+              </span>
+            </div>
+            <p className="text-[11px] text-(--text-secondary) truncate mt-0.5">
+              {getRelicEffectAtLevel(relic.id, level)}
+            </p>
+          </div>
+        ) : null}
       </div>
 
-      {isEmpty ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xs font-mono text-(--text-secondary)">
-            {onCooldown ? 'Cooling down...' : 'Empty - select a relic below'}
-          </p>
-        </div>
-      ) : relic ? (
-        <div className="flex-1 flex flex-col gap-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-(--text-primary) truncate">
-              {relic.name}
-            </span>
-            <span className="chip border-(--text-accent) text-(--text-accent) shrink-0 text-[0.6rem]">
-              Lv{level}
-            </span>
-          </div>
-          <p className="text-[0.65rem] text-(--text-secondary) leading-snug">
-            {getRelicEffectAtLevel(relic.id, level)}
-          </p>
-          <button
-            onClick={() => unequipRelic(relic.id)}
-            className="self-start text-[0.65rem] font-mono text-(--text-secondary) hover:text-#ef4444 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent) rounded mt-1"
-          >
-            unequip
-          </button>
-        </div>
-      ) : null}
+      {!isEmpty && relic && (
+        <button
+          onClick={() => unequipRelic(relic.id)}
+          className="px-2.5 py-1 text-xs font-mono font-bold rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 cursor-pointer shrink-0"
+        >
+          Unequip
+        </button>
+      )}
     </div>
   )
 }

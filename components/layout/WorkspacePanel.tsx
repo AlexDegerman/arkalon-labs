@@ -72,7 +72,7 @@ export default function WorkspacePanel() {
 
   return (
     <div
-      className="flex-1 overflow-y-auto scrollbar-dark min-h-0"
+      className="flex-1 overflow-y-auto scrollbar-dark min-h-0 bg-(--bg-primary)/40"
       role="tabpanel"
       id={`workspace-panel-${workspaceTab}`}
     >

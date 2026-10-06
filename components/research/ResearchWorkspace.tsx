@@ -35,26 +35,28 @@ export default function ResearchWorkspace() {
   }, [completedNodes])
 
   return (
-    <div className="flex flex-col gap-3 p-3 h-full overflow-y-auto scrollbar-dark">
-      {/* Active research slots */}
+    <div className="flex flex-col gap-3 p-3 sm:p-4 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
+      {/* Active Slots Suite */}
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-          Active Research
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
+          Active Processing Slots ({slotCount})
         </p>
-        {Array.from({ length: slotCount }, (_, i) => (
-          <ActiveNodeDisplay key={i} slotIndex={i} />
-        ))}
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: slotCount }, (_, i) => (
+            <ActiveNodeDisplay key={i} slotIndex={i} />
+          ))}
+        </div>
       </div>
 
       <div className="section-divider" />
 
-      {/* Queue */}
+      {/* Queue Strip */}
       <QueueStrip />
 
       <div className="section-divider" />
 
-      {/* Branch tabs and node grid */}
-      <div className="flex flex-col gap-2">
+      {/* Branch Navigation & Nodes Grid */}
+      <div className="flex flex-col gap-2.5">
         <BranchTabs
           activeBranch={activeBranch}
           onBranchChange={setActiveBranch}

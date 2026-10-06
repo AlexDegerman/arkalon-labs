@@ -9,19 +9,18 @@ function RelicGrid() {
 
   if (unlockedRelics.length === 0) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <p className="text-xs font-mono text-(--text-secondary) text-center">
+      <div className="card rounded-xl p-8 border border-dashed border-(--border-default) bg-(--bg-surface)/40 text-center">
+        <p className="text-xs font-mono text-(--text-secondary)/70">
           No relics discovered yet. Resolve anomalies to find them.
         </p>
       </div>
     )
   }
 
-  // Sort: equipped first, then by ID
   const sorted = [...unlockedRelics].sort((a, b) => a - b)
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
       {sorted.map((id) => (
         <RelicCard key={id} relicId={id} />
       ))}

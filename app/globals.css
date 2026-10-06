@@ -6,51 +6,84 @@
   --font-mono: var(--font-jetbrains-mono), monospace;
 }
 
-/* 2. Base Tier Tokens (CDD Section 7.1) */
+@keyframes title-sweep-linear {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.title-labs {
+  background: linear-gradient(
+    90deg,
+    #00f0ff 0%,
+    #ffffff 25%,
+    #00f0ff 40%,
+    #0077b6 65%,
+    #00f0ff 85%,
+    #ffffff 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  -webkit-text-stroke: 0.5px #ff00dc;
+  filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.85))
+    drop-shadow(0 0 12px rgba(255, 0, 220, 0.45));
+  animation: title-sweep-linear 3.5s linear infinite;
+}
+
+/* 2. Base Tier Tokens (Electric Cyan & Deep Void Theme) */
 :root {
-  --bg-primary: #0a0e17;
-  --bg-surface: #111827;
-  --bg-elevated: #1f2937;
-  --border-default: #1e3a5f;
-  --border-accent: #2dd4bf;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-accent: #2dd4bf;
-  --glow-primary: rgba(45, 212, 191, 0.15);
-  --status-success: #22c55e;
+  --bg-primary: #080c14;
+  --bg-surface: #0e1522;
+  --bg-elevated: #141f30;
+  --border-default: #1c2a3d;
+  --border-accent: #00f0ff;
+  --text-primary: #e8edf4;
+  --text-secondary: #7c8ba1;
+  --text-accent: #00f0ff;
+  --glow-primary: rgba(0, 240, 255, 0.25);
+  --glow-accent: rgba(255, 0, 220, 0.35);
+  --status-success: #39ff8a;
   --status-warning: #f59e0b;
-  --status-locked: #4b5563;
+  --status-locked: #4b5d75;
 }
 
 /* Mid Tier: 10^12 – 10^48 RP */
 [data-tier="mid"] {
-  --bg-primary: #0d0a1a;
-  --bg-surface: #1a1030;
-  --bg-elevated: #2a1845;
-  --border-default: #4a2080;
-  --border-accent: #c026d3;
-  --text-primary: #f0e6ff;
-  --text-secondary: #a78bfa;
-  --text-accent: #f472b6;
-  --glow-primary: rgba(192, 38, 211, 0.2);
-  --status-locked: #6b5b7b;
+  --bg-primary: #090918;
+  --bg-surface: #101228;
+  --bg-elevated: #171b38;
+  --border-default: #282d54;
+  --border-accent: #8b5cf6;
+  --text-primary: #f0edff;
+  --text-secondary: #9a94bd;
+  --text-accent: #c084fc;
+  --glow-primary: rgba(139, 92, 246, 0.3);
+  --glow-accent: rgba(236, 72, 153, 0.35);
+  --status-locked: #5b557c;
 }
 
 /* High Tier: > 10^48 RP */
 [data-tier="high"] {
-  --bg-primary: #050208;
-  --bg-surface: #0a0510;
-  --bg-elevated: #150a20;
-  --border-default: #2a1550;
-  --border-accent: #e0e0ff;
+  --bg-primary: #04020a;
+  --bg-surface: #0a0515;
+  --bg-elevated: #140b28;
+  --border-default: #2d184f;
+  --border-accent: #ff00dc;
   --text-primary: #ffffff;
-  --text-secondary: #c4b5fd;
-  --text-accent: #fef3c7;
-  --glow-primary: rgba(255, 255, 255, 0.1);
-  --status-locked: #3a2a4a;
+  --text-secondary: #baa6d4;
+  --text-accent: #fef08a;
+  --glow-primary: rgba(255, 0, 220, 0.35);
+  --glow-accent: rgba(0, 240, 255, 0.45);
+  --status-locked: #4b3068;
 }
 
-/* 3. Base Styles */
+/* 3. Base Styles (Section 13.5 Viewport Defense with Subtle Radar Grid) */
 html,
 body {
   overflow-x: hidden;
@@ -58,9 +91,55 @@ body {
   min-height: 100dvh;
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 65%),
+    radial-gradient(circle at 50% 100%, rgba(255, 0, 220, 0.04) 0%, transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  background-attachment: fixed;
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Frosted glass container */
+.glass {
+  background: rgba(14, 21, 34, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+}
+
+/* Standard surface card */
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+}
+
+.card-elevated {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+}
+
+/* Affordable state - active green glow */
+.affordable {
+  border-color: var(--status-success) !important;
+  box-shadow: 0 0 10px rgba(57, 255, 138, 0.2);
+}
+
+/* Locked state */
+.locked {
+  border-color: var(--status-locked) !important;
+  opacity: 0.55;
+}
+
+/* Focus rings */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--border-accent);
+  outline-offset: 1px;
 }
 
 /* Default monospace elements to JetBrains Mono */

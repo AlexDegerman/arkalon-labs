@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="micro32-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="25%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#00f0ff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="#000000"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="6" fill="none" stroke="#00f0ff" stroke-width="0.5" stroke-opacity="0.3"/>
+  <g transform="translate(16, 16) scale(0.165) translate(-100, -102)">
+    <path
+      d="
+        M 46 56
+        L 74 32
+        L 74 132
+        L 154 132
+        L 154 160
+        L 146 160
+        L 146 172
+        L 134 172
+        L 134 160
+        L 126 160
+        L 126 172
+        L 114 172
+        L 114 160
+        L 106 160
+        L 106 172
+        L 94 172
+        L 94 160
+        L 46 160
+        Z
+      "
+      fill="url(#micro32-flow)"
+      stroke="#ff00dc"
+      stroke-width="2"
+    />
+  </g>
+</svg>

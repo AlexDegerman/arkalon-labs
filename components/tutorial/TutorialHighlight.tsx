@@ -17,7 +17,11 @@ export default function TutorialHighlight({ targetId, children }: Props) {
 
   return (
     <div
-      className={isHighlighted ? 'tutorial-highlight rounded' : undefined}
+      className={
+        isHighlighted
+          ? 'tutorial-highlight rounded-xl ring-2 ring-(--border-accent) shadow-[0_0_18px_rgba(0,240,255,0.45)]'
+          : undefined
+      }
       aria-live={isHighlighted ? 'polite' : undefined}
     >
       {children}

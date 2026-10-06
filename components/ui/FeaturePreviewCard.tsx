@@ -8,15 +8,15 @@ interface Props {
 
 export default function FeaturePreviewCard({ feature }: Props) {
   return (
-    <div className="glass rounded-lg border border-(--border-default) p-6 flex flex-col gap-3 max-w-sm mx-auto">
-      <div className="flex items-center gap-2">
+    <div className="card rounded-2xl border border-(--border-default) bg-(--bg-surface)/95 p-6 flex flex-col gap-3 max-w-sm mx-auto shadow-2xl backdrop-blur-md">
+      <div className="flex items-center gap-2.5 border-b border-(--border-default) pb-3">
         <span
-          className="text-(--status-locked) text-lg"
+          className="text-xl shrink-0 select-none text-(--status-locked)"
           aria-hidden="true"
         >
           &#x1F512;
         </span>
-        <h3 className="text-sm font-semibold text-(--text-primary)">
+        <h3 className="text-sm font-black font-mono uppercase tracking-widest text-(--text-primary)">
           {feature.label}
         </h3>
       </div>
@@ -25,8 +25,11 @@ export default function FeaturePreviewCard({ feature }: Props) {
         {feature.description}
       </p>
 
-      <div className="border-t border-(--border-default) pt-3">
-        <p className="text-xs text-(--text-accent) font-mono">
+      <div className="rounded-lg bg-(--bg-elevated) border border-(--border-accent)/30 p-3 mt-1">
+        <span className="text-[10px] font-mono uppercase tracking-widest text-(--text-secondary) block mb-0.5">
+          Unlock Directive:
+        </span>
+        <p className="text-xs font-mono font-bold text-(--text-accent)">
           {feature.unlockHint}
         </p>
       </div>

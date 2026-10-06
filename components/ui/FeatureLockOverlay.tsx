@@ -19,18 +19,18 @@ export default function FeatureLockOverlay({ feature, children }: Props) {
   }
 
   return (
-    <div className="relative w-full h-full min-h-50">
+    <div className="relative w-full h-full min-h-56 flex items-center justify-center">
       {/* Blurred background content */}
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none select-none"
-        style={{ filter: 'blur(3px)', opacity: 0.25 }}
+        style={{ filter: 'blur(5px)', opacity: 0.15 }}
         aria-hidden="true"
       >
         {children}
       </div>
 
-      {/* Lock overlay */}
-      <div className="absolute inset-0 flex items-center justify-center p-4 bg-(--bg-primary)/70">
+      {/* Lock Preview Card Overlay */}
+      <div className="relative z-10 p-4">
         <FeaturePreviewCard feature={feature} />
       </div>
     </div>

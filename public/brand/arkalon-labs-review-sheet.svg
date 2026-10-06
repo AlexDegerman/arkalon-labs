@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 780" width="100%" height="100%">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#101928" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="sheet-electric-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="25%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#00f0ff"/>
+      <stop offset="75%" stop-color="#0077b6"/>
+      <stop offset="100%" stop-color="#003d66"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1000" height="780" fill="#05070d"/>
+  <rect width="1000" height="780" fill="url(#grid)"/>
+
+  <!-- Header -->
+  <text x="50" y="55" font-family="monospace" font-size="14" font-weight="bold" fill="#00f0ff" letter-spacing="2">ARKALON LABORATORIES // ASSET SYSTEM REVIEW</text>
+  <text x="50" y="78" font-family="sans-serif" font-size="12" fill="#7c8ba1">SPEC: 40deg PARALLEL CUT - CANTILEVER L HULL - 3 BASAL PAWLS - SOLID BLACK APPS GROUND</text>
+  <line x1="50" y1="95" x2="950" y2="95" stroke="#1c2738" stroke-width="1.5"/>
+
+  <!-- Row 1: Primary Marks -->
+  <!-- 1. App Icon -->
+  <g transform="translate(50, 120)">
+    <text x="0" y="-12" font-family="monospace" font-size="11" fill="#94A3B8">APP ICON (512px)</text>
+    <rect width="160" height="160" fill="#000000" stroke="#00f0ff" stroke-width="1.5" stroke-opacity="0.3"/>
+    <g transform="translate(80, 80) scale(0.8) translate(-100, -102)">
+      <path d="M 46 56 L 74 32 L 74 132 L 154 132 L 154 160 L 146 160 L 146 172 L 134 172 L 134 160 L 126 160 L 126 172 L 114 172 L 114 160 L 106 160 L 106 172 L 94 172 L 94 160 L 46 160 Z" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="1"/>
+    </g>
+  </g>
+
+  <!-- 2. Dark Emblem Card -->
+  <g transform="translate(240, 120)">
+    <text x="0" y="-12" font-family="monospace" font-size="11" fill="#94A3B8">MASTER EMBLEM (SOLID)</text>
+    <rect width="160" height="160" fill="#000000" stroke="#1c2738" stroke-width="1.5"/>
+    <g transform="translate(80, 80) scale(0.8) translate(-100, -102)">
+      <path d="M 46 56 L 74 32 L 74 132 L 154 132 L 154 160 L 146 160 L 146 172 L 134 172 L 134 160 L 126 160 L 126 172 L 114 172 L 114 160 L 106 160 L 106 172 L 94 172 L 94 160 L 46 160 Z" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="1"/>
+    </g>
+  </g>
+
+  <!-- 3. Avatar -->
+  <g transform="translate(430, 120)">
+    <text x="0" y="-12" font-family="monospace" font-size="11" fill="#94A3B8">AVATAR (CIRCLE)</text>
+    <circle cx="80" cy="80" r="80" fill="#000000" stroke="#00f0ff" stroke-width="1.5" stroke-opacity="0.3"/>
+    <g transform="translate(80, 80) scale(0.75) translate(-100, -102)">
+      <path d="M 46 56 L 74 32 L 74 132 L 154 132 L 154 160 L 146 160 L 146 172 L 134 172 L 134 160 L 126 160 L 126 172 L 114 172 L 114 160 L 106 160 L 106 172 L 94 172 L 94 160 L 46 160 Z" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="1.2"/>
+    </g>
+  </g>
+
+  <!-- 4. Micro Favicons -->
+  <g transform="translate(630, 120)">
+    <text x="0" y="-12" font-family="monospace" font-size="11" fill="#94A3B8">MICRO SUITE</text>
+    <rect width="320" height="160" rx="16" fill="#0c111a" stroke="#1c2738" stroke-width="1.5"/>
+    
+    <!-- 64px -->
+    <g transform="translate(24, 48)">
+      <rect width="64" height="64" fill="#000000" stroke="#00f0ff" stroke-width="1" stroke-opacity="0.2"/>
+      <g transform="translate(32, 32) scale(0.33) translate(-100, -102)">
+        <path d="M 46 56 L 74 32 L 74 132 L 154 132 L 154 160 L 146 160 L 146 172 L 134 172 L 134 160 L 126 160 L 126 172 L 114 172 L 114 160 L 106 160 L 106 172 L 94 172 L 94 160 L 46 160 Z" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="2"/>
+      </g>
+      <text x="32" y="80" font-family="monospace" font-size="10" fill="#7c8ba1" text-anchor="middle">64px</text>
+    </g>
+
+    <!-- 32px -->
+    <g transform="translate(125, 64)">
+      <rect width="32" height="32" fill="#000000" stroke="#00f0ff" stroke-width="1" stroke-opacity="0.2"/>
+      <g transform="translate(16, 16) scale(0.16) translate(-100, -102)">
+        <path d="M 46 56 L 74 32 L 74 132 L 154 132 L 154 160 L 146 160 L 146 172 L 134 172 L 134 160 L 126 160 L 126 172 L 114 172 L 114 160 L 106 160 L 106 172 L 94 172 L 94 160 L 46 160 Z" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="3"/>
+      </g>
+      <text x="16" y="48" font-family="monospace" font-size="10" fill="#7c8ba1" text-anchor="middle">32px</text>
+    </g>
+
+    <!-- 16px -->
+    <g transform="translate(195, 72)">
+      <rect width="16" height="16" fill="#000000" stroke="#00f0ff" stroke-width="1" stroke-opacity="0.2"/>
+      <g transform="translate(8, 8) scale(0.08) translate(-100, -102)">
+        <path d="M 46 56 L 74 32 L 74 132 L 154 132 L 154 160 L 146 160 L 146 172 L 134 172 L 134 160 L 126 160 L 126 172 L 114 172 L 114 160 L 106 160 L 106 172 L 94 172 L 94 160 L 46 160 Z" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="5"/>
+      </g>
+      <text x="8" y="32" font-family="monospace" font-size="10" fill="#7c8ba1" text-anchor="middle">16px</text>
+    </g>
+  </g>
+
+  <!-- Row 2: In-Context App Header Lockup -->
+  <g transform="translate(50, 340)">
+    <text x="0" y="-12" font-family="monospace" font-size="11" fill="#94A3B8">HORIZONTAL HEADER LOCKUP (COMMAND BAR)</text>
+    <rect width="900" height="90" rx="16" fill="#0c111a" stroke="#1c2738" stroke-width="1.5"/>
+    <g transform="translate(48, 45) scale(0.35) translate(-100, -102)">
+      <path d="M 46 56 L 74 32 L 74 132 L 154 132 L 154 160 L 146 160 L 146 172 L 134 172 L 134 160 L 126 160 L 126 172 L 114 172 L 114 160 L 106 160 L 106 172 L 94 172 L 94 160 L 46 160 Z" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="1.5"/>
+    </g>
+    <text x="96" y="54" font-family="'JetBrains Mono', monospace" font-weight="900" font-size="24" letter-spacing="3.5" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="0.5">ARKALON LABORATORIES</text>
+  </g>
+
+  <!-- Row 3: Wordmark & Spec Summary -->
+  <g transform="translate(50, 480)">
+    <text x="0" y="-12" font-family="monospace" font-size="11" fill="#94A3B8">STANDALONE WORDMARK</text>
+    <rect width="440" height="110" rx="16" fill="#0c111a" stroke="#1c2738" stroke-width="1.5"/>
+    <text x="32" y="64" font-family="'JetBrains Mono', monospace" font-weight="900" font-size="22" letter-spacing="3" fill="url(#sheet-electric-flow)" stroke="#ff00dc" stroke-width="0.5">ARKALON LABORATORIES</text>
+  </g>
+
+  <g transform="translate(510, 480)">
+    <text x="0" y="-12" font-family="monospace" font-size="11" fill="#94A3B8">SPECIFICATION METRICS</text>
+    <rect width="440" height="240" rx="16" fill="#080b10" stroke="#1c2738" stroke-width="1.5"/>
+    
+    <text x="24" y="36" font-family="monospace" font-size="12" fill="#00f0ff">- CHASSIS SILHOUETTE:</text>
+    <text x="210" y="36" font-family="monospace" font-size="12" fill="#7c8ba1">Cantilever L (108px x 140px)</text>
+
+    <text x="24" y="68" font-family="monospace" font-size="12" fill="#00f0ff">- CUT-FACE ANGLE:</text>
+    <text x="210" y="68" font-family="monospace" font-size="12" fill="#7c8ba1">40.0deg parallel slice (dx=28, dy=24)</text>
+
+    <text x="24" y="100" font-family="monospace" font-size="12" fill="#00f0ff">- BASAL PAWLS:</text>
+    <text x="210" y="100" font-family="monospace" font-size="12" fill="#7c8ba1">3 square-cut orthogonal teeth (12px)</text>
+
+    <text x="24" y="132" font-family="monospace" font-size="12" fill="#00f0ff">- COLOR SPECTRUM:</text>
+    <text x="210" y="132" font-family="monospace" font-size="12" fill="#7c8ba1">#00f0ff -> #ffffff -> #0077b6</text>
+
+    <text x="24" y="164" font-family="monospace" font-size="12" fill="#00f0ff">- ACCENT IONIZATION:</text>
+    <text x="210" y="164" font-family="monospace" font-size="12" fill="#7c8ba1">#ff00dc magenta stroke border</text>
+
+    <text x="24" y="196" font-family="monospace" font-size="12" fill="#00f0ff">- CORNER PROTECTION:</text>
+    <text x="210" y="196" font-family="monospace" font-size="12" fill="#7c8ba1">Full-bleed #000000 solid backfill</text>
+  </g>
+</svg>

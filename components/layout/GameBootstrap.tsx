@@ -31,17 +31,20 @@ export default function GameBootstrap() {
     prestigeActive: prestigeAnimating,
     operationActive: activeAnomalyType?.startsWith('operation_') ?? false
   })
-  
-  // Duplicate tab overlay
+
   if (isDuplicate) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--bg-primary)">
-        <div className="glass rounded-lg border border-(--border-default) p-8 max-w-sm mx-4 text-center">
-          <p className="text-sm font-mono text-(--text-accent) mb-2">
-            Arkalon Laboratories is running in another tab.
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--bg-primary)/95 backdrop-blur-md">
+        <div className="card rounded-2xl border border-(--border-default) bg-(--bg-surface) p-8 max-w-sm mx-4 text-center shadow-2xl flex flex-col gap-3">
+          <span className="text-3xl select-none" aria-hidden="true">
+            ⚠️
+          </span>
+          <p className="text-sm font-mono font-bold text-(--text-accent) uppercase tracking-wider">
+            Duplicate Session Detected
           </p>
-          <p className="text-xs text-(--text-secondary)">
-            Close this tab or switch to the other one to continue.
+          <p className="text-xs text-(--text-secondary) leading-relaxed">
+            Arkalon Laboratories is actively running in another browser tab.
+            Please close this window to avoid telemetry desynchronization.
           </p>
         </div>
       </div>

@@ -28,64 +28,66 @@ export default function QueueStrip() {
 
   if (queue.length === 0) {
     return (
-      <div className="flex items-center gap-2 p-2 border border-dashed border-(--border-default) rounded">
-        <p className="text-xs font-mono text-(--text-secondary)">
-          Queue empty - click a node to queue it ({queueMax} slots)
+      <div className="flex items-center justify-between p-2.5 border border-dashed border-(--border-default) rounded-xl bg-(--bg-surface)/40">
+        <p className="text-xs font-mono text-(--text-secondary)/70">
+          Research queue empty · Click available nodes to queue
         </p>
+        <span className="text-[10px] font-mono text-(--text-secondary)/60 font-bold uppercase">
+          0/{queueMax} Slots
+        </span>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-          Queue ({queue.length}/{queueMax})
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between mb-0.5">
+        <span className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
+          Study Queue ({queue.length}/{queueMax})
         </span>
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         {queue.map((nodeId, idx) => {
           const node = RESEARCH_NODE_MAP[nodeId]
           if (!node) return null
           return (
             <div
               key={nodeId}
-              className="flex items-center gap-2 card rounded px-2 py-1.5"
+              className="flex items-center gap-2 card rounded-lg px-2.5 py-1.5 border border-(--border-default) bg-(--bg-surface) hover:border-(--border-default)/90 transition-colors"
             >
-              <span className="text-xs font-mono text-(--text-secondary) w-4 shrink-0">
+              <span className="text-xs font-mono font-bold text-(--text-secondary) w-4 shrink-0">
                 {idx + 1}.
               </span>
-              <span className="text-xs text-(--text-primary) flex-1 truncate">
+              <span className="text-xs text-(--text-primary) font-medium flex-1 truncate">
                 {node.label}
               </span>
-              <span className="chip border-(--border-default) text-(--text-secondary) shrink-0 text-[0.6rem]">
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) shrink-0">
                 {node.branch.slice(0, 1).toUpperCase()}
                 {node.tier > 0 ? node.tier : 'inf'}
               </span>
-              <div className="flex items-center gap-0.5 shrink-0">
+              <div className="flex items-center gap-1 shrink-0 font-mono">
                 <button
                   onClick={() => handleMoveUp(nodeId)}
                   disabled={idx === 0}
-                  className="w-5 h-5 flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent) rounded text-xs"
-                  aria-label={`Move ${node.label} up in queue`}
+                  className="w-6 h-6 flex items-center justify-center rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary) hover:text-(--text-primary) disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer text-xs"
+                  aria-label={`Move ${node.label} up`}
                 >
                   ^
                 </button>
                 <button
                   onClick={() => handleMoveDown(nodeId)}
                   disabled={idx === queue.length - 1}
-                  className="w-5 h-5 flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) disabled:opacity-30 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent) rounded text-xs"
-                  aria-label={`Move ${node.label} down in queue`}
-                  style={{ transform: 'rotate(180deg)' }}
+                  className="w-6 h-6 flex items-center justify-center rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary) hover:text-(--text-primary) disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer text-xs"
+                  aria-label={`Move ${node.label} down`}
                 >
                   ^
                 </button>
                 <button
                   onClick={() => handleRemove(nodeId)}
-                  className="w-5 h-5 flex items-center justify-center text-(--text-secondary) hover:text-[#ef4444] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent) rounded text-xs"
-                  aria-label={`Remove ${node.label} from queue`}
+                  className="w-6 h-6 flex items-center justify-center rounded bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 cursor-pointer text-xs font-bold"
+                  aria-label={`Remove ${node.label}`}
                 >
-                  x
+                  X
                 </button>
               </div>
             </div>

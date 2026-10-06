@@ -16,7 +16,7 @@ import SettingsButton from '@/components/ui/SettingsButton'
 
 export default function GamePage() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-(--bg-primary)">
+    <div className="flex flex-col h-screen overflow-hidden bg-(--bg-primary) text-(--text-primary)">
       <FacilityAlertQueue />
       <WelcomeModal />
       <UpdateModal />
@@ -25,28 +25,36 @@ export default function GamePage() {
       <SettingsPanel />
 
       {/* PC header */}
-      <header className="hidden lg:flex items-center justify-between px-4 py-2 border-b border-(--border-default) bg-(--bg-surface) shrink-0">
-        <div className="flex items-center gap-3">
-          <span className="font-mono text-xs text-(--text-accent) uppercase tracking-widest">
-            Arkalon Laboratories
+      <header className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-(--border-default) bg-(--bg-surface)/95 backdrop-blur-md shrink-0 z-20">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          <img
+            src="/brand/arkalon-labs-emblem.svg"
+            alt="Arkalon Laboratories"
+            width={24}
+            height={24}
+            className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 select-none rounded"
+          />
+          <span className="font-mono text-xs sm:text-sm font-black uppercase tracking-widest title-labs truncate">
+            <span className="hidden sm:inline">Arkalon Laboratories</span>
+            <span className="sm:hidden">Arkalon Labs</span>
           </span>
-          <span className="text-(--border-default)">//</span>
-          <span className="font-mono text-xs text-(--text-secondary)">
+          <span className="hidden md:inline text-(--border-default)">//</span>
+          <span className="hidden md:inline font-mono text-xs text-(--text-secondary) truncate">
             Primary Command Engine
           </span>
         </div>
         <SettingsButton />
       </header>
 
-      {/* PC RP banner (below header, above columns) */}
-      <div className="hidden lg:block">
+      {/* Desktop RP banner & quick stat pill strip */}
+      <div className="hidden lg:block shrink-0">
         <RPBanner />
         <MiniStatStrip />
       </div>
 
-      {/* Three-column layout - desktop only */}
+      {/* PC Widescreen: 40% / 28% / 32% three-column grid */}
       <div
-        className="hidden lg:grid flex-1 overflow-hidden min-h-0"
+        className="hidden lg:grid flex-1 overflow-hidden min-h-0 mx-auto w-full max-w-[1920px]"
         style={{ gridTemplateColumns: '40% 28% 32%' }}
       >
         <LeftColumn />
@@ -54,6 +62,7 @@ export default function GamePage() {
         <RightColumn />
       </div>
 
+      {/* Mobile Master Screen (< 1024px) */}
       <MobileScreen />
       <MobileNav />
 

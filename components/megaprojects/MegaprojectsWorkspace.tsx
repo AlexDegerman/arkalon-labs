@@ -18,10 +18,10 @@ export default function MegaprojectsWorkspace() {
   const effectivePPS = activeMegaprojectId ? pps - allocatedPPS : pps
 
   return (
-    <div className="flex flex-col gap-3 p-3 h-full overflow-y-auto scrollbar-dark">
+    <div className="flex flex-col gap-3 p-3 sm:p-4 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
       {/* Header */}
-      <div className="flex flex-col gap-1">
-        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
+      <div className="flex flex-col gap-0.5 px-1">
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
           Megaprojects
         </p>
         <p className="text-[0.65rem] text-(--text-secondary)">
@@ -30,22 +30,22 @@ export default function MegaprojectsWorkspace() {
         </p>
       </div>
 
-      {/* Active project summary */}
+      {/* Active telemetry summary */}
       {activeMegaprojectId && (
-        <div className="glass rounded px-3 py-2 flex items-center justify-between">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[0.65rem] font-mono text-(--text-secondary)">
-              Effective RP/s
+        <div className="card rounded-xl p-3 flex items-center justify-between border border-(--border-accent)/40 bg-linear-to-r from-(--border-accent)/10 via-(--bg-surface) to-(--bg-surface)">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-mono text-(--text-secondary) uppercase">
+              Effective Surplus RP/s
             </span>
-            <span className="text-xs font-mono text-(--text-primary)">
+            <span className="text-xs sm:text-sm font-mono font-bold text-(--text-primary)">
               {formatPoints(effectivePPS)}/s
             </span>
           </div>
-          <div className="flex flex-col gap-0.5 text-right">
-            <span className="text-[0.65rem] font-mono text-(--text-secondary)">
+          <div className="flex flex-col text-right">
+            <span className="text-[10px] font-mono text-(--text-secondary) uppercase">
               Allocated
             </span>
-            <span className="text-xs font-mono text-(--text-accent)">
+            <span className="text-xs sm:text-sm font-mono font-black text-(--text-accent)">
               {formatPoints(allocatedPPS)}/s ({allocationPercent}%)
             </span>
           </div>
@@ -54,7 +54,7 @@ export default function MegaprojectsWorkspace() {
 
       <div className="section-divider" />
 
-      {/* Megaproject cards */}
+      {/* Megaprojects list */}
       <div className="flex flex-col gap-3">
         {MEGAPROJECTS.map((def) => (
           <MegaprojectCard key={def.id} def={def} />

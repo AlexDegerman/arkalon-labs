@@ -11,23 +11,19 @@ const BULK_LABELS: Record<string | number, string> = {
   1: 'x1',
   10: 'x10',
   100: 'x100',
-  max: 'Max'
+  max: 'MAX'
 }
 
 export default function GeneratorList() {
   const [bulkAmount, setBulkAmount] = useState<BulkBuyAmount>(1)
 
   // Determine which generators are visible
-  // Generators above the current era threshold are shown as locked placeholders
   function isGeneratorVisible(index: number): boolean {
-    // Always show tiers 1-5
     if (index < 5) return true
 
-    // Show if player has ever owned one, or can plausibly reach it
     const gen = useGameStore.getState().generators[index]
     if (gen.quantity > 0n) return true
 
-    // Show next two tiers beyond what's been purchased
     const highestOwned = GENERATORS.reduce((max, _, i) => {
       const q = useGameStore.getState().generators[i].quantity
       return q > 0n ? i : max
@@ -37,32 +33,33 @@ export default function GeneratorList() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Bulk buy selector - sticky sub-header */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-(--border-default) bg-(--bg-surface) shrink-0">
-        <span className="text-xs font-mono text-(--text-secondary) mr-2">
-          Buy:
+    <div className="flex flex-col h-full bg-(--bg-primary)/40">
+      {/* Bulk buy selector bar */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-(--border-default) bg-(--bg-surface)/95 shrink-0">
+        <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-(--text-secondary)">
+          PURCHASE MODE
         </span>
-        {([...BULK_BUY_OPTIONS, 'max'] as BulkBuyAmount[]).map((opt) => (
-          <button
-            key={String(opt)}
-            onClick={() => setBulkAmount(opt)}
-            className={[
-              'px-2 py-0.5 text-xs font-mono rounded border transition-colors',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
-              bulkAmount === opt
-                ? 'border-(--border-accent) text-(--text-accent) bg-(--bg-elevated)'
-                : 'border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary)'
-            ].join(' ')}
-            aria-pressed={bulkAmount === opt}
-          >
-            {BULK_LABELS[String(opt)]}
-          </button>
-        ))}
+        <div className="flex items-center gap-1 p-0.5 rounded-lg border border-(--border-default) bg-(--bg-elevated)">
+          {([...BULK_BUY_OPTIONS, 'max'] as BulkBuyAmount[]).map((opt) => (
+            <button
+              key={String(opt)}
+              onClick={() => setBulkAmount(opt)}
+              className={[
+                'px-2.5 py-1 text-xs font-mono font-bold rounded transition-all cursor-pointer select-none',
+                bulkAmount === opt
+                  ? 'bg-(--border-accent) text-[#080c14] shadow-[0_0_10px_rgba(0,240,255,0.4)]'
+                  : 'text-(--text-secondary) hover:text-(--text-primary)'
+              ].join(' ')}
+              aria-pressed={bulkAmount === opt}
+            >
+              {BULK_LABELS[String(opt)]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Scrollable generator list */}
-      <div className="flex-1 overflow-y-auto scrollbar-dark p-2 flex flex-col gap-2">
+      <div className="flex-1 overflow-y-auto scrollbar-dark p-2 sm:p-2.5 flex flex-col gap-2">
         {GENERATORS.map((def, index) => {
           if (!isGeneratorVisible(index)) return null
           return (

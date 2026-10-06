@@ -35,27 +35,27 @@ function AchievementBadge({ achievement, earned }: AchievementBadgeProps) {
   return (
     <div
       className={[
-        'card rounded-lg p-2.5 flex flex-col gap-1 transition-colors',
-        earned ? 'border-(--status-success)' : 'opacity-50'
+        'card rounded-xl p-3 flex flex-col gap-1 border transition-all duration-150',
+        earned
+          ? 'border-(--border-accent)/50 bg-(--border-accent)/5 shadow-[0_0_12px_rgba(0,240,255,0.08)]'
+          : 'border-(--border-default) bg-(--bg-surface)/40 opacity-40'
       ].join(' ')}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <span
           className={[
-            'text-sm',
-            earned
-              ? 'text-(--status-success)'
-              : 'text-(--status-locked)'
+            'text-sm font-bold select-none',
+            earned ? 'text-(--border-accent)' : 'text-(--text-secondary)'
           ].join(' ')}
           aria-hidden="true"
         >
           {earned ? '★' : '☆'}
         </span>
-        <span className="text-xs font-semibold text-(--text-primary) truncate">
+        <span className="text-xs font-bold text-(--text-primary) truncate">
           {achievement.name}
         </span>
       </div>
-      <p className="text-[0.65rem] text-(--text-secondary) leading-snug">
+      <p className="text-[11px] text-(--text-secondary) leading-snug">
         {achievement.description}
       </p>
     </div>
@@ -95,8 +95,10 @@ export default function AchievementsWorkspace() {
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
             className={[
-              'workspace-tab shrink-0',
-              activeCategory === cat.id ? 'workspace-tab-active' : ''
+              'px-3 py-2 text-xs font-mono font-bold uppercase tracking-wider whitespace-nowrap transition-all cursor-pointer border-b-2',
+              activeCategory === cat.id
+                ? 'border-(--border-accent) text-(--border-accent) bg-(--border-accent)/10'
+                : 'border-transparent text-(--text-secondary) hover:text-(--text-primary)'
             ].join(' ')}
           >
             {cat.label}
@@ -104,8 +106,7 @@ export default function AchievementsWorkspace() {
         ))}
       </div>
 
-      {/* Achievement grid */}
-      <div className="flex-1 overflow-y-auto scrollbar-dark p-3">
+      <div className="flex-1 overflow-y-auto scrollbar-dark p-3 sm:p-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {filtered.map((achievement) => (
             <AchievementBadge

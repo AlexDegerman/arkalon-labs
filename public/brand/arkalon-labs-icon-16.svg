@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <defs>
+    <linearGradient id="micro16-flow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#0077b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="16" height="16" fill="#000000"/>
+  <g transform="translate(8, 8) scale(0.082) translate(-100, -102)">
+    <path
+      d="
+        M 46 56
+        L 74 32
+        L 74 132
+        L 154 132
+        L 154 160
+        L 146 160
+        L 146 172
+        L 134 172
+        L 134 160
+        L 126 160
+        L 126 172
+        L 114 172
+        L 114 160
+        L 106 160
+        L 106 172
+        L 94 172
+        L 94 160
+        L 46 160
+        Z
+      "
+      fill="url(#micro16-flow)"
+      stroke="#ff00dc"
+      stroke-width="4"
+    />
+  </g>
+</svg>

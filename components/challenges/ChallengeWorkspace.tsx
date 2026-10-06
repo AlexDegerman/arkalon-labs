@@ -7,9 +7,9 @@ import { CHALLENGE_DISPLAY } from '@/constants/challenges'
 import type { ChallengeCategory } from '@/constants/challenges'
 
 const CATEGORY_TABS: { id: ChallengeCategory; label: string }[] = [
-  { id: 'standard', label: 'Standard' },
-  { id: 'advanced', label: 'Advanced' },
-  { id: 'extreme', label: 'Extreme' }
+  { id: 'standard', label: 'Standard (T1)' },
+  { id: 'advanced', label: 'Advanced (T2)' },
+  { id: 'extreme', label: 'Extreme (T3)' }
 ]
 
 export default function ChallengeWorkspace() {
@@ -25,7 +25,6 @@ export default function ChallengeWorkspace() {
     (c) => c.category === activeCategory
   )
 
-  // Category unlock state
   const categoryUnlocked: Record<ChallengeCategory, boolean> = {
     standard: tier1Done,
     advanced: tier2Done,
@@ -33,49 +32,43 @@ export default function ChallengeWorkspace() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Active challenge banner */}
+    <div className="flex flex-col h-full overflow-hidden bg-(--bg-primary)/40">
+      {/* Active challenge persistent alert bar */}
       {activeChallengeId && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-(--border-accent)/10 border-b border-(--border-accent) shrink-0">
-          <span className="status-dot bg-(--border-accent) dot-pulse" />
-          <span className="text-xs font-mono text-(--text-accent)">
-            Challenge active:{' '}
-            <span className="font-bold">
+        <div className="flex items-center gap-2 px-3 py-2 bg-(--border-accent)/10 border-b border-(--border-accent) shrink-0 font-mono text-xs">
+          <span className="w-2 h-2 rounded-full bg-(--border-accent) animate-pulse shrink-0" />
+          <span className="text-(--text-accent) truncate">
+            Active Constraint:{' '}
+            <strong className="text-white">
               {CHALLENGE_DISPLAY.find((c) => c.id === activeChallengeId)
                 ?.name ?? activeChallengeId}
-            </span>
+            </strong>
           </span>
         </div>
       )}
 
-      {/* Category tab bar */}
+      {/* Category Selection Tabs */}
       <div
-        className="flex border-b border-(--border-default) shrink-0"
+        className="grid grid-cols-3 gap-1 p-1 bg-(--bg-surface) border-b border-(--border-default) shrink-0"
         role="tablist"
-        aria-label="Challenge categories"
       >
         {CATEGORY_TABS.map((tab) => {
           const unlocked = categoryUnlocked[tab.id]
+          const isActive = activeCategory === tab.id
           return (
             <button
               key={tab.id}
               role="tab"
-              aria-selected={activeCategory === tab.id}
+              aria-selected={isActive}
               onClick={() => setActiveCategory(tab.id)}
               className={[
-                'workspace-tab',
-                activeCategory === tab.id ? 'workspace-tab-active' : '',
-                !unlocked ? 'workspace-tab-locked' : ''
+                'py-1.5 text-xs font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none text-center',
+                isActive
+                  ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent)'
+                  : !unlocked
+                    ? 'border-transparent text-(--text-secondary)/40 opacity-40 cursor-not-allowed'
+                    : 'border-transparent text-(--text-secondary) hover:text-(--text-primary)'
               ].join(' ')}
-              title={
-                !unlocked
-                  ? tab.id === 'advanced'
-                    ? 'Complete your first Timeline Severance to unlock'
-                    : tab.id === 'extreme'
-                      ? 'Complete your first Singular Synthesis to unlock'
-                      : undefined
-                  : undefined
-              }
             >
               {!unlocked && (
                 <span className="mr-1 text-[0.6rem]" aria-hidden="true">
@@ -88,11 +81,11 @@ export default function ChallengeWorkspace() {
         })}
       </div>
 
-      {/* Challenge list */}
-      <div className="flex-1 overflow-y-auto scrollbar-dark p-3 flex flex-col gap-3">
+      {/* Challenge List */}
+      <div className="flex-1 overflow-y-auto scrollbar-dark p-3 sm:p-4 flex flex-col gap-3">
         {!categoryUnlocked[activeCategory] ? (
-          <div className="flex items-center justify-center py-8">
-            <p className="text-xs font-mono text-(--text-secondary) text-center">
+          <div className="card rounded-xl p-8 border border-dashed border-(--border-default) bg-(--bg-surface)/40 text-center">
+            <p className="text-xs font-mono text-(--text-secondary)">
               {activeCategory === 'advanced'
                 ? 'Complete your first Timeline Severance to unlock Advanced Challenges.'
                 : 'Complete your first Singular Synthesis to unlock Extreme Challenges.'}

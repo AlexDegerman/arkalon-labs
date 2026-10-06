@@ -22,7 +22,7 @@ export default function BranchTabs({
 }: Props) {
   return (
     <div
-      className="flex border-b border-(--border-default)"
+      className="grid grid-cols-4 gap-1 p-1 bg-(--bg-surface) border border-(--border-default) rounded-xl shrink-0"
       role="tablist"
       aria-label="Research branches"
     >
@@ -37,20 +37,19 @@ export default function BranchTabs({
             aria-selected={isActive}
             onClick={() => onBranchChange(branch.id)}
             className={[
-              'flex-1 flex flex-col items-center gap-0.5 py-2 px-1 text-xs font-mono border-b-2 transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--border-accent)',
+              'flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg border font-mono transition-all cursor-pointer select-none',
               isActive
-                ? 'border-(--border-accent) text-(--text-accent)'
-                : 'border-transparent text-(--text-secondary) hover:text-(--text-primary)'
+                ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent) shadow-[0_0_10px_rgba(0,240,255,0.2)]'
+                : 'border-transparent text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-elevated)'
             ].join(' ')}
           >
-            <span className="font-bold text-sm">{branch.shortLabel}</span>
-            <span className="hidden sm:inline text-[0.65rem] opacity-80">
+            <span className="font-black text-sm">{branch.shortLabel}</span>
+            <span className="text-[10px] hidden sm:inline tracking-wider font-bold">
               {branch.label}
             </span>
-            {count > 0 && (
-              <span className="text-[0.6rem] opacity-60">{count}/10</span>
-            )}
+            <span className="text-[9px] text-(--text-secondary)/70">
+              {count}/10
+            </span>
           </button>
         )
       })}

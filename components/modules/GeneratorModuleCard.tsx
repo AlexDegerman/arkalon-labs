@@ -9,8 +9,7 @@ import {
   getModuleEffectLabel,
   MODULE_DEFINITIONS
 } from '@/lib/moduleDefs'
-import { MODULE_SYNERGIES } from '@/constants/generators'
-import { GENERATORS } from '@/constants/generators'
+import { MODULE_SYNERGIES, GENERATORS } from '@/constants/generators'
 import { getSynergyBonusSummary } from '@/lib/productionEngine'
 import { formatPoints } from '@/lib/format'
 import type { ModuleType } from '@/types/game'
@@ -45,13 +44,13 @@ const ModuleTrack = memo(function ModuleTrack({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 p-2 rounded-lg bg-(--bg-elevated)/60 border border-(--border-default)/70">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold text-(--text-primary)">
+        <span className="text-xs font-bold text-(--text-primary)">
           {def.label}
         </span>
-        <span className="text-xs font-mono text-(--text-secondary)">
-          {currentLevel}/{levelCap}
+        <span className="text-[10px] font-mono font-bold text-(--text-secondary)">
+          Lv{currentLevel}/{levelCap}
         </span>
       </div>
 
@@ -61,28 +60,25 @@ const ModuleTrack = memo(function ModuleTrack({
         height={3}
       />
 
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[0.65rem] text-(--text-secondary)">
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <span className="text-[11px] text-(--text-secondary) font-mono">
           {effectLabel}
         </span>
-        {!atCap && (
+        {!atCap ? (
           <button
             onClick={handleUpgrade}
             disabled={!canAfford}
             className={[
-              'px-2 py-0.5 text-[0.65rem] font-mono rounded border shrink-0 transition-colors',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
+              'px-2 py-0.5 text-[10px] font-mono font-bold rounded border transition-all cursor-pointer select-none',
               canAfford
-                ? 'border-(--status-success) text-(--status-success) hover:bg-(--status-success) hover:text-black'
-                : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
+                ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) hover:bg-(--status-success) hover:text-black'
+                : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
-            aria-label={`Upgrade ${def.label} module - costs ${formatPoints(cost)} RP`}
           >
             {formatPoints(cost)} RP
           </button>
-        )}
-        {atCap && (
-          <span className="text-[0.65rem] font-mono text-(--status-success)">
+        ) : (
+          <span className="text-[10px] font-mono font-bold text-(--status-success) px-1.5 py-0.2 rounded bg-(--status-success)/10 border border-(--status-success)/30">
             MAX
           </span>
         )}
@@ -119,33 +115,30 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
   const MODULE_TYPES: ModuleType[] = ['efficiency', 'cost_reduction', 'synergy']
 
   return (
-    <div className="card rounded-lg p-3 flex flex-col gap-3">
-      {/* Generator header */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-bold text-(--text-primary)">
+    <div className="card rounded-xl p-3 sm:p-3.5 flex flex-col gap-2.5 border border-(--border-default) bg-(--bg-surface)">
+      <div className="flex items-center justify-between border-b border-(--border-default)/50 pb-2">
+        <span className="text-xs sm:text-sm font-bold text-(--text-primary)">
           #{String(generatorIndex + 1).padStart(2, '0')} {def.name}
         </span>
-        <span className="chip border-(--border-default) text-(--text-secondary) text-[0.6rem]">
-          x{gen.quantity.toString()}
+        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary)">
+          x{gen.quantity.toString()} Owned
         </span>
       </div>
 
-      {/* Synergy target info */}
       {synergyTargets.length > 0 && gen.synergyLevel > 0 && (
-        <div className="text-[0.65rem] text-(--text-secondary) bg-(--bg-elevated) rounded px-2 py-1 flex flex-col gap-0.5">
+        <div className="text-[11px] font-mono text-(--text-secondary) bg-(--bg-elevated) rounded-lg p-2 border border-(--border-default)/70 flex flex-col gap-1">
           {synergyTargets.map((t) => {
             const bonus = getSynergyBonusSummary(t.targetIndex, store).find(
               (e) => e.synergyName === t.name
             )?.bonus
             return (
               <span key={t.name}>
-                <span className="text-(--text-accent)">{t.name}:</span> boosts{' '}
-                {t.targetName}
+                <strong className="text-(--text-accent)">{t.name}:</strong>
+                {' '}
                 {bonus !== undefined && bonus > 0 && (
-                  <span className="text-(--status-success)">
-                    {' '}
+                  <strong className="text-(--status-success)">
                     (+{bonus.toFixed(1)}%)
-                  </span>
+                  </strong>
                 )}
               </span>
             )
@@ -153,8 +146,7 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
         </div>
       )}
 
-      {/* Module tracks */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {MODULE_TYPES.map((type) => (
           <ModuleTrack
             key={type}

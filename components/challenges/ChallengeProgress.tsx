@@ -28,11 +28,9 @@ export default function ChallengeProgress({
 
   if (currentTiers >= maxTiers) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="chip border-(--status-success) text-(--status-success) text-[0.6rem]">
-          ALL TIERS COMPLETE
-        </span>
-      </div>
+      <span className="text-[10px] font-mono font-bold text-(--status-success)">
+        ALL TIERS COMPLETE
+      </span>
     )
   }
 
@@ -42,32 +40,35 @@ export default function ChallengeProgress({
       : 0
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center justify-between text-[0.65rem] font-mono">
-        <span className="text-(--text-secondary)">Tier {nextTier} target</span>
+    <div className="flex flex-col gap-1 font-mono text-[10px]">
+      <div className="flex items-center justify-between">
+        <span className="text-(--text-secondary)">Target Goal:</span>
         <span
           className={
-            isActive ? 'text-(--text-accent)' : 'text-(--text-secondary)'
+            isActive
+              ? 'text-(--text-accent) font-bold'
+              : 'text-(--text-secondary)'
           }
         >
-          {formatPoints(target)} RP
+          {formatPoints(target)} RP{' '}
           {hasAccelerant && (
-            <span className="text-(--status-success) ml-1">(-25%)</span>
+            <span className="text-(--status-success)">(-25%)</span>
           )}
         </span>
       </div>
+
       {isActive && (
-        <>
-          <ProgressBar progress={progress} height={3} />
-          <div className="flex items-center justify-between text-[0.6rem] font-mono">
-            <span className="text-(--text-secondary)">
+        <div className="flex flex-col gap-1 mt-0.5">
+          <ProgressBar progress={progress} height={4} />
+          <div className="flex items-center justify-between text-(--text-secondary)">
+            <span>
               {formatPoints(lifetimePoints)} / {formatPoints(target)}
             </span>
-            <span className="text-(--text-accent)">
+            <span className="text-(--text-accent) font-bold">
               {Math.round(progress * 100)}%
             </span>
           </div>
-        </>
+        </div>
       )}
     </div>
   )

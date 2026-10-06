@@ -23,13 +23,13 @@ export default function TutorialArrow({
   return (
     <div
       className={[
-        'flex items-center justify-center pointer-events-none',
-        direction === 'above' ? 'mb-1' : 'mt-1'
+        'flex items-center justify-center pointer-events-none z-30 select-none',
+        direction === 'above' ? 'mb-1.5' : 'mt-1.5'
       ].join(' ')}
       aria-hidden="true"
     >
       <span
-        className="tutorial-arrow text-(--border-accent) text-lg font-bold select-none"
+        className="tutorial-arrow text-(--border-accent) text-xl font-black drop-shadow-[0_0_8px_rgba(0,240,255,0.8)]"
         style={{
           transform: direction === 'below' ? 'rotate(180deg)' : undefined
         }}

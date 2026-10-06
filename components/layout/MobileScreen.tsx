@@ -49,8 +49,8 @@ function MobileArkalonTab() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4 flex flex-col items-center gap-6 scrollbar-dark">
-      <div className="mt-6">
+    <div className="h-full overflow-y-auto p-4 flex flex-col items-center justify-between gap-4 scrollbar-dark">
+      <div className="my-auto flex flex-col items-center gap-2">
         <ArkalonSphere
           state={sphereState}
           interactive={interactiveArkalon}
@@ -69,27 +69,27 @@ export default function MobileScreen() {
   const { mobileTab, moreDrawerOpen, setMoreDrawerOpen } = useActiveTab()
 
   return (
-    <div className="lg:hidden flex-1 overflow-hidden relative min-h-0 flex flex-col">
-      {/* Mobile RP banner - always visible */}
+    <div className="lg:hidden flex-1 overflow-hidden relative min-h-0 flex flex-col bg-(--bg-primary)">
+      {/* Mobile persistent RP banner & stat strip */}
       <RPBanner />
       <MiniStatStrip />
 
-      {/* Mobile anomaly bar - shown above tab content when active */}
+      {/* Active Anomaly Banner */}
       <MobileAnomalyBar />
 
-      {/* Tab content */}
+      {/* Screen Views */}
       <div className="flex-1 overflow-hidden relative min-h-0">
-        {/* Lab tab */}
+        {/* Lab View */}
         {mobileTab === 'lab' && (
           <div className="h-full flex flex-col min-h-0">
             <GeneratorList />
           </div>
         )}
 
-        {/* Arkalon tab */}
+        {/* Core Telemetry View */}
         {mobileTab === 'arkalon' && <MobileArkalonTab />}
 
-        {/* Research tab - workspace panel with tab bar */}
+        {/* Research View */}
         {mobileTab === 'research' && (
           <div className="h-full flex flex-col min-h-0">
             <WorkspaceTabBar />
@@ -97,14 +97,14 @@ export default function MobileScreen() {
           </div>
         )}
 
-        {/* Relics tab */}
+        {/* Relics View */}
         {mobileTab === 'relics' && (
           <div className="h-full min-h-0">
             <RelicsFeatureWrapper />
           </div>
         )}
 
-        {/* More drawer */}
+        {/* More Drawer */}
         {moreDrawerOpen && (
           <MobileMoreDrawer onClose={() => setMoreDrawerOpen(false)} />
         )}

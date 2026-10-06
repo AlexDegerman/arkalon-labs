@@ -15,7 +15,7 @@ function MiniStatStrip() {
   const omniSpars = useGameStore((s) => s.omniSpars)
 
   return (
-    <div className="flex items-center gap-3 px-3 py-1.5 border-b border-(--border-default) bg-(--bg-surface) shrink-0 overflow-x-auto scrollbar-dark">
+    <div className="flex items-center gap-3 px-3 sm:px-4 py-1.5 border-b border-(--border-default) bg-(--bg-surface)/95 shrink-0 overflow-x-auto scrollbar-none">
       <StatItem label="Gen" value={formatPoints(BigInt(totalGenerators))} />
       <StatDivider />
       <StatItem label="Dust" value={formatPoints(BigInt(artifactDust))} />
@@ -73,5 +73,4 @@ function StatDivider() {
     </span>
   )
 }
-
 export default memo(MiniStatStrip)

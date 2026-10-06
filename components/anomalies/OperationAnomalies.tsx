@@ -49,21 +49,21 @@ export function ChronoFreezeFlux() {
   const alignPercent = Math.round((alignedTime / baseDuration.current) * 100)
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 font-mono">
       <p className="text-xs text-(--text-secondary)">
         Keep the slider matched to the frequency spike.
       </p>
       <div className="relative w-full" style={{ height: '56px' }}>
-        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2 bg-(--bg-elevated) rounded border border-(--border-default)" />
         {/* Frequency spike indicator */}
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-2.5 bg-(--bg-elevated) rounded-full border border-(--border-default)" />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-1 h-8 rounded transition-none"
+          className="absolute top-1/2 -translate-y-1/2 w-1.5 h-8 rounded-full transition-none"
           style={{
-            left: `calc(${spikePosition * 100}% - 2px)`,
+            left: `calc(${spikePosition * 100}% - 3px)`,
             background: isAligned
               ? 'var(--status-success)'
-              : 'var(--text-accent)',
-            boxShadow: `0 0 8px ${isAligned ? 'var(--status-success)' : 'var(--text-accent)'}`
+              : 'var(--border-accent)',
+            boxShadow: `0 0 10px ${isAligned ? 'var(--status-success)' : 'var(--border-accent)'}`
           }}
           aria-hidden="true"
         />
@@ -73,27 +73,24 @@ export function ChronoFreezeFlux() {
           max={100}
           value={Math.round(sliderValue * 100)}
           onChange={(e) => setSliderValue(Number(e.target.value) / 100)}
-          className="absolute inset-0 w-full opacity-0 cursor-pointer"
-          style={{ height: '56px' }}
+          className="absolute inset-0 w-full opacity-0 cursor-pointer h-full"
           aria-label="Frequency alignment slider"
         />
         <div
-          className={`absolute top-1/2 -translate-y-1/2 size-4 h-8 rounded border-2 transition-colors`}
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-8 rounded-md border-2 border-white transition-colors pointer-events-none"
           style={{
             left: `calc(${sliderValue * 100}% - 8px)`,
             background: isAligned
-              ? 'var(--status-success)'
-              : 'var(--text-secondary)',
-            borderColor: isAligned
               ? 'var(--status-success)'
               : 'var(--text-secondary)'
           }}
           aria-hidden="true"
         />
       </div>
-      <p className="text-xs font-mono text-(--text-secondary) text-center">
-        Aligned: <span className="text-(--text-accent)">{alignPercent}%</span> -
-        Reward: Freeze research + 3x generation
+      <p className="text-xs text-(--text-secondary) text-center">
+        Harmonized:{' '}
+        <strong className="text-(--text-accent)">{alignPercent}%</strong> ·
+        Reward: 5m Timer Freeze + 3x RP Rate
       </p>
     </div>
   )
@@ -145,37 +142,37 @@ export function SolarFlareOverload() {
   )
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-(--text-secondary)">
+    <div className="flex flex-col gap-3 font-mono">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-(--text-secondary)">
           Click the energy flares as they appear.
-        </p>
-        <span className="chip border-(--text-accent) text-(--text-accent) text-[0.6rem]">
-          {captured} captured
+        </span>
+        <span className="text-(--text-accent) font-bold">
+          {captured} Flares Captured
         </span>
       </div>
       <div
-        className="relative w-full rounded border border-(--border-default) bg-(--bg-elevated)"
+        className="relative w-full rounded-xl border border-amber-500/40 bg-(--bg-elevated) overflow-hidden"
         style={{ height: '180px' }}
       >
         {flares.map((flare) => (
           <button
             key={flare.id}
             onClick={() => handleFlareClick(flare.id)}
-            className="absolute size-8 rounded-full flex items-center justify-center focus-visible:outline-none"
+            className="absolute w-8 h-8 rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
             style={{
               left: `calc(${flare.x}% - 16px)`,
               top: `calc(${flare.y}% - 16px)`,
-              background: 'radial-gradient(circle, #f59e0b, #ef4444)',
-              boxShadow: '0 0 12px #f59e0b'
+              background: 'radial-gradient(circle, #fde047, #ea580c)',
+              boxShadow: '0 0 16px #f59e0b'
             }}
             aria-label="Capture energy flare"
           >
-            <span className="text-white text-xs font-bold">*</span>
+            <span className="text-black font-black text-xs">✦</span>
           </button>
         ))}
       </div>
-      <p className="text-xs font-mono text-(--text-secondary) text-center">
+      <p className="text-xs text-(--text-secondary) text-center">
         Reward: 1% of next generator cost per flare
       </p>
     </div>
@@ -230,7 +227,7 @@ export function GravitySinkCollapse() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 font-mono">
       <p className="text-xs text-(--text-secondary)">
         Enter the terminal sequences exactly as shown.
       </p>
@@ -239,14 +236,14 @@ export function GravitySinkCollapse() {
           <div
             key={i}
             className={[
-              'flex-1 py-2 rounded border text-center text-xs font-mono transition-colors',
+              'flex-1 py-2.5 rounded-xl border text-center text-xs font-bold transition-all',
               i < results.length
                 ? results[i]
-                  ? 'border-(--status-success) text-(--status-success)'
-                  : 'border-#ef4444 text-#ef4444'
+                  ? 'border-(--status-success) text-(--status-success) bg-(--status-success)/10'
+                  : 'border-red-500 text-red-400 bg-red-950/20'
                 : i === currentSeq
-                  ? 'border-(--border-accent) text-(--text-accent)'
-                  : 'border-(--border-default) text-(--text-secondary)'
+                  ? 'border-(--border-accent) text-(--border-accent) bg-(--border-accent)/10 animate-pulse'
+                  : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary)/60'
             ].join(' ')}
           >
             {i <= currentSeq || i < results.length ? seq : '???'}
@@ -261,20 +258,19 @@ export function GravitySinkCollapse() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
             placeholder={`Enter sequence ${currentSeq + 1}`}
-            className="flex-1 bg-(--bg-elevated) border border-(--border-default) rounded px-3 py-1.5 text-xs font-mono text-(--text-primary) focus:outline-none focus:border-(--border-accent)"
+            className="flex-1 bg-(--bg-elevated) border border-(--border-default) rounded-xl px-3 py-2 text-xs font-mono text-(--text-primary) focus:outline-none focus:border-(--border-accent)"
             autoFocus
           />
           <button
             onClick={handleSubmit}
-            className="px-3 py-1.5 text-xs font-mono rounded border border-(--border-accent) text-(--text-accent) hover:bg-(--border-accent)/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)"
+            className="px-4 py-2 text-xs font-mono font-bold uppercase rounded-xl border border-(--border-accent) bg-(--border-accent) text-[#080c14] cursor-pointer hover:brightness-110"
           >
             Submit
           </button>
         </div>
       )}
-      <p className="text-xs font-mono text-(--text-secondary) text-center">
-        {results.filter(Boolean).length}/{SEQUENCES.length} correct - Reward:
-        50% generator cost reduction
+      <p className="text-xs text-(--text-secondary) text-center">
+        Reward: 50% Generator Cost Reduction for 2 Minutes
       </p>
     </div>
   )
@@ -340,42 +336,41 @@ export function MatrixInversion() {
           )
         }
         setFlippedIds([])
-      }, 800)
+      }, 700)
     }
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-(--text-secondary)">
+    <div className="flex flex-col gap-3 font-mono">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-(--text-secondary)">
           Match logic symbol pairs in the grid.
-        </p>
-        <span className="chip border-(--text-accent) text-(--text-accent) text-[0.6rem]">
-          {matches}/{SYMBOLS.length} matched
+        </span>
+        <span className="text-(--text-accent) font-bold">
+          {matches}/{SYMBOLS.length} Matched
         </span>
       </div>
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-4 gap-2">
         {cardState.map((card) => (
           <button
             key={card.id}
             onClick={() => handleCardClick(card.id)}
             disabled={card.matched || (card.flipped && flippedIds.length >= 2)}
             className={[
-              'h-10 rounded border text-sm font-mono font-bold transition-all',
-              'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-(--border-accent)',
+              'h-11 rounded-xl border text-sm font-bold transition-all cursor-pointer select-none',
               card.matched
-                ? 'border-(--status-success) bg-(--status-success)/10 text-(--status-success) cursor-default'
+                ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) cursor-default'
                 : card.flipped
-                  ? 'border-(--text-accent) bg-(--text-accent)/10 text-(--text-accent)'
-                  : 'border-(--border-default) text-(--text-secondary) hover:border-(--text-secondary)'
+                  ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent)'
+                  : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:border-(--border-accent)'
             ].join(' ')}
           >
             {card.flipped || card.matched ? card.symbol : '?'}
           </button>
         ))}
       </div>
-      <p className="text-xs font-mono text-(--text-secondary) text-center">
-        Reward: 5x AR bonus strength temporarily
+      <p className="text-xs text-(--text-secondary) text-center">
+        Reward: 5x AR Multiplier Strength Temporarily
       </p>
     </div>
   )

@@ -25,11 +25,11 @@ export default function BuyButton({
       disabled={isDisabled}
       aria-label={`${label} - costs ${formatPoints(cost)} RP`}
       className={[
-        'px-3 py-1.5 text-xs font-mono font-bold rounded border transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+        'min-w-16 sm:min-w-20 px-3 py-2 text-xs font-mono font-black uppercase tracking-wider rounded-lg border transition-all duration-150',
+        'active:scale-95 cursor-pointer select-none',
         canAfford && !disabled
-          ? 'border-(--status-success) text-(--status-success) hover:bg-(--status-success) hover:text-black'
-          : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
+          ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_12px_rgba(0,240,255,0.35)]'
+          : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
       ].join(' ')}
     >
       {label}

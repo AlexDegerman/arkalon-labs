@@ -85,15 +85,23 @@ export default function AutomationPanel() {
           return (
             <div
               key={feature.id}
-              className="card rounded-lg p-2.5 flex items-center gap-3"
+              className="card rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-3 border border-(--border-default) bg-(--bg-surface)"
             >
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-(--text-primary) truncate">
+                  {feature.label}
+                </p>
+                <p className="text-[11px] text-(--text-secondary) leading-snug">
+                  {feature.description}
+                </p>
+              </div>
+
               <button
                 onClick={() => toggleAutomation(feature.id)}
                 role="switch"
                 aria-checked={enabled}
                 className={[
-                  'relative size-9 h-5 rounded-full border transition-colors shrink-0',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+                  'relative w-10 h-5 rounded-full border transition-colors cursor-pointer shrink-0',
                   enabled
                     ? 'bg-(--status-success) border-(--status-success)'
                     : 'bg-(--bg-elevated) border-(--border-default)'
@@ -102,19 +110,11 @@ export default function AutomationPanel() {
               >
                 <span
                   className={[
-                    'absolute top-0.5 size-4 rounded-full bg-white transition-transform',
-                    enabled ? 'translate-x-4' : 'translate-x-0.5'
+                    'absolute top-0.5 w-4 h-4 rounded-full bg-black transition-transform',
+                    enabled ? 'translate-x-5' : 'translate-x-0.5'
                   ].join(' ')}
                 />
               </button>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-(--text-primary) truncate">
-                  {feature.label}
-                </p>
-                <p className="text-[0.65rem] text-(--text-secondary) leading-snug">
-                  {feature.description}
-                </p>
-              </div>
             </div>
           )
         })}

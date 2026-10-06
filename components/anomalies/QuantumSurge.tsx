@@ -55,10 +55,8 @@ export default function QuantumSurge() {
     setCaptureFlash(true)
     setTimeout(() => setCaptureFlash(false), 300)
 
-    // Update interaction value (0-1)
     updateAnomalyInteraction(Math.min(1, newCaptures / 5))
 
-    // Move immediately after capture
     setNodePos(randomPosition())
     setLastMoveTime(Date.now())
 
@@ -71,32 +69,31 @@ export default function QuantumSurge() {
   const multiplier = Math.min(5, 2 + captures)
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-(--text-secondary)">
-          Click the shifting node. Capture within 3 seconds of each move.
-        </p>
-        <span className="chip border-(--text-accent) text-(--text-accent)">
-          {captures}/5 captures - {multiplier}x
+    <div className="flex flex-col gap-3.5 font-mono">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-(--text-secondary)">
+          Capture shifting core node (&lt;3s per relocation)
+        </span>
+        <span className="font-bold text-(--text-accent) px-2 py-0.5 rounded border border-(--border-accent)/40 bg-(--border-accent)/10">
+          {captures}/5 · {multiplier}x Boost
         </span>
       </div>
 
       {/* Interaction field */}
       <div
         ref={containerRef}
-        className="relative w-full rounded border border-#ef4444/40 bg-(--bg-elevated) overflow-hidden"
+        className="relative w-full rounded-xl border border-red-500/40 bg-(--bg-elevated) overflow-hidden shadow-inner"
         style={{ height: '200px' }}
         aria-label="Quantum surge interaction field"
       >
-        {/* Moving node */}
         <button
           onClick={handleCapture}
           className={[
-            'absolute size-10 rounded-full border-2 border-(--text-accent) transition-all duration-500',
-            'flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+            'absolute w-10 h-10 rounded-full border-2 border-(--border-accent) transition-all duration-300 cursor-pointer',
+            'flex items-center justify-center focus-visible:outline-none',
             captureFlash
-              ? 'bg-(--text-accent) scale-125'
-              : 'bg-(--text-accent)/20 hover:bg-(--text-accent)/40'
+              ? 'bg-(--border-accent) scale-125 shadow-[0_0_20px_rgba(0,240,255,1)]'
+              : 'bg-(--border-accent)/20 hover:bg-(--border-accent)/40 shadow-[0_0_12px_rgba(0,240,255,0.4)]'
           ].join(' ')}
           style={{
             left: `calc(${nodePos.x}% - 20px)`,
@@ -104,20 +101,17 @@ export default function QuantumSurge() {
           }}
           aria-label="Capture quantum node"
         >
-          <span className="text-xs font-mono font-bold text-(--text-accent)">
-            ◎
-          </span>
+          <span className="text-xs font-black text-white">◎</span>
         </button>
 
-        {/* Capture count visual */}
-        <div className="absolute bottom-2 left-2 flex gap-1">
+        <div className="absolute bottom-2.5 left-3 flex gap-1.5">
           {Array.from({ length: 5 }, (_, i) => (
             <div
               key={i}
               className={[
-                'size-3 rounded-full border',
+                'w-3 h-3 rounded-full border transition-all',
                 i < captures
-                  ? 'bg-(--text-accent) border-(--text-accent)'
+                  ? 'bg-(--border-accent) border-(--border-accent) shadow-[0_0_6px_rgba(0,240,255,0.8)]'
                   : 'bg-transparent border-(--border-default)'
               ].join(' ')}
               aria-hidden="true"
@@ -126,9 +120,11 @@ export default function QuantumSurge() {
         </div>
       </div>
 
-      <p className="text-xs font-mono text-(--text-secondary) text-center">
-        Multiplier: <span className="text-(--text-accent)">{multiplier}x</span>{' '}
-        passive RP
+      <p className="text-xs text-(--text-secondary) text-center">
+        Stabilized Yield:{' '}
+        <strong className="text-(--text-accent)">
+          {multiplier}x Passive RP Multiplier
+        </strong>
       </p>
     </div>
   )

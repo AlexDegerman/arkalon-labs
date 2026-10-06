@@ -59,74 +59,70 @@ export default function CenterColumn() {
   } else if (o3Complete) {
     anomalyStatusLabel = `Next anomaly: ${formatCountdown(timeToNextCheck)}`
   } else {
-    anomalyStatusLabel = 'Anomaly: standby'
+    anomalyStatusLabel = 'Anomaly: Standby'
   }
 
   // Click boost indicator (O2 required)
   const showClickHint = interactiveArkalon && o2Complete
 
   return (
-    <div className="flex flex-col h-full border-r border-(--border-default) overflow-hidden">
-      <div className="px-3 py-2 border-b border-(--border-default) shrink-0">
-        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-widest">
+    <div className="flex flex-col h-full border-r border-(--border-default) bg-(--bg-primary)/60 overflow-hidden">
+      <div className="px-3 py-2 border-b border-(--border-default) bg-(--bg-surface)/95 shrink-0">
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
           Arkalon Core
         </p>
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 p-4 overflow-y-auto scrollbar-dark">
-        {/* Sphere */}
-        <div className="relative">
-          <ArkalonSphere
-            state={sphereState}
-            interactive={interactiveArkalon}
-            onClick={handleSphereClick}
-            size={160}
-          />
-          {/* Click hint overlay - shown when O2 is complete */}
+
+      <div className="flex-1 flex flex-col items-center justify-between p-4 overflow-y-auto scrollbar-dark">
+        {/* Animated vector sphere */}
+        <div className="my-auto flex flex-col items-center gap-2">
+          <div className="relative">
+            <ArkalonSphere
+              state={sphereState}
+              interactive={interactiveArkalon}
+              onClick={handleSphereClick}
+              size={150}
+            />
+          </div>
+
           {showClickHint && !activeAnomaly && (
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
-              <span className="text-[0.6rem] font-mono text-(--text-secondary)">
-                click - +5% research speed
-              </span>
-            </div>
+            <span className="text-[10px] font-mono text-(--text-accent) font-bold tracking-wide animate-pulse">
+              TAP ORB · +5% RESEARCH SPEED
+            </span>
           )}
         </div>
 
-        {/* Spacer when hint shown */}
-        {showClickHint && !activeAnomaly && <div className="h-1" />}
-
-        {/* Terminal */}
-        <div className="w-full">
+        {/* Live Typewriter Terminal Console */}
+        <div className="w-full my-2">
           <ArkalonTerminal lines={lines} maxLines={3} />
         </div>
 
-        {/* Status row */}
-        <div className="w-full flex flex-col gap-1.5 px-1">
-          {/* Anomaly status */}
-          <div className="flex items-center gap-1.5">
+        {/* Diagnostic Status Pips */}
+        <div className="w-full grid grid-cols-2 gap-2 p-2 rounded-xl bg-(--bg-surface) border border-(--border-default) shrink-0 text-xs font-mono">
+          <div className="flex items-center gap-1.5 truncate">
             <span
               className={[
-                'status-dot',
+                'w-2 h-2 rounded-full shrink-0',
                 activeAnomaly
-                  ? 'bg-#ef4444 dot-pulse'
+                  ? 'bg-red-500 animate-ping'
                   : o3Complete
-                    ? 'status-dot-active dot-pulse'
-                    : 'status-dot-locked'
+                    ? 'bg-(--border-accent)'
+                    : 'bg-(--status-locked)'
               ].join(' ')}
             />
-            <span className="text-xs font-mono text-(--text-secondary)">
+            <span className="truncate text-(--text-secondary) text-[11px]">
               {anomalyStatusLabel}
             </span>
           </div>
 
-          {/* Probe status */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 truncate justify-end">
             <span
               className={[
-                'status-dot',
-                probeCount > 0 ? 'status-dot-active' : 'status-dot-locked'
+                'w-2 h-2 rounded-full shrink-0',
+                probeCount > 0 ? 'bg-amber-400' : 'bg-(--status-locked)'
               ].join(' ')}
             />
-            <span className="text-xs font-mono text-(--text-secondary)">
+            <span className="text-(--text-secondary) text-[11px]">
               Probes: {probeCount}
             </span>
           </div>

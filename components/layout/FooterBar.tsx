@@ -13,22 +13,22 @@ function FooterBar() {
   const anomaliesUnlocked = useGameStore((s) => s.unlocks.anomalies)
 
   return (
-    <footer className="h-8 flex items-center justify-between px-4 border-t border-(--border-default) bg-(--bg-surface) shrink-0 gap-2">
-      <span className="text-xs font-mono text-(--text-secondary) truncate">
+    <footer className="h-8 flex items-center justify-between px-3 sm:px-4 border-t border-(--border-default) bg-(--bg-surface)/90 shrink-0 gap-2 text-[11px] font-mono text-(--text-secondary)">
+      <span className="truncate">
         {prestige1Done ? `Op Cycle ${operationCycle}` : 'Arkalon Laboratories'}
       </span>
 
-      {/* Anomaly label - updated by FooterBarLive via DOM write */}
+      {/* Dynamic DOM written by FooterBarLive */}
       <span
         id="footer-anomaly-label"
-        className="text-xs font-mono text-(--text-secondary) shrink-0"
+        className="shrink-0 text-(--text-secondary)"
       >
-        {anomaliesUnlocked ? 'Anomaly scan: active' : 'Anomaly scan: standby'}
+        {anomaliesUnlocked ? 'Anomaly: Scanning' : 'Anomaly: Standby'}
       </span>
 
       <span
         id="footer-save-status"
-        className="text-xs font-mono text-(--text-secondary) shrink-0"
+        className="shrink-0 text-(--text-secondary)"
       >
         Save: --
       </span>

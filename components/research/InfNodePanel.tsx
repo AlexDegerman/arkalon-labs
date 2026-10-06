@@ -43,48 +43,41 @@ export default function InfNodePanel({ branch }: Props) {
   if (!prereqComplete) return null
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 mt-2">
       <div className="section-divider" />
-      <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
-        Infinite Node
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
+          Infinite Node
+        </p>
+        <span className="text-[10px] font-mono text-(--text-accent) font-bold">
+          x{scaling.toFixed(1)}/Level
+        </span>
+      </div>
+
       <div
         className={[
-          'card rounded-lg p-3 flex flex-col gap-2',
-          canAfford ? 'border-(--text-accent)' : ''
+          'card rounded-xl p-3 flex flex-col gap-2.5 border transition-all',
+          canAfford
+            ? 'border-(--border-accent)/60 bg-linear-to-r from-(--border-accent)/10 via-(--bg-surface) to-(--bg-surface)'
+            : 'border-(--border-default) bg-(--bg-surface)'
         ].join(' ')}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-xs font-semibold text-(--text-primary) truncate">
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
               {node.label}
             </span>
-            <span className="text-[0.65rem] text-(--text-secondary)">
+            <span className="text-[11px] text-(--text-secondary) mt-0.5">
               {node.effectDescription}
             </span>
           </div>
-          <span className="chip border-(--border-accent) text-(--text-accent) shrink-0 text-[0.6rem]">
+          <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded border border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent) shrink-0">
             Lv{level}
           </span>
         </div>
 
-        {/* Cost and cost scaling info */}
-        <div className="flex items-center justify-between text-[0.65rem] font-mono">
-          <span className="text-(--text-secondary)">
-            x{scaling.toFixed(1)}/level
-          </span>
-          <span
-            className={
-              canAfford ? 'text-(--status-success)' : 'text-(--text-secondary)'
-            }
-          >
-            {formatPoints(cost)} RP
-          </span>
-        </div>
-
-        {/* Next few level costs preview */}
         {level < 5 && (
-          <div className="flex gap-2 text-[0.6rem] font-mono">
+          <div className="flex gap-2 text-[10px] font-mono text-(--text-secondary)/60 pt-1 border-t border-(--border-default)/50 overflow-x-auto scrollbar-none">
             {[1, 2, 3].map((offset) => {
               const previewLevel = level + offset
               const previewCost = infNodeCostAtLevel(
@@ -93,11 +86,8 @@ export default function InfNodePanel({ branch }: Props) {
                 previewLevel
               )
               return (
-                <span
-                  key={offset}
-                  className="text-(--text-secondary) opacity-60"
-                >
-                  Lv{previewLevel}: {formatPoints(previewCost)}
+                <span key={offset} className="whitespace-nowrap">
+                  Lv{previewLevel}: {formatPoints(previewCost)} RP
                 </span>
               )
             })}
@@ -108,14 +98,15 @@ export default function InfNodePanel({ branch }: Props) {
           onClick={() => startResearch(nodeId)}
           disabled={!canAfford}
           className={[
-            'w-full py-1.5 text-xs font-mono rounded border transition-colors',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+            'w-full py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer',
             canAfford
-              ? 'border-(--text-accent) text-(--text-accent) hover:bg-(--text-accent)/10'
-              : 'border-(--status-locked) text-(--status-locked) cursor-not-allowed opacity-60'
+              ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_12px_rgba(0,240,255,0.3)]'
+              : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
           ].join(' ')}
         >
-          Purchase Lv{level + 1}
+          {canAfford
+            ? `Upgrade to Lv${level + 1} (${formatPoints(cost)} RP)`
+            : `Requires ${formatPoints(cost)} RP`}
         </button>
       </div>
     </div>

@@ -14,7 +14,6 @@ interface Sector {
 
 function generateSectors(): Sector[] {
   const pressures = [5, 4, 3, 2, 1]
-  // Shuffle display order
   const shuffled = [...pressures].sort(() => Math.random() - 0.5)
   return shuffled.map((pressure, id) => ({
     id,
@@ -49,7 +48,6 @@ export default function ContainmentBreach() {
       setSelected(newSelected)
 
       if (newSelected.length === SECTOR_COUNT) {
-        // Check if the selection is in correct descending pressure order
         const isCorrect = isCorrectOrder(newSelected, sectors)
         setResult(isCorrect ? 'correct' : 'wrong')
         resolvedRef.current = true
@@ -64,7 +62,7 @@ export default function ContainmentBreach() {
   )
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 font-mono">
       <p className="text-xs text-(--text-secondary)">
         Select sectors in descending pressure order (highest first).
       </p>
@@ -72,10 +70,10 @@ export default function ContainmentBreach() {
       {result && (
         <div
           className={[
-            'text-xs font-mono font-bold text-center py-2 rounded',
+            'text-xs font-bold text-center py-2.5 rounded-xl border uppercase tracking-wider',
             result === 'correct'
-              ? 'text-(--status-success) bg-(--status-success)/10'
-              : 'text-#ef4444 bg-#ef4444/10'
+              ? 'border-(--status-success) text-(--status-success) bg-(--status-success)/10 shadow-[0_0_12px_rgba(57,255,138,0.2)]'
+              : 'border-red-500/50 text-red-400 bg-red-950/20'
           ].join(' ')}
         >
           {result === 'correct' ? 'BREACH CONTAINED' : 'CONTAINMENT FAILED'}
@@ -93,33 +91,32 @@ export default function ContainmentBreach() {
               onClick={() => handleSectorClick(sector.id)}
               disabled={isSelected || !!result}
               className={[
-                'flex flex-col items-center gap-1 p-2 rounded border text-xs font-mono transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+                'flex flex-col items-center justify-between gap-1 p-2 rounded-xl border text-xs transition-all select-none min-h-20',
                 isSelected
-                  ? 'border-(--text-accent) bg-(--text-accent)/10 cursor-default'
+                  ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--text-accent) shadow-[0_0_10px_rgba(0,240,255,0.2)] cursor-default'
                   : result
-                    ? 'border-(--status-locked) opacity-50 cursor-not-allowed'
-                    : 'border-(--border-default) hover:border-(--text-accent) cursor-pointer'
+                    ? 'border-(--border-default) opacity-40 cursor-not-allowed bg-(--bg-surface)'
+                    : 'border-(--border-default) bg-(--bg-elevated) hover:border-(--border-accent) text-(--text-primary) cursor-pointer'
               ].join(' ')}
               aria-label={`${sector.label} - pressure ${sector.pressure}`}
               aria-pressed={isSelected}
             >
-              <span className="text-(--text-secondary) text-[0.6rem]">
+              <span className="text-(--text-secondary) text-[10px]">
                 {sector.label}
               </span>
               {/* Pressure shown only after interaction or as hint */}
               {isSelected && (
-                <span className="font-bold text-(--text-accent)">
+                <span className="font-bold text-(--text-accent) text-xs">
                   P{sector.pressure}
                 </span>
               )}
               {!isSelected && (
-                <span className="text-lg">
+                <span className="text-lg leading-none py-0.5">
                   {getPressureIcon(sector.pressure)}
                 </span>
               )}
               {isSelected && (
-                <span className="text-[0.6rem] text-(--text-secondary)">
+                <span className="text-[10px] font-bold text-(--text-secondary)">
                   #{selectionIndex + 1}
                 </span>
               )}
@@ -128,7 +125,7 @@ export default function ContainmentBreach() {
         })}
       </div>
 
-      <p className="text-xs font-mono text-(--text-secondary) text-center">
+      <p className="text-xs text-(--text-secondary) text-center">
         {selected.length}/{SECTOR_COUNT} sectors selected
       </p>
     </div>

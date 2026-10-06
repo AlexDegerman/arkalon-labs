@@ -13,18 +13,20 @@ export default function ModulesWorkspace() {
 
   if (ownedGeneratorIndices.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 p-4">
-        <p className="terminal text-(--text-secondary) text-xs text-center">
-          Purchase a Server Cluster to unlock module installation.
-        </p>
+      <div className="flex items-center justify-center h-48 p-4">
+        <div className="card rounded-xl p-6 border border-dashed border-(--border-default) bg-(--bg-surface)/40 text-center max-w-sm">
+          <p className="text-xs font-mono text-(--text-secondary) leading-relaxed">
+            Purchase a Server Cluster to unlock module installation.
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-3 p-3 overflow-y-auto scrollbar-dark h-full">
-      <div className="flex flex-col gap-1">
-        <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
+    <div className="flex flex-col gap-3 p-3 sm:p-4 overflow-y-auto scrollbar-dark h-full bg-(--bg-primary)/40">
+      <div className="flex flex-col gap-0.5 px-1">
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
           Generator Modules
         </p>
         <p className="text-xs text-(--text-secondary)">

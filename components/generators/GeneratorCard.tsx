@@ -27,7 +27,6 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   const def = GENERATORS[generatorIndex]
   const [showTooltip, setShowTooltip] = useState(false)
 
-  // Narrow selectors
   const quantity = useGameStore(
     (s) => s.generators[generatorIndex]?.quantity ?? 0n
   )
@@ -40,7 +39,6 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   const milestoneStr = getMilestoneString(generatorIndex, quantity, state)
   const timeToAfford = getTimeToAffordString(generatorIndex, state)
 
-  // Cost efficiency shown in tooltip
   const efficiency = showTooltip
     ? getCostEfficiencyString(generatorIndex, state)
     : ''
@@ -54,62 +52,65 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   return (
     <div
       className={[
-        'card flex items-center gap-3 p-3 rounded-lg transition-colors relative',
-        affordable ? 'affordable' : '',
-        isLocked ? 'opacity-50' : ''
+        'card flex items-center justify-between gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl transition-all duration-150 relative border',
+        affordable
+          ? 'border-(--border-accent)/40 bg-linear-to-r from-(--border-accent)/10 via-(--bg-surface) to-(--bg-surface) shadow-[0_0_15px_rgba(0,240,255,0.06)]'
+          : 'border-(--border-default) bg-(--bg-surface)',
+        isLocked ? 'opacity-40' : ''
       ].join(' ')}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      {/* SVG icon */}
-      <div className="shrink-0">
+      {/* Left: SVG Icon Badge */}
+      <div className="shrink-0 rounded-lg p-1 bg-(--bg-elevated) border border-(--border-default) flex items-center justify-center">
         <GeneratorIcon
           generatorIndex={generatorIndex}
           stage={stage}
-          size={40}
+          size={38}
         />
       </div>
 
-      {/* Info column */}
+      {/* Middle: Info and Progression */}
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-(--text-primary) truncate">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
             {def.name}
           </span>
           {quantity > 0n && (
-            <span className="chip border-(--border-default) text-(--text-secondary) shrink-0">
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary) shrink-0">
               x{quantity.toString()}
             </span>
           )}
         </div>
 
-        {/* Cost row */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Cost & Countdown */}
+        <div className="flex items-center gap-2 flex-wrap text-xs font-mono">
           <span
-            className={[
-              'text-xs font-mono',
-              affordable ? 'text-(--status-success)' : 'text-(--text-secondary)'
-            ].join(' ')}
+            className={
+              affordable
+                ? 'font-bold text-(--status-success)'
+                : 'text-(--text-secondary)'
+            }
           >
             {formatPoints(cost)} RP
           </span>
           {timeToAfford && (
-            <span className="text-xs font-mono text-(--status-warning)">
-              {timeToAfford}
+            <span className="text-[11px] text-(--status-warning)">
+              ({timeToAfford})
             </span>
           )}
         </div>
 
-        {/* Milestone progress */}
+        {/* Milestone Indicator */}
         {quantity > 0n && (
-          <span className="text-[0.65rem] font-mono text-(--text-secondary)">
+          <span className="text-[10px] font-mono text-(--text-secondary)/80 truncate">
             {milestoneStr}
           </span>
         )}
       </div>
 
-      {/* Buy button */}
-      <div className="shrink-0">
+      {/* Right: Buy action */}
+      <div className="shrink-0 flex flex-col items-center">
         {generatorIndex === 0 && (
           <TutorialArrow targetId="generator-0-buy" direction="above" />
         )}
@@ -123,13 +124,13 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
         </TutorialHighlight>
       </div>
 
-      {/* Cost efficiency tooltip - desktop hover only */}
+      {/* Tooltip on hover */}
       {showTooltip && efficiency && (
         <div
-          className="absolute left-0 right-0 -bottom-8 z-10 px-3 py-1.5 bg-(--bg-elevated) border border-(--border-default) rounded text-[0.6rem] font-mono text-(--text-secondary) pointer-events-none"
+          className="absolute left-3 right-3 -bottom-7 z-20 px-2.5 py-1 bg-[#080c14] border border-(--border-accent)/50 rounded text-[10px] font-mono text-(--text-accent) pointer-events-none shadow-xl"
           aria-hidden="true"
         >
-          Efficiency: {efficiency}
+          {efficiency}
         </div>
       )}
     </div>

@@ -9,7 +9,6 @@ interface DrawerItem {
   id: WorkspaceTab
   label: string
   icon: string
-  // Rendered even when locked; lock state wired in Phase 4
   alwaysVisible: boolean
 }
 
@@ -42,21 +41,19 @@ export default function MobileMoreDrawer({ onClose }: Props) {
 
   return (
     <>
-      {/* Scrim */}
       <div
-        className="absolute inset-0 bg-black/60 z-10"
+        className="fixed inset-0 bg-black/75 backdrop-blur-xs z-40 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Drawer panel */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-20 bg-(--bg-elevated) border-t border-(--border-default) rounded-t-xl"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-(--bg-elevated) border-t border-(--border-default) rounded-t-2xl shadow-2xl p-4 flex flex-col gap-3 animate-[fade-in_0.15s_ease-out_both]"
         role="dialog"
         aria-label="More options"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-(--border-default)">
-          <span className="text-xs font-mono text-(--text-secondary) uppercase tracking-widest">
+        <div className="flex items-center justify-between border-b border-(--border-default) pb-2.5">
+          <span className="text-xs font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
             More
           </span>
           <div className="flex items-center gap-2">
@@ -65,23 +62,22 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                 onClose()
                 useUIStore.getState().setSettingsPanelOpen(true)
               }}
-              className="text-(--text-secondary) text-xs font-mono hover:text-(--text-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent) rounded px-1"
+              className="text-xs font-mono text-(--text-accent) font-bold hover:underline px-1.5 py-0.5"
             >
               Settings
             </button>
             <button
               onClick={onClose}
-              className="text-(--text-secondary) text-lg leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent) rounded"
+              className="text-(--text-secondary) hover:text-(--text-primary) p-1 rounded font-mono text-sm leading-none cursor-pointer"
               aria-label="Close drawer"
             >
-              x
+              X
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-1 p-3 pb-safe">
+        <div className="grid grid-cols-4 gap-2 pt-1 pb-safe">
           {DRAWER_ITEMS.map((item) => {
-            // Check if a feature key maps to this drawer item
             const featureDef = Object.values(FEATURE_MAP).find(
               (f) => f.workspaceTab === item.id
             )
@@ -92,18 +88,17 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                 key={item.id}
                 onClick={() => handleSelect(item.id)}
                 className={[
-                  'flex flex-col items-center gap-1 py-3 px-1 rounded transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-accent)',
+                  'flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl border transition-all cursor-pointer select-none',
                   isLocked
-                    ? 'text-(--status-locked) opacity-60'
-                    : 'text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-surface)'
+                    ? 'border-(--border-default)/50 bg-(--bg-surface)/40 text-(--text-secondary)/40 opacity-60'
+                    : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-accent)'
                 ].join(' ')}
                 aria-label={`${item.label}${isLocked ? ' (locked)' : ''}`}
               >
-                <span className="text-lg leading-none" aria-hidden="true">
+                <span className="text-xl leading-none" aria-hidden="true">
                   {isLocked ? '\u{1F512}' : item.icon}
                 </span>
-                <span className="text-xs text-center leading-tight">
+                <span className="text-[10px] font-mono font-bold text-center leading-tight truncate w-full">
                   {item.label}
                 </span>
               </button>

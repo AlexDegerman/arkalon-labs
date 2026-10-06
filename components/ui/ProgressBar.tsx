@@ -1,7 +1,6 @@
 'use client'
 
 interface Props {
-  // 0.0 to 1.0
   progress: number
   variant?: 'default' | 'success' | 'warning'
   height?: number
@@ -13,7 +12,7 @@ interface Props {
 export default function ProgressBar({
   progress,
   variant = 'default',
-  height = 6,
+  height = 5,
   label,
   showPercent = false,
   animated = true
@@ -21,31 +20,31 @@ export default function ProgressBar({
   const clamped = Math.max(0, Math.min(1, progress))
   const pct = Math.round(clamped * 100)
 
-  const fillClass =
+  const fillColor =
     variant === 'success'
-      ? 'progress-fill-success'
+      ? 'bg-(--status-success) shadow-[0_0_8px_rgba(57,255,138,0.4)]'
       : variant === 'warning'
-        ? 'progress-fill-warning'
-        : 'progress-fill'
+        ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+        : 'bg-(--border-accent) shadow-[0_0_8px_rgba(0,240,255,0.4)]'
 
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className="flex flex-col gap-1 w-full font-mono text-[11px]">
       {(label || showPercent) && (
         <div className="flex items-center justify-between">
           {label && (
-            <span className="text-xs font-mono text-(--text-secondary)">
+            <span className="text-(--text-secondary) font-bold truncate">
               {label}
             </span>
           )}
           {showPercent && (
-            <span className="text-xs font-mono text-(--text-accent)">
+            <span className="text-(--text-accent) font-bold ml-auto shrink-0">
               {pct}%
             </span>
           )}
         </div>
       )}
       <div
-        className="progress-track w-full"
+        className="w-full bg-(--bg-elevated) border border-(--border-default)/70 rounded-full overflow-hidden"
         style={{ height }}
         role="progressbar"
         aria-valuenow={pct}
@@ -54,7 +53,11 @@ export default function ProgressBar({
         aria-label={label}
       >
         <div
-          className={[fillClass, animated ? '' : 'transition-none!'].join(' ')}
+          className={[
+            fillColor,
+            'h-full rounded-full',
+            animated ? 'transition-all duration-300' : 'transition-none'
+          ].join(' ')}
           style={{ width: `${pct}%` }}
         />
       </div>

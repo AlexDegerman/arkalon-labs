@@ -12,11 +12,11 @@ interface StatRowProps {
 
 function StatRow({ label, value, accent = false }: StatRowProps) {
   return (
-    <div className="flex items-center justify-between py-1.5 border-b border-(--border-default) last:border-b-0">
-      <span className="text-xs text-(--text-secondary)">{label}</span>
+    <div className="flex items-center justify-between py-1.5 border-b border-(--border-default)/50 last:border-b-0 font-mono text-xs">
+      <span className="text-(--text-secondary)">{label}</span>
       <span
         className={[
-          'text-xs font-mono font-semibold',
+          'font-bold',
           accent ? 'text-(--text-accent)' : 'text-(--text-primary)'
         ].join(' ')}
       >
@@ -34,7 +34,7 @@ interface StatSectionProps {
 function StatSection({ title, children }: StatSectionProps) {
   return (
     <div className="card rounded-lg p-3 flex flex-col gap-0">
-      <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide mb-2">
+      <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest mb-1.5 pb-1 border-b border-(--border-default)">
         {title}
       </p>
       {children}
@@ -57,12 +57,10 @@ export default function StatsWorkspace() {
   const challengeRecords = useGameStore((s) => s.challengeRecords)
 
   const era = getCurrentEra(lifetimePoints)
-
   const totalGenerators = generators.reduce(
     (sum, g) => sum + Number(g.quantity),
     0
   )
-
   const totalChallengeCompletions = Object.values(challengeRecords).reduce(
     (sum, r) => sum + r.completedTiers,
     0
@@ -178,6 +176,13 @@ export default function StatsWorkspace() {
             value={`${formatPoints(BigInt(Math.floor(omniSpars)))} OS`}
           />
         )}
+      </StatSection>
+
+      <StatSection title="Anomalous Event Diagnostics">
+        <StatRow
+          label="Total Anomalies Stabilized"
+          value={stats.totalAnomaliesResolved.toLocaleString()}
+        />
       </StatSection>
     </div>
   )
