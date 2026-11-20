@@ -20,15 +20,17 @@ export default function FeatureLockOverlay({ feature, children }: Props) {
 
   return (
     <div className="relative w-full h-full min-h-56 flex items-center justify-center">
-      {/* Blurred background content */}
+      {/* Static blueprint backdrop (locked workspaces are not mounted) */}
       <div
-        className="absolute inset-0 overflow-hidden pointer-events-none select-none"
-        style={{ filter: 'blur(5px)', opacity: 0.15 }}
+        className="absolute inset-0 overflow-hidden pointer-events-none select-none opacity-15"
+        style={{
+          backgroundImage:
+            'linear-gradient(var(--border-default) 1px, transparent 1px), linear-gradient(90deg, var(--border-default) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          filter: 'blur(2px)'
+        }}
         aria-hidden="true"
-      >
-        {children}
-      </div>
-
+      />
       {/* Lock Preview Card Overlay */}
       <div className="relative z-10 p-4">
         <FeaturePreviewCard feature={feature} />

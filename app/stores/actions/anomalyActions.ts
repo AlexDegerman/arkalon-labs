@@ -7,170 +7,144 @@ import {
   selectNextAnomaly,
   getEffectiveDuration,
   getNextSpawnInterval,
-  buildAnomalyReward,
   ANOMALY_DEFINITIONS,
-  OPERATION_ANOMALY_DEFINITIONS
+  OPERATION_ANOMALY_DEFINITIONS,
+  FUSED_ANOMALY_DEFINITIONS
 } from '@/lib/anomalyDefs'
-import { markUnlocksDirty, markAchievementsDirty, markTutorialDirty } from '@/lib/dirtyFlags'
+import type { AnomalyType } from '@/types/game'
+import {
+  markUnlocksDirty,
+  markAchievementsDirty,
+  markTutorialDirty
+} from '@/lib/dirtyFlags'
 import {
   dispatchAnomalyResolved,
-  dispatchRelicDiscovered
+  dispatchAnomalySpawn,
 } from '@/lib/dialogueDispatcher'
-import { earnOperationPoints } from './operationActions'
+import { playSound } from '@/hooks/useSound'
+import { awardRelic } from './relicActions'
 
 // Anomaly actions
 
-// Called by the tick loop when the spawn check timer reaches 0
-export function checkAnomalySpawn(): void {
+// Called by the tick loop when the spawn check timer reaches 0 or forced via cascade/collider
+export function checkAnomalySpawn(
+  force = false,
+  presetType?: AnomalyType
+): void {
   const store = useGameStore.getState()
-  if (!store.unlocks.anomalies) return
+  if (!store.unlocks.anomalies && !force) return
   if (store.activeAnomalyType) return
   // SC5, EC4: no anomalies
   if (store.activeChallengeRestrictions?.anomaliesDisabled) return
 
-  const def = selectNextAnomaly(store)
+  const allDefs = [
+    ...ANOMALY_DEFINITIONS,
+    ...OPERATION_ANOMALY_DEFINITIONS,
+    ...FUSED_ANOMALY_DEFINITIONS
+  ]
+  const def = presetType
+    ? (allDefs.find((d) => d.type === presetType) ?? selectNextAnomaly(store))
+    : selectNextAnomaly(store)
+
   const duration = getEffectiveDuration(def, store)
   const nextCheck = getNextSpawnInterval(store)
 
   useGameStore.setState({
     activeAnomalyType: def.type,
     anomalyTimeRemaining: duration,
-    anomalyInteractionValue: 0,
     timeToNextAnomalyCheck: nextCheck
   })
 
   // Transition BGM to anomaly context
   useMusicStore.getState().setContext('anomaly')
 
-  // Fire tutorial beat for first anomaly
+  // Recalculate PPS to apply passive buffer
+  useGameStore.getState().recalcPPS()
+
+  playSound('spawn')
+  dispatchAnomalySpawn(def.type)
   markTutorialDirty()
 
-  // Push anomaly alert
   useUIStore.getState().pushAlert({
     priority: 1,
     variant: 'anomaly',
     title: def.label,
-    message: def.description,
+    message: `${def.rewardDescription} active for ${Math.round(duration)}s.`,
     autoDismissMs: 5000
   })
 }
 
-// Called when the player successfully resolves an anomaly
-// interactionScore: 0.0-1.0
-export function resolveAnomaly(interactionScore: number): void {
+// Auto-called when an active anomaly buff window expires
+export function completeAnomaly(): void {
   const store = useGameStore.getState()
   if (!store.activeAnomalyType) return
 
-  const allDefs = [...ANOMALY_DEFINITIONS, ...OPERATION_ANOMALY_DEFINITIONS]
-  const def = allDefs.find((d: any) => d.type === store.activeAnomalyType)
-  if (!def) return
-
-  const reward = buildAnomalyReward(def, interactionScore, store)
-
-  // Apply instant RP payout
-  let rpGain = reward.instantRPPayout + reward.rpReward
-
-  // Apply dust
-  const newDust = store.artifactDust + reward.dustDropped
-
-  // Unlock relic if dropped
-  const newUnlocked =
-    reward.relicDropped > 0 &&
-    !store.unlockedRelics.includes(reward.relicDropped)
-      ? [...store.unlockedRelics, reward.relicDropped]
-      : store.unlockedRelics
-
-  const newLevels =
-    reward.relicDropped > 0 &&
-    !store.unlockedRelics.includes(reward.relicDropped)
-      ? { ...store.relicLevels, [reward.relicDropped]: 1 }
-      : store.relicLevels
-
-  if (
-    reward.relicDropped > 0 &&
-    !store.unlockedRelics.includes(reward.relicDropped)
-  ) {
-    useUIStore.getState().pushAlert({
-      priority: 2,
-      variant: 'unlock',
-      title: 'Relic Discovered',
-      message: `A new relic has been added to your collection.`,
-      autoDismissMs: 5000
-    })
-  }
-
-  // Apply R4: reduce running research timers
-  let updatedSlots = store.activeResearchSlots
-  if (reward.researchTimeReduction > 0) {
-    updatedSlots = store.activeResearchSlots.map((slot) => {
-      if (!slot.nodeId || slot.timerRemaining <= 0) return slot
-      return {
-        ...slot,
-        timerRemaining: Math.max(
-          0,
-          slot.timerRemaining - reward.researchTimeReduction
-        )
-      }
-    })
-  }
+  const allDefs = [
+    ...ANOMALY_DEFINITIONS,
+    ...OPERATION_ANOMALY_DEFINITIONS,
+    ...FUSED_ANOMALY_DEFINITIONS
+  ]
+  const def = allDefs.find((d) => d.type === store.activeAnomalyType)
 
   useGameStore.setState((s) => ({
-    researchPoints: s.researchPoints + rpGain,
-    lifetimePoints: s.lifetimePoints + rpGain,
-    artifactDust: newDust,
-    unlockedRelics: newUnlocked,
-    relicLevels: newLevels,
     activeAnomalyType: null,
     anomalyTimeRemaining: 0,
-    anomalyInteractionValue: 0,
-    activeResearchSlots: updatedSlots,
     stats: {
       ...s.stats,
       totalAnomaliesResolved: s.stats.totalAnomaliesResolved + 1
     }
   }))
 
+  if (store.stats.totalAnomaliesResolved + 1 >= 10) {
+    awardRelic(6)
+  }
+
   // Return to idle BGM
   useMusicStore.getState().setContext('idle')
 
-  // Award operation points for operation anomalies
-  const isOperationAnomaly = store.activeAnomalyType?.startsWith('operation_')
-  if (isOperationAnomaly && store.activeAnomalyType) {
-    earnOperationPoints(store.activeAnomalyType, interactionScore)
+  if (def) {
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'info',
+      title: `${def.label} Ended`,
+      message: 'Facility parameters returned to baseline.',
+      autoDismissMs: 3000
+    })
   }
 
   markUnlocksDirty()
   markAchievementsDirty()
+  dispatchAnomalyResolved()
+  useGameStore.getState().recalcPPS()
 
-  dispatchAnomalyResolved(reward.wasMaxReward)
-
-  if (reward.relicDropped > 0) {
-    dispatchRelicDiscovered()
-  }
-
-  if (rpGain > 0n) {
-    useGameStore.getState().recalcPPS()
+  // Passive 10% cascade chance to chain a follow-up anomaly
+  if (Math.random() < 0.1) {
+    setTimeout(() => {
+      checkAnomalySpawn(true)
+    }, 400)
   }
 }
 
-// Dismisses the active anomaly without reward (timer expired or skipped)
-export function dismissAnomaly(): void {
+// Particle Collider: Synthesize an anomaly on demand using 25 Artifact Dust
+export function synthesizeAnomaly(): void {
   const store = useGameStore.getState()
-  if (!store.activeAnomalyType) return
-
-  const nextCheck = getNextSpawnInterval(store)
+  if (!store.unlocks.anomalies) return
+  if (store.activeAnomalyType) return
+  if (store.activeChallengeRestrictions?.anomaliesDisabled) return
+  if (store.artifactDust < 25) return
 
   useGameStore.setState({
-    activeAnomalyType: null,
-    anomalyTimeRemaining: 0,
-    anomalyInteractionValue: 0,
-    timeToNextAnomalyCheck: nextCheck
+    artifactDust: store.artifactDust - 25
   })
 
-  useMusicStore.getState().setContext('idle')
-}
+  playSound('spawn')
+  useUIStore.getState().pushAlert({
+    priority: 1,
+    variant: 'unlock',
+    title: 'Particle Collider Activated',
+    message: 'Sub-atomic dust stream fused. Artificial surge emerging.',
+    autoDismissMs: 4000
+  })
 
-// Updates the anomaly interaction value (used by interaction widgets)
-export function updateAnomalyInteraction(value: number): void {
-  useGameStore.setState({ anomalyInteractionValue: value })
+  checkAnomalySpawn(true)
 }

@@ -1,32 +1,53 @@
 'use client'
-import { useCallback, useRef, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useUIStore } from '@/app/stores/uiStore'
 
 // Define all sound keys used in Labs
 export type SoundKey =
   | 'click'
-  | 'tick'
+  | 'purchase'
+  | 'alert'
+  | 'spawn'
+  | 'collect'
+  | 'research-complete'
+  | 'equip'
+  | 'probe'
+  | 'build'
+  | 'fanfare'
   | 'success'
-  | 'error'
-  | 'level-up'
-  | 'prestige'
-  | 'anomaly-spawn'
-  | 'anomaly-defeat'
+  | 'fail'
+  | 'relic-common'
+  | 'relic-rare'
+  | 'relic-epic'
+  | 'relic-legendary'
+  | 'relic-mythical'
 
-const SOUND_MAP: Record<SoundKey, string> = {
+export const SOUND_MAP: Record<SoundKey, string> = {
   click: '/sounds/click.mp3',
-  tick: '/sounds/tick.mp3',
-  success: '/sounds/success.mp3',
-  error: '/sounds/error.mp3',
-  'level-up': '/sounds/level-up.mp3',
-  prestige: '/sounds/prestige.mp3',
-  'anomaly-spawn': '/sounds/anomaly-spawn.mp3',
-  'anomaly-defeat': '/sounds/anomaly-defeat.mp3'
+  purchase: '/sounds/purchase.mp3',
+  alert: '/sounds/alert.mp3',
+  spawn: '/sounds/spawn.mp3',
+  collect: '/sounds/collect.mp3',
+  'research-complete': '/sounds/research-complete.mp3',
+  equip: '/sounds/equip.mp3',
+  probe: '/sounds/probe.mp3',
+  build: '/sounds/build.mp3',
+  fanfare: '/sounds/fanfare.mp3',
+  success: '/sounds/success.wav',
+  fail: '/sounds/fail.wav',
+  'relic-common': '/sounds/relic_common.mp3',
+  'relic-rare': '/sounds/relic_rare.mp3',
+  'relic-epic': '/sounds/relic_epic.mp3',
+  'relic-legendary': '/sounds/relic_legendary.mp3',
+  'relic-mythical': '/sounds/relic_mythical.mp3'
 }
 
 // Per-channel volume multipliers applied on top of the user's slider setting.
 const VOLUME_MULTIPLIERS: Partial<Record<SoundKey, number>> = {
-  tick: 0.5
+  click: 0.7,
+  purchase: 0.9,
+  alert: 0.8,
+  build: 0.5,
 }
 
 // Standard HTML5 Audio pool for non-rapid sounds
@@ -37,13 +58,13 @@ const poolRef = new Map<
 >()
 
 // Web Audio API setup for polyphonic rapid-tap sounds
-type PolyKey = 'click' | 'tick'
-const POLY_KEYS: PolyKey[] = ['click', 'tick']
+type PolyKey = 'click' | 'purchase'
+const POLY_KEYS: PolyKey[] = ['click', 'purchase']
 let audioCtx: AudioContext | null = null
 const polyBuffers: Partial<Record<PolyKey, AudioBuffer>> = {}
 let masterGain: GainNode | null = null
 const activePolyClicks: { source: AudioBufferSourceNode; gain: GainNode }[] = []
-const MAX_POLY = 6
+const MAX_POLY = 8
 
 async function initPolyAudio(): Promise<void> {
   if (audioCtx) return
@@ -98,20 +119,55 @@ function playPolySound(key: PolyKey, volume: number, playbackRate = 1.0): void {
   source.start()
 }
 
+// Standalone function callable directly from Zustand store actions
+const lastPlayAt = new Map<SoundKey, number>()
+const SFX_DEDUPE_MS = 250
+export function playSound(
+  key: SoundKey,
+  options?: { playbackRate?: number }
+): void {
+  if (typeof window === 'undefined') return
+  const { sfxEnabled, sfxVolume } = useUIStore.getState()
+  if (!sfxEnabled) return
+  // Suppress identical non-poly SFX fired by multiple systems in one tick
+  if (!POLY_KEYS.includes(key as PolyKey)) {
+    const now = performance.now()
+    if (now - (lastPlayAt.get(key) ?? 0) < SFX_DEDUPE_MS) return
+    lastPlayAt.set(key, now)
+  }
+  
+  const vol = Math.max(
+    0,
+    Math.min(1, sfxVolume * (VOLUME_MULTIPLIERS[key] ?? 1))
+  )
+
+  if (POLY_KEYS.includes(key as PolyKey)) {
+    if (audioCtx && polyBuffers[key as PolyKey]) {
+      playPolySound(key as PolyKey, vol, options?.playbackRate ?? 1.0)
+      return
+    }
+  }
+
+  let pool = poolRef.get(key)
+  if (!pool) {
+    const elements: HTMLAudioElement[] = []
+    for (let i = 0; i < POOL_SIZE; i++) {
+      const audio = new Audio(SOUND_MAP[key])
+      audio.preload = 'none'
+      elements.push(audio)
+    }
+    pool = { elements, index: 0 }
+    poolRef.set(key, pool)
+  }
+
+  const audio = pool.elements[pool.index % POOL_SIZE]
+  pool.index = (pool.index + 1) % POOL_SIZE
+  audio.currentTime = 0
+  audio.volume = vol
+  audio.play().catch(() => {})
+}
+
 export function useSound() {
-  const sfxEnabled = useUIStore((s) => s.sfxEnabled)
-  const sfxVolume = useUIStore((s) => s.sfxVolume)
-  const sfxEnabledRef = useRef(sfxEnabled)
-  const sfxVolumeRef = useRef(sfxVolume)
-
-  useEffect(() => {
-    sfxEnabledRef.current = sfxEnabled
-  }, [sfxEnabled])
-
-  useEffect(() => {
-    sfxVolumeRef.current = sfxVolume
-  }, [sfxVolume])
-
   // Pre-decode polyphonic buffers and unlock on interaction
   useEffect(() => {
     initPolyAudio()
@@ -129,43 +185,5 @@ export function useSound() {
     }
   }, [])
 
-  const play = useCallback(
-    (key: SoundKey, options?: { playbackRate?: number }) => {
-      if (!sfxEnabledRef.current || typeof window === 'undefined') return
-      const vol = Math.min(
-        1,
-        sfxVolumeRef.current * (VOLUME_MULTIPLIERS[key] ?? 1)
-      )
-
-      // Route rapid-tap sounds through the Web Audio API polyphony engine
-      if (POLY_KEYS.includes(key as PolyKey)) {
-        if (audioCtx && polyBuffers[key as PolyKey]) {
-          playPolySound(key as PolyKey, vol, options?.playbackRate ?? 1.0)
-          return
-        }
-      }
-
-      // Standard pool for everything else
-      let pool = poolRef.get(key)
-      if (!pool) {
-        const elements: HTMLAudioElement[] = []
-        for (let i = 0; i < POOL_SIZE; i++) {
-          const audio = new Audio(SOUND_MAP[key])
-          audio.preload = 'none'
-          elements.push(audio)
-        }
-        pool = { elements, index: 0 }
-        poolRef.set(key, pool)
-      }
-
-      const audio = pool.elements[pool.index % POOL_SIZE]
-      pool.index = (pool.index + 1) % POOL_SIZE
-      audio.currentTime = 0
-      audio.volume = vol
-      audio.play().catch(() => {})
-    },
-    []
-  )
-
-  return { play }
+  return { play: playSound }
 }

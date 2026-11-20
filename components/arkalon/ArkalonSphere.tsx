@@ -1,14 +1,35 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 export type ArkalonState = 'idle' | 'anomaly' | 'prestige'
+export type ArkalonCoreStage = 1 | 2 | 3 | 4 | 5
+
+export const CORE_STAGE_LABELS: Record<ArkalonCoreStage, string> = {
+  1: 'Fractured',
+  2: 'Reconstructing',
+  3: 'Stabilized',
+  4: 'Resonant',
+  5: 'Ascendant'
+}
+
+export function getArkalonCoreStage(
+  peakLifetimePoints: bigint,
+  totalPrestiges: number
+): ArkalonCoreStage {
+  if (peakLifetimePoints >= 10n ** 35n) return 5
+  if (peakLifetimePoints >= 1_000_000_000n || totalPrestiges >= 1) return 4
+  if (peakLifetimePoints >= 1_000_000n) return 3
+  if (peakLifetimePoints >= 1_000n) return 2
+  return 1
+}
 
 interface Props {
   state: ArkalonState
   interactive: boolean
   onClick?: () => void
   size?: number
+  stage?: ArkalonCoreStage
 }
 
 // Wireframe icosahedron vertex pairs for the sphere lines
@@ -90,13 +111,14 @@ export default function ArkalonSphere({
   state,
   interactive,
   onClick,
-  size = 128
+  size = 128,
+  stage = 5
 }: Props) {
   const cx = size / 2
   const cy = size / 2
   const r = size * 0.38
 
-  const edges = buildEdges(cx, cy, r)
+  const edges = useMemo(() => buildEdges(cx, cy, r), [cx, cy, r])
 
   const animationClass =
     state === 'anomaly'
@@ -126,12 +148,20 @@ export default function ArkalonSphere({
         ? '#c026d3'
         : 'var(--border-accent)'
 
-  const strokeOpacity = state === 'idle' ? 0.7 : 1
+  const strokeOpacity = state === 'idle' ? (stage === 1 ? 0.55 : 0.78) : 1
+  const visibleEdgeCount = stage === 1 ? 12 : stage === 2 ? 21 : edges.length
+  const auraBlur = state !== 'idle' ? 22 : [6, 10, 14, 18, 24][stage - 1]
+  const auraOpacity =
+    state !== 'idle' ? 0.34 : [0.08, 0.14, 0.2, 0.28, 0.36][stage - 1]
 
   return (
     <div
-      className={`arkalon-sphere-wrap ${animationClass}`}
-      style={{ width: size, height: size }}
+      className="relative flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95"
+      style={{
+        width: size,
+        height: size,
+        filter: `drop-shadow(0 0 ${auraBlur}px ${strokeColor})`
+      }}
       role={interactive ? 'button' : 'img'}
       aria-label={
         interactive ? 'Arkalon core - click to interact' : 'Arkalon core visual'
@@ -140,25 +170,68 @@ export default function ArkalonSphere({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
+      {/* Matching-color ambient aura */}
+      <div
+        className="absolute inset-1 rounded-full pointer-events-none blur-xl transition-all duration-700"
+        style={{ backgroundColor: strokeColor, opacity: auraOpacity }}
+        aria-hidden="true"
+      />
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         aria-hidden="true"
-        style={{ overflow: 'visible' }}
+        style={{ overflow: 'visible', position: 'relative' }}
       >
-        {/* Outer glow circle */}
+        {/* Outer containment ring */}
         <circle
           cx={cx}
           cy={cy}
-          r={r + 4}
+          r={r + 5}
           fill="none"
           stroke={strokeColor}
-          strokeWidth="0.5"
-          strokeOpacity="0.2"
-        />
+          strokeWidth={stage >= 4 ? '1' : '0.6'}
+          strokeDasharray={
+            stage <= 2 ? '4 6' : stage === 4 ? '10 6' : '14 4 3 4'
+          }
+          strokeOpacity={stage >= 3 ? 0.45 : 0.25}
+        >
+          {stage >= 4 && (
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from={`0 ${cx} ${cy}`}
+              to={`360 ${cx} ${cy}`}
+              dur="22s"
+              repeatCount="indefinite"
+            />
+          )}
+        </circle>
 
-        {/* Core circle */}
+        {/* Stage 5: Counter-rotating outer harmonic ring */}
+        {stage >= 5 && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r + 12}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth="0.75"
+            strokeDasharray="6 10"
+            strokeOpacity="0.35"
+          >
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from={`360 ${cx} ${cy}`}
+              to={`0 ${cx} ${cy}`}
+              dur="32s"
+              repeatCount="indefinite"
+            />
+          </circle>
+        )}
+
+        {/* Core shell */}
         <circle
           cx={cx}
           cy={cy}
@@ -166,11 +239,12 @@ export default function ArkalonSphere({
           fill="none"
           stroke={strokeColor}
           strokeWidth="1"
-          strokeOpacity={strokeOpacity * 0.5}
+          strokeDasharray={stage === 1 ? '6 5' : undefined}
+          strokeOpacity={strokeOpacity * 0.55}
         />
 
-        {/* Wireframe edges */}
-        {edges.map(([x1, y1, x2, y2], i) => (
+        {/* Wireframe edges (progressive restoration) */}
+        {edges.slice(0, visibleEdgeCount).map(([x1, y1, x2, y2], i) => (
           <line
             key={i}
             x1={x1}
@@ -178,22 +252,38 @@ export default function ArkalonSphere({
             x2={x2}
             y2={y2}
             stroke={strokeColor}
-            strokeWidth="0.75"
-            strokeOpacity={strokeOpacity * 0.6}
+            strokeWidth={stage >= 4 ? '0.9' : '0.75'}
+            strokeDasharray={stage === 1 && i % 3 === 0 ? '3 3' : undefined}
+            strokeOpacity={strokeOpacity * (stage === 1 ? 0.5 : 0.65)}
           />
         ))}
+
+        {/* Stage 5: Harmonic vertex pips */}
+        {stage >= 5 &&
+          edges
+            .slice(0, 6)
+            .map(([x1, y1], i) => (
+              <circle
+                key={`v-${i}`}
+                cx={x1}
+                cy={y1}
+                r={1.4}
+                fill={strokeColor}
+                opacity={0.75}
+              />
+            ))}
 
         {/* Center node */}
         <circle
           cx={cx}
           cy={cy}
-          r={3}
+          r={stage === 1 ? 2 : stage >= 4 ? 3.5 : 3}
           fill={strokeColor}
-          opacity={strokeOpacity}
+          opacity={stage === 1 ? 0.5 : strokeOpacity}
         />
 
         {/* Interactive pulse ring */}
-        {interactive && state === 'idle' && (
+        {interactive && state === 'idle' && stage >= 3 && (
           <circle
             cx={cx}
             cy={cy}
@@ -201,8 +291,7 @@ export default function ArkalonSphere({
             fill="none"
             stroke={strokeColor}
             strokeWidth="0.5"
-            strokeOpacity="0.15"
-            className="dot-pulse"
+            strokeOpacity="0.18"
           />
         )}
 

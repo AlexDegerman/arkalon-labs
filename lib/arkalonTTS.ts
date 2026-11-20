@@ -92,22 +92,37 @@ export function primeArkalonVoices(): void {
   } catch {}
 }
 
+// Cancels active speech immediately
+export function cancelArkalonSpeech(): void {
+  if (!isSpeechSupported()) return
+  try {
+    window.speechSynthesis.cancel()
+    lastSpeakTime = 0
+  } catch {}
+}
+
 // Speaks dialogue with cadence pauses, lowered pitch, and rate control
-export function speakArkalon(text: string, volume = 0.88): void {
+export function speakArkalon(text: string, volume = 0.88, force = false): void {
   if (!isSpeechSupported()) return
 
   const now = Date.now()
-  if (now - lastSpeakTime < COOLDOWN_MS) return
+  if (!force && now - lastSpeakTime < COOLDOWN_MS) return
   lastSpeakTime = now
 
   const cadenceText = prepareSpeechCadence(text)
   if (!cadenceText) return
 
   try {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume()
+    }
     window.speechSynthesis.cancel()
 
     setTimeout(() => {
       try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume()
+        }
         const utterance = new SpeechSynthesisUtterance(cadenceText)
 
         utterance.rate = 0.8

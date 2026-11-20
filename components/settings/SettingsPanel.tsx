@@ -1,89 +1,99 @@
 'use client'
 
-import { useState, useRef, useEffect, useTransition } from 'react'
-import { Dices, ExternalLink } from 'lucide-react'
+import { useState, useRef } from 'react'
 import { makeInitialState, useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import {
   exportSave,
   importSave,
   clearLocalStorageSave,
-  saveToLocalStorage
+  saveToLocalStorage,
+  serialiseState
 } from '@/lib/saveGame'
-import { setNotationMode, setDecimalPrecision } from '@/lib/format'
-import { rerollPlayerName } from '@/app/actions/rerollPlayerName'
+import { saveState } from '@/app/actions/saveState'
+import { setNotationMode } from '@/lib/format'
 import VolumeControls from '@/components/ui/VolumeControls'
-import type { NotationMode } from '@/types/game'
+import type { NotationMode, UITheme } from '@/types/game'
+import { markUnlocksDirty, markAchievementsDirty, resetDirtyFlags } from '@/lib/dirtyFlags'
+import { resetCloudState } from '@/app/actions/saveState'
+import { resetTickSession } from '@/app/stores/actions/tickActions'
+import { resetUnlockSessionCaches } from '@/lib/unlockWatcher'
+import { useMusicStore } from '@/app/stores/musicStore'
+
+export const THEME_CONFIG: Record<
+  UITheme,
+  {
+    label: string
+    borderAccent: string
+    textAccent: string
+  }
+> = {
+  default: {
+    label: 'Electric Cyan',
+    borderAccent: '#00f0ff',
+    textAccent: '#00f0ff',
+  },
+  matrix: {
+    label: 'Matrix Green',
+    borderAccent: '#22c55e',
+    textAccent: '#4ade80',
+  },
+  vaporwave: {
+    label: 'Vaporwave',
+    borderAccent: '#f43f5e',
+    textAccent: '#fb7185',
+  },
+  solar: {
+    label: 'Solar Amber',
+    borderAccent: '#f59e0b',
+    textAccent: '#fbbf24',
+  },
+  void: {
+    label: 'Absolute Void',
+    borderAccent: '#cbd5e1',
+    textAccent: '#f1f5f9',
+  }
+}
+
+export function applyThemeVariables(theme: UITheme): void {
+  if (typeof document === 'undefined') return
+  const cfg = THEME_CONFIG[theme] ?? THEME_CONFIG.default
+  document.documentElement.style.setProperty(
+    '--border-accent',
+    cfg.borderAccent
+  )
+  document.documentElement.style.setProperty('--text-accent', cfg.textAccent)
+  document.documentElement.setAttribute('data-facility-theme', theme)
+}
 
 const NOTATION_OPTIONS: {
   value: NotationMode
   label: string
-  example: string
 }[] = [
-  { value: 'suffix', label: 'Suffix', example: '1.50 Million' },
-  { value: 'scientific', label: 'Scientific', example: '1.50e6' },
-  { value: 'engineering', label: 'Engineering', example: '1.50E6' },
-  { value: 'logarithm', label: 'Logarithm', example: 'e6.18' }
-]
-
-const PRECISION_OPTIONS: { value: 1 | 2 | 3; label: string }[] = [
-  { value: 1, label: '1 decimal' },
-  { value: 2, label: '2 decimals' },
-  { value: 3, label: '3 decimals' }
+  { value: 'suffix', label: 'Suffix (1.50M)' },
+  { value: 'scientific', label: 'Scientific (1.50e6)' }
 ]
 
 type ConfirmState = 'idle' | 'confirm1' | 'confirm2' | 'typing'
 
 export default function SettingsPanel() {
-  const { settingsPanelOpen, setSettingsPanelOpen } = useUIStore()
+  const settingsPanelOpen = useUIStore((s) => s.settingsPanelOpen)
+  const setSettingsPanelOpen = useUIStore((s) => s.setSettingsPanelOpen)
   const settings = useGameStore((s) => s.settings)
-
-  const [displayName, setDisplayName] = useState<string>('Director')
-  const [justRerolled, setJustRerolled] = useState(false)
-  const [isRerolling, startReroll] = useTransition()
 
   const [exportText, setExportText] = useState('')
   const [importText, setImportText] = useState('')
+  const [importOpen, setImportOpen] = useState(false)
   const [importError, setImportError] = useState('')
   const [importSuccess, setImportSuccess] = useState(false)
+  const [cloudSyncStatus, setCloudSyncStatus] = useState<
+    'idle' | 'syncing' | 'synced' | 'rate_limited' | 'offline' | 'error'
+  >('idle')
   const [resetConfirm, setResetConfirm] = useState<ConfirmState>('idle')
   const [resetInput, setResetInput] = useState('')
   const resetInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('arkalon_labs_display_name')
-      if (stored) setDisplayName(stored)
-    } catch {}
-
-    function onPlayerReady(e: Event) {
-      const customEvent = e as CustomEvent<string>
-      if (customEvent.detail) {
-        setDisplayName(customEvent.detail)
-      }
-    }
-
-    window.addEventListener('arkalon_player_ready', onPlayerReady)
-    return () =>
-      window.removeEventListener('arkalon_player_ready', onPlayerReady)
-  }, [])
-
   if (!settingsPanelOpen) return null
-
-  function handleReroll() {
-    if (isRerolling) return
-    startReroll(async () => {
-      const res = await rerollPlayerName()
-      if (res.success && res.nickname) {
-        setDisplayName(res.nickname)
-        try {
-          localStorage.setItem('arkalon_labs_display_name', res.nickname)
-        } catch {}
-        setJustRerolled(true)
-        setTimeout(() => setJustRerolled(false), 800)
-      }
-    })
-  }
 
   function updateSetting<K extends keyof typeof settings>(
     key: K,
@@ -95,8 +105,17 @@ export default function SettingsPanel() {
     if (key === 'notationMode') {
       setNotationMode(value as NotationMode)
     }
-    if (key === 'decimalPrecision') {
-      setDecimalPrecision(value as 1 | 2 | 3)
+    if (key === 'currentUITheme') {
+      applyThemeVariables(value as UITheme)
+    }
+    if (key === 'neonBloom') {
+      document.documentElement.setAttribute('data-neon-bloom', String(value))
+    }
+    if (key === 'reducedMotion') {
+      document.documentElement.setAttribute(
+        'data-reduced-motion',
+        String(value)
+      )
     }
   }
 
@@ -125,8 +144,39 @@ export default function SettingsPanel() {
     }
 
     useGameStore.getState().applyState(loaded)
+    resetUnlockSessionCaches()
+    resetTickSession()
+    resetDirtyFlags()
+    setNotationMode(loaded.settings.notationMode)
+    applyThemeVariables(
+      (loaded.settings.currentUITheme ?? 'default') as UITheme
+    )
+    document.documentElement.setAttribute(
+      'data-neon-bloom',
+      String(loaded.settings.neonBloom)
+    )
+    document.documentElement.setAttribute(
+      'data-reduced-motion',
+      String(loaded.settings.reducedMotion)
+    )
+    useUIStore.setState({
+      terminalLines: [],
+      alertQueue: [],
+      activeAlert: null,
+      unseenUnlockedTabs: []
+    })
+    const music = useMusicStore.getState()
+    music.setContext(loaded.activeAnomalyType ? 'anomaly' : 'idle')
+    music.setMuted(Boolean(loaded.settings.audioMuted))
+    music.setVolumeBGM(loaded.settings.volumeMusic)
+    music.setVolumeSFX(loaded.settings.volumeSFX)
+    music.setVolumeVoice(loaded.settings.volumeVoice)
+    saveToLocalStorage(useGameStore.getState())
+    markUnlocksDirty()
+    markAchievementsDirty()
     setImportSuccess(true)
     setImportText('')
+    setImportOpen(false)
   }
 
   function handleManualSave() {
@@ -141,7 +191,65 @@ export default function SettingsPanel() {
     })
   }
 
-  function handleReset() {
+  async function handleCloudSync() {
+    if (cloudSyncStatus === 'syncing') return
+    const state = useGameStore.getState()
+    saveToLocalStorage(state)
+    setCloudSyncStatus('syncing')
+    try {
+      const serialized = serialiseState(state)
+      const res = await saveState({
+        save: serialized,
+        lastSavedTime: serialized.lastSavedTime,
+        lifetimePoints: serialized.lifetimePoints,
+        currentPoints: serialized.researchPoints,
+        cachedPPS: serialized.cachedPointsPerSecond
+      })
+      if (res.success) {
+        setCloudSyncStatus('synced')
+      } else if (res.error === 'Rate limited') {
+        setCloudSyncStatus('rate_limited')
+      } else if (res.error === 'Database offline') {
+        setCloudSyncStatus('offline')
+      } else {
+        setCloudSyncStatus('error')
+      }
+    } catch {
+      setCloudSyncStatus('offline')
+    }
+    setTimeout(() => setCloudSyncStatus('idle'), 3500)
+  }
+
+  function handleDownloadSave() {
+    const state = useGameStore.getState()
+    const b64 = exportSave(state)
+    const blob = new Blob([b64], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const dateStr = new Date().toISOString().slice(0, 10)
+    a.href = url
+    a.download = `arkalon-labs-save-${dateStr}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      if (content) {
+        setImportText(content.trim())
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  async function handleReset() {
     if (resetConfirm === 'idle') {
       setResetConfirm('confirm1')
       return
@@ -161,17 +269,66 @@ export default function SettingsPanel() {
         return
       }
       clearLocalStorageSave()
-      useGameStore.getState().applyState(makeInitialState())
+      const freshState = makeInitialState()
+      useGameStore.getState().applyState(freshState)
+      saveToLocalStorage(useGameStore.getState())
+      resetUnlockSessionCaches()
+      resetTickSession()
+      resetDirtyFlags()
+      setNotationMode(freshState.settings.notationMode)
+      applyThemeVariables(freshState.settings.currentUITheme as UITheme)
+      document.documentElement.setAttribute(
+        'data-neon-bloom',
+        String(freshState.settings.neonBloom)
+      )
+      document.documentElement.setAttribute(
+        'data-reduced-motion',
+        String(freshState.settings.reducedMotion)
+      )
+      useUIStore.setState({
+        terminalLines: [],
+        alertQueue: [],
+        activeAlert: null,
+        unseenUnlockedTabs: []
+      })
+      const music = useMusicStore.getState()
+      music.setContext('idle')
+      music.setMuted(false)
+      music.setVolumeBGM(freshState.settings.volumeMusic)
+      music.setVolumeSFX(freshState.settings.volumeSFX)
+      music.setVolumeVoice(freshState.settings.volumeVoice)
       setResetConfirm('idle')
       setResetInput('')
       setSettingsPanelOpen(false)
+      try {
+        const cloudRes = await resetCloudState()
+        if (!cloudRes.success && cloudRes.error !== 'Database offline') {
+          useUIStore.getState().pushAlert({
+            priority: 1,
+            variant: 'info',
+            title: 'Cloud Reset Warning',
+            message:
+              'Local facility reset, but cloud deletion failed. Sync manually once online.',
+            autoDismissMs: 6000
+          })
+        }
+      } catch {
+        useUIStore.getState().pushAlert({
+          priority: 1,
+          variant: 'info',
+          title: 'Cloud Reset Warning',
+          message:
+            'Local facility reset, but cloud deletion could not be reached.',
+          autoDismissMs: 6000
+        })
+      }
     }
   }
 
   const returnUrl =
     typeof window !== 'undefined'
       ? window.location.href
-      : 'https://labs.rpsleague.fi/game'
+      : 'https://labs.rpsleague.fi'
 
   return (
     <div
@@ -197,149 +354,161 @@ export default function SettingsPanel() {
         </div>
 
         <div className="flex-1 overflow-y-auto scrollbar-dark p-4 flex flex-col gap-4">
-          {/* Identity Section */}
-          <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-surface) p-3">
-            <span className="text-[10px] font-black uppercase tracking-wider text-(--text-secondary) font-mono">
+          {/* Arkalon Core Network Account & Recovery Card */}
+          <div className="w-full rounded-xl border border-(--border-default) bg-(--bg-surface) p-3.5">
+            <p className="mb-1 text-xs uppercase tracking-wider text-(--text-secondary) font-bold font-mono">
               Arkalon Core Identity
-            </span>
-
-            <div
-              className="w-full rounded-lg border px-3 py-2 flex items-center justify-between gap-2 transition-all duration-200"
-              style={{
-                backgroundColor: justRerolled
-                  ? 'rgba(0, 240, 255, 0.12)'
-                  : 'var(--bg-elevated)',
-                borderColor: justRerolled
-                  ? 'var(--border-accent)'
-                  : 'var(--border-default)'
-              }}
-            >
-              <span
-                className="flex-1 whitespace-nowrap tracking-tight font-bold font-mono text-xs text-(--text-accent)"
-                style={{
-                  fontSize:
-                    displayName.length > 18
-                      ? '10px'
-                      : displayName.length > 13
-                        ? '12px'
-                        : '14px'
-                }}
-              >
-                {isRerolling ? '...' : displayName}
-              </span>
-
-              <button
-                type="button"
-                onClick={handleReroll}
-                disabled={isRerolling}
-                title="Reroll procedural nickname"
-                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--border-accent) cursor-pointer transition-all disabled:opacity-50"
-              >
-                <Dices
-                  size={12}
-                  className={isRerolling ? 'animate-spin' : ''}
-                />
-                <span>REROLL</span>
-              </button>
-            </div>
-
-            <p className="text-[11px] text-(--text-secondary) leading-relaxed">
-              Your account is anchored across the Arkalon Network. Reveal your
-              master recovery code on the Hub.
             </p>
-
-            <a
-              href={`https://network.rpsleague.fi/settings?tab=identity&returnTo=${encodeURIComponent(returnUrl)}`}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-mono font-bold bg-(--border-accent)/10 border border-(--border-accent)/40 text-(--border-accent) hover:bg-(--border-accent)/20 transition-colors cursor-pointer"
-            >
-              <span>Reveal Recovery Code on Hub</span>
-              <ExternalLink size={12} />
-            </a>
+            <p className="mb-3 text-xs text-(--text-secondary) leading-relaxed font-sans">
+              Your profile is anchored by Arkalon Core. Access your recovery
+              code or switch devices on the Network Hub.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 pt-1 font-mono">
+              <a
+                href={`https://network.rpsleague.fi/settings?returnTo=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 inline-flex items-center justify-center rounded-lg border border-(--border-default) px-3 py-2 text-xs font-semibold text-(--text-primary) hover:border-(--border-accent) hover:text-(--text-accent) transition-colors cursor-pointer"
+              >
+                Reroll Nickname ↗
+              </a>
+              <a
+                href={`https://network.rpsleague.fi/settings?tab=identity&returnTo=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 inline-flex items-center justify-center rounded-lg bg-(--border-accent)/10 border border-(--border-accent)/40 px-3 py-2 text-xs font-semibold text-(--text-accent) hover:bg-(--border-accent)/20 transition-colors cursor-pointer"
+              >
+                Reveal Recovery Code ↗
+              </a>
+            </div>
           </div>
 
           <VolumeControls />
 
-          {/* Display & Notation */}
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
-              Display & Notation
+          {/* Facility UI Themes */}
+          <div className="flex flex-col gap-1.5 font-mono">
+            <span className="text-[10px] font-bold text-(--text-secondary) uppercase tracking-widest">
+              Interface Color Theme
+            </span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {(Object.keys(THEME_CONFIG) as UITheme[]).map((thm) => {
+                const cfg = THEME_CONFIG[thm]
+                const isSelected =
+                  (settings.currentUITheme ?? 'default') === thm
+
+                return (
+                  <button
+                    key={thm}
+                    onClick={() => updateSetting('currentUITheme', thm)}
+                    className={[
+                      'py-1.5 px-2 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer',
+                      isSelected
+                        ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent)'
+                        : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary)'
+                    ].join(' ')}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: cfg.borderAccent }}
+                    />
+                    <span className="truncate">{cfg.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Visual FX & Accessibility */}
+          <div className="flex flex-col gap-2 font-mono p-3 rounded-xl bg-(--bg-surface) border border-(--border-default)">
+            <span className="text-[10px] font-bold text-(--text-secondary) uppercase tracking-widest">
+              Visual FX & Optics
             </span>
 
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-(--text-secondary)">
+                Neon Bloom Bloom Filter:
+              </span>
+              <button
+                onClick={() => updateSetting('neonBloom', !settings.neonBloom)}
+                className={[
+                  'px-2 py-0.5 rounded border text-[10px] font-bold cursor-pointer transition-colors',
+                  settings.neonBloom
+                    ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success)'
+                    : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary)'
+                ].join(' ')}
+              >
+                {settings.neonBloom ? 'ENABLED' : 'DISABLED'}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-(--text-secondary)">
+                CRT Scanlines Layer:
+              </span>
+              <button
+                onClick={() =>
+                  updateSetting('crtScanlines', !settings.crtScanlines)
+                }
+                className={[
+                  'px-2 py-0.5 rounded border text-[10px] font-bold cursor-pointer transition-colors',
+                  settings.crtScanlines
+                    ? 'border-cyan-400 bg-cyan-400/15 text-cyan-300'
+                    : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary)'
+                ].join(' ')}
+              >
+                {settings.crtScanlines ? 'ACTIVE' : 'OFF'}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-(--text-secondary)">
+                Reduced Motion Mode:
+              </span>
+              <button
+                onClick={() =>
+                  updateSetting('reducedMotion', !settings.reducedMotion)
+                }
+                className={[
+                  'px-2 py-0.5 rounded border text-[10px] font-bold cursor-pointer transition-colors',
+                  settings.reducedMotion
+                    ? 'border-amber-400 bg-amber-400/15 text-amber-300'
+                    : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary)'
+                ].join(' ')}
+              >
+                {settings.reducedMotion ? 'ACTIVE' : 'OFF'}
+              </button>
+            </div>
+          </div>
+
+          {/* Hotkey Cheat Sheet Modal Trigger */}
+          <button
+            onClick={() => {
+              setSettingsPanelOpen(false)
+              useUIStore.getState().setHotkeyModalOpen(true)
+            }}
+            className="w-full py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-accent) transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span>Keyboard Shortcuts Matrix</span>
+            <kbd className="text-[9px] px-1 py-0.2 rounded bg-black/40 border border-(--border-default) font-mono">
+              ?
+            </kbd>
+          </button>
+
+          {/* Number Format */}
+          <div className="flex flex-col gap-1.5 font-mono">
+            <span className="text-[10px] font-bold text-(--text-secondary) uppercase tracking-widest">
+              Number Format
+            </span>
+            <div className="grid grid-cols-2 gap-2">
               {NOTATION_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => updateSetting('notationMode', opt.value)}
                   className={[
-                    'flex flex-col items-start p-2 rounded-lg border text-left transition-all cursor-pointer select-none',
+                    'py-2 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center',
                     settings.notationMode === opt.value
-                      ? 'border-(--border-accent) bg-(--border-accent)/10 shadow-[0_0_8px_rgba(0,240,255,0.15)]'
-                      : 'border-(--border-default) bg-(--bg-surface) hover:border-(--text-secondary)'
-                  ].join(' ')}
-                  aria-pressed={settings.notationMode === opt.value}
-                >
-                  <span className="text-xs font-bold text-(--text-primary)">
-                    {opt.label}
-                  </span>
-                  <span className="text-[10px] font-mono text-(--text-secondary)">
-                    {opt.example}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="flex gap-1.5">
-              {PRECISION_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => updateSetting('decimalPrecision', opt.value)}
-                  className={[
-                    'flex-1 py-1.5 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer',
-                    settings.decimalPrecision === opt.value
-                      ? 'border-(--border-accent) text-(--border-accent) bg-(--border-accent)/10'
+                      ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent)'
                       : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary)'
                   ].join(' ')}
-                  aria-pressed={settings.decimalPrecision === opt.value}
                 >
                   {opt.label}
                 </button>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-1.5 pt-1">
-              {[
-                { key: 'reducedMotion' as const, label: 'Reduced Motion' },
-                {
-                  key: 'colorBlindMode' as const,
-                  label: 'Color-Blind Accessibility'
-                }
-              ].map(({ key, label }) => (
-                <label
-                  key={key}
-                  className="flex items-center justify-between p-2 rounded-lg bg-(--bg-surface) border border-(--border-default) cursor-pointer"
-                >
-                  <span className="text-xs font-medium text-(--text-secondary)">
-                    {label}
-                  </span>
-                  <button
-                    role="switch"
-                    aria-checked={settings[key]}
-                    onClick={() => updateSetting(key, !settings[key])}
-                    className={[
-                      'relative w-9 h-5 rounded-full border transition-colors cursor-pointer',
-                      settings[key]
-                        ? 'bg-(--status-success) border-(--status-success)'
-                        : 'bg-(--bg-elevated) border-(--border-default)'
-                    ].join(' ')}
-                  >
-                    <span
-                      className={[
-                        'absolute top-0.5 w-4 h-4 rounded-full bg-black transition-transform',
-                        settings[key] ? 'translate-x-4' : 'translate-x-0.5'
-                      ].join(' ')}
-                    />
-                  </button>
-                </label>
               ))}
             </div>
           </div>
@@ -347,62 +516,108 @@ export default function SettingsPanel() {
           {/* Save Management */}
           <div className="flex flex-col gap-2.5">
             <span className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
-              Local File Backups
+              Save & Backup
             </span>
 
-            <button
-              onClick={handleManualSave}
-              className="w-full py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer"
-            >
-              Save to Local Storage Now
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleManualSave}
+                className="py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border border-(--border-accent)/40 bg-(--border-accent)/10 text-(--text-accent) hover:bg-(--border-accent) hover:text-[#080c14] transition-all cursor-pointer"
+              >
+                Save Locally
+              </button>
+              <button
+                onClick={handleCloudSync}
+                disabled={cloudSyncStatus === 'syncing'}
+                className="py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border border-(--status-success)/50 bg-(--status-success)/10 text-(--status-success) hover:bg-(--status-success) hover:text-[#080c14] transition-all cursor-pointer disabled:opacity-50"
+              >
+                {cloudSyncStatus === 'syncing'
+                  ? 'Syncing...'
+                  : cloudSyncStatus === 'synced'
+                    ? 'Cloud Synced!'
+                    : cloudSyncStatus === 'rate_limited'
+                      ? 'Cooldown (30s)'
+                      : cloudSyncStatus === 'offline'
+                        ? 'Cloud Offline'
+                        : cloudSyncStatus === 'error'
+                          ? 'Sync Failed'
+                          : 'Sync Now'}
+              </button>
+            </div>
 
-            <button
-              onClick={handleExport}
-              className="w-full py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer"
-            >
-              Export Save String (Clipboard)
-            </button>
-            {exportText && (
-              <textarea
-                readOnly
-                value={exportText}
-                rows={2}
-                className="w-full bg-(--bg-surface) border border-(--border-default) rounded-lg p-2 text-[10px] font-mono text-(--text-secondary) resize-none focus:outline-none"
-                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-              />
-            )}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleExport}
+                className="py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer"
+              >
+                {exportText ? 'Copied to Clipboard!' : 'Export Save'}
+              </button>
 
-            <textarea
-              value={importText}
-              onChange={(e) => setImportText(e.target.value)}
-              rows={2}
-              placeholder="Paste base64 save string here to import..."
-              className="w-full bg-(--bg-surface) border border-(--border-default) rounded-lg p-2 text-[10px] font-mono text-(--text-primary) resize-none focus:outline-none focus:border-(--border-accent) placeholder:text-(--text-secondary)/50"
-            />
-            {importError && (
-              <p className="text-[11px] text-red-400 font-mono">
-                {importError}
-              </p>
-            )}
-            {importSuccess && (
-              <p className="text-[11px] text-(--status-success) font-mono">
-                Save imported successfully.
-              </p>
-            )}
+              <button
+                onClick={() => {
+                  setImportSuccess(false)
+                  setImportError('')
+                  setImportOpen((prev) => !prev)
+                }}
+                className="py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer"
+              >
+                Import Save
+              </button>
+            </div>
 
-            <button
-              onClick={handleImport}
-              disabled={!importText.trim()}
-              className={[
-                'w-full py-2 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer',
-                importText.trim()
-                  ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110'
-                  : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary)/40 cursor-not-allowed opacity-60'
-              ].join(' ')}
-            >
-              Import Save String
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleDownloadSave}
+                className="py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer"
+              >
+                Download (.txt)
+              </button>
+
+              <label className="py-2 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--text-primary) transition-all cursor-pointer text-center">
+                Upload File
+                <input
+                  type="file"
+                  accept=".txt"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {importOpen && (
+              <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-(--border-default) bg-(--bg-surface)">
+                <textarea
+                  value={importText}
+                  onChange={(e) => setImportText(e.target.value)}
+                  rows={2}
+                  placeholder="Paste base64 save string here..."
+                  className="w-full bg-(--bg-elevated) border border-(--border-default) rounded-lg p-2 text-[10px] font-mono text-(--text-primary) resize-none focus:outline-none focus:border-(--border-accent) placeholder:text-(--text-secondary)/50"
+                  autoFocus
+                />
+                {importError && (
+                  <p className="text-[11px] text-red-400 font-mono">
+                    {importError}
+                  </p>
+                )}
+                {importSuccess && (
+                  <p className="text-[11px] text-(--status-success) font-mono">
+                    Save imported successfully.
+                  </p>
+                )}
+                <button
+                  onClick={handleImport}
+                  disabled={!importText.trim()}
+                  className={[
+                    'w-full py-1.5 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer',
+                    importText.trim()
+                      ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110'
+                      : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
+                  ].join(' ')}
+                >
+                  Confirm Import
+                </button>
+              </div>
+            )}
 
             {/* Hard Reset */}
             <div className="pt-2">

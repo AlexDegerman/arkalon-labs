@@ -1,7 +1,11 @@
-import type { AnomalyType } from '@/types/game'
-import type { GameState } from '@/types/game'
-import type { AnomalyResultPayload } from '@/types/anomalies'
-import { ANOMALY_SPAWN_MIN_SECONDS, ANOMALY_SPAWN_MAX_SECONDS } from '@/constants/game'
+import type { AnomalyType, GameState } from '@/types/game'
+import {
+  ANOMALY_SPAWN_MIN_SECONDS,
+  ANOMALY_SPAWN_MAX_SECONDS
+} from '@/constants/game'
+import { getCurrentCycle } from './operationDefs'
+import { getMegaprojectPhase } from './megaprojectDefs'
+import { getRelicEffectiveMultiplier } from './relicEffects'
 
 export interface AnomalyDefinition {
   type: AnomalyType
@@ -9,7 +13,6 @@ export interface AnomalyDefinition {
   description: string
   probability: number // 0-1 weight for weighted random selection
   baseDurationSeconds: number
-  interactionType: 'click_node' | 'slider' | 'sector_order' | 'symbol_sequence'
   // Reward description shown in UI
   rewardDescription: string
 }
@@ -18,38 +21,38 @@ export const ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
   {
     type: 'quantum_surge',
     label: 'Quantum Surge',
-    description: 'Click the shifting core node within 3 seconds of relocation.',
+    description:
+      'Spatial energy surge overclocking all facility research engines.',
     probability: 0.35,
-    baseDurationSeconds: 45,
-    interactionType: 'click_node',
-    rewardDescription: '2x-5x passive RP multiplier based on captures'
+    baseDurationSeconds: 60,
+    rewardDescription: '4x Global RP Production'
   },
   {
     type: 'temporal_distortion',
     label: 'Temporal Distortion',
-    description: 'Keep the slider aligned in the shifting safe zone.',
+    description:
+      'Localized chronal distortion accelerating study speeds tenfold.',
     probability: 0.25,
-    baseDurationSeconds: 30,
-    interactionType: 'slider',
-    rewardDescription: '5x research speed while aligned'
+    baseDurationSeconds: 45,
+    rewardDescription: '10x Research Speed'
   },
   {
     type: 'containment_breach',
     label: 'Containment Breach',
-    description: 'Select the 3-5 sectors in descending pressure order.',
+    description:
+      'Sub-atomic vacuum collapse doubling output and halving equipment construction costs.',
     probability: 0.2,
-    baseDurationSeconds: 20,
-    interactionType: 'sector_order',
-    rewardDescription: '30 minutes of passive RP as instant payout'
+    baseDurationSeconds: 45,
+    rewardDescription: '2x RP Production & 50% Generator Cost Reduction'
   },
   {
     type: 'arkalon_resonance',
     label: 'Arkalon Resonance',
-    description: 'Match the symbol sequence shown.',
+    description:
+      'Harmonic convergence synchronizing the Arkalon Core and accelerating yield.',
     probability: 0.2,
     baseDurationSeconds: 60,
-    interactionType: 'symbol_sequence',
-    rewardDescription: '25% tech cost reduction + 0-time research project'
+    rewardDescription: '3x Production & 25% Tech Cost Reduction'
   }
 ]
 
@@ -58,38 +61,59 @@ export const OPERATION_ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
   {
     type: 'operation_chrono_freeze',
     label: 'Chrono-Freeze Flux',
-    description: 'Match frequency spikes with the slider.',
+    description:
+      'Temporal crystal flux boosting generation and research throughput.',
     probability: 0.25,
-    baseDurationSeconds: 60,
-    interactionType: 'slider',
-    rewardDescription: 'Freeze research timer 5 min + 3x generation'
+    baseDurationSeconds: 75,
+    rewardDescription: '3x RP Production & 5x Research Speed'
   },
   {
     type: 'operation_solar_flare',
     label: 'Solar Flare Overload',
-    description: 'Click floating energy flares as they appear.',
+    description:
+      'Stellar flare radiation directly energizing power generators.',
     probability: 0.25,
-    baseDurationSeconds: 40,
-    interactionType: 'click_node',
-    rewardDescription: '1% of next generator unlock cost per flare'
+    baseDurationSeconds: 60,
+    rewardDescription: '5x Output to Energy Generators'
   },
   {
     type: 'operation_gravity_sink',
     label: 'Gravity Sink Collapse',
-    description: 'Enter the 3 terminal sequences correctly.',
+    description:
+      'Gravitational compression boosting output and reducing structural expansion costs.',
     probability: 0.25,
-    baseDurationSeconds: 30,
-    interactionType: 'sector_order',
-    rewardDescription: '50% generator cost reduction for 2 minutes'
+    baseDurationSeconds: 60,
+    rewardDescription: '2x RP Production & 50% Generator Cost Reduction'
   },
   {
     type: 'operation_matrix_inversion',
     label: 'Matrix Inversion',
-    description: 'Match logic symbol pairs in the grid.',
+    description:
+      'Matrix polarity shift multiplying Arkalon Resonance efficiency.',
     probability: 0.25,
-    baseDurationSeconds: 50,
-    interactionType: 'symbol_sequence',
-    rewardDescription: '5x AR bonus strength temporarily'
+    baseDurationSeconds: 60,
+    rewardDescription: '3x Arkalon Resonance Multiplier'
+  }
+]
+
+export const FUSED_ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
+  {
+    type: 'fused_singularity_surge',
+    label: 'Singularity Surge [Fused]',
+    description:
+      'Collapsing spatial horizon combining Quantum Surge and Containment Breach.',
+    probability: 0.5,
+    baseDurationSeconds: 60,
+    rewardDescription: '4x RP Production & 50% Generator Cost Discount'
+  },
+  {
+    type: 'fused_chronal_breach',
+    label: 'Chronal Resonance [Fused]',
+    description:
+      'Harmonic space-time disruption fusing Temporal Distortion and Arkalon Resonance.',
+    probability: 0.5,
+    baseDurationSeconds: 60,
+    rewardDescription: '10x Research Speed & 3x RP & 25% Tech Discount'
   }
 ]
 
@@ -105,12 +129,23 @@ function weightedRandom(defs: AnomalyDefinition[]): AnomalyDefinition {
 }
 
 // Selects the next anomaly to spawn
-// 20% chance of operation anomaly when operations are unlocked
+// 20% chance of active cycle operation anomaly when operations are unlocked
+// 20% chance of fused anomaly in Era 5+ (>= 10^60 lifetime RP)
 export function selectNextAnomaly(state: GameState): AnomalyDefinition {
   const opsUnlocked = state.unlocks.anomalousOperations
 
   if (opsUnlocked && Math.random() < 0.2) {
-    return weightedRandom(OPERATION_ANOMALY_DEFINITIONS)
+    const effectiveCycleNumber =
+      state.manualOperationCycle ?? state.currentOperationCycle
+    const currentCycle = getCurrentCycle(effectiveCycleNumber)
+    const cycleDef = OPERATION_ANOMALY_DEFINITIONS.find(
+      (d) => d.type === currentCycle.anomalyType
+    )
+    if (cycleDef) return cycleDef
+  }
+
+  if (state.lifetimePoints >= 10n ** 60n && Math.random() < 0.2) {
+    return weightedRandom(FUSED_ANOMALY_DEFINITIONS)
   }
 
   return weightedRandom(ANOMALY_DEFINITIONS)
@@ -118,7 +153,7 @@ export function selectNextAnomaly(state: GameState): AnomalyDefinition {
 
 // Returns the effective anomaly duration in seconds,
 // applying E7, Anomaly Extender AR upgrade, Fractured Chrono-Hourglass relic,
-// and challenge restrictions
+// SC5 tiers, Matrix Mirror Phase 3, and challenge restrictions
 export function getEffectiveDuration(
   def: AnomalyDefinition,
   state: GameState
@@ -130,23 +165,45 @@ export function getEffectiveDuration(
     duration *= 2
   }
 
-  // Anomaly Extender AR upgrade: +5 seconds per level
+  // Anomaly Extender AR upgrade: +5 seconds per level (amplified by AC2)
   const extenderLevel = state.arUpgrades.anomaly_extender
   if (extenderLevel > 0) {
-    duration += 5 * extenderLevel
+    const ac2Tiers = state.challengeRecords['AC2']?.completedTiers ?? 0
+    const arEffectivenessMult = 1 + 0.2 * ac2Tiers
+    duration += 5 * extenderLevel * arEffectivenessMult
   }
 
   // Fractured Chrono-Hourglass relic (ID 2): +1.5s per level
   if (
+    !state.activeChallengeRestrictions?.relicsDisabled &&
     state.unlockedRelics.includes(2) &&
     state.relicSlots.some((s) => s.relicId === 2)
   ) {
     const relicLevel = state.relicLevels[2] ?? 0
-    duration += 1.5 * relicLevel
+    duration += 1.5 * relicLevel * getRelicEffectiveMultiplier(2, state)
   }
 
-  // Anomalous Lens operation artifact: +15% frequency (shorter intervals)
-  // affects spawn rate not duration
+  // Temporal Compression Siphon: +1s per level (capped at 30)
+  const temporalLevel = Math.min(30, state.cosmicTemporalLevel ?? 0)
+  if (temporalLevel > 0) {
+    duration += temporalLevel
+  }
+
+  // Arkalon Matrix Mirror Phase 3: +5s anomaly duration
+  if (getMegaprojectPhase('arkalon_matrix_mirror', state) >= 3) {
+    duration += 5
+  }
+
+  // SC5 reward: +5s anomaly duration per tier
+  const sc5Tiers = state.challengeRecords['SC5']?.completedTiers ?? 0
+  if (sc5Tiers > 0) {
+    duration += 5 * sc5Tiers
+  }
+
+  // Reality Warden achievement capstone: +10s anomaly duration
+  if (state.achievements?.includes('anomaly_50')) {
+    duration += 10
+  }
 
   // AC7 challenge: fixed 10-second duration
   const forcedDuration =
@@ -158,7 +215,7 @@ export function getEffectiveDuration(
 }
 
 // Returns the next spawn check interval in seconds
-// Range: 8-15 minutes, adjusted by Neural Pipeline and Anomalous Lens
+// Range: 3-6 minutes, adjusted by Neural Pipeline, Anomalous Lens, and Quantum Die
 export function getNextSpawnInterval(state: GameState): number {
   let minSeconds = ANOMALY_SPAWN_MIN_SECONDS
   let maxSeconds = ANOMALY_SPAWN_MAX_SECONDS
@@ -179,6 +236,7 @@ export function getNextSpawnInterval(state: GameState): number {
 
   // Quantum Die relic (ID 6): -3s min interval per level (floor 60s)
   if (
+    !state.activeChallengeRestrictions?.relicsDisabled &&
     state.unlockedRelics.includes(6) &&
     state.relicSlots.some((s) => s.relicId === 6)
   ) {
@@ -195,127 +253,28 @@ export function getNextSpawnInterval(state: GameState): number {
 
   // SC5 challenge: no anomalies
   if (state.activeChallengeRestrictions?.anomaliesDisabled) {
-    return maxSeconds * 100 // Effectively never spawn
+    return maxSeconds * 100
   }
 
   return minSeconds + Math.random() * (maxSeconds - minSeconds)
 }
 
-// Builds the reward payload for a resolved anomaly
-// interactionScore: 0.0-1.0 representing quality of player interaction
-export function buildAnomalyReward(
-  def: AnomalyDefinition,
-  interactionScore: number,
-  state: GameState
-): AnomalyResultPayload {
-  const e7Active = state.completedResearchNodes.includes('E7')
-  const r4Active = state.completedResearchNodes.includes('R4')
-  const pps = state.cachedPointsPerSecond
+// Returns cumulative buff strength multiplier from C6, SC5, and AC7
+export function getAnomalyBuffScale(state: GameState): number {
+  let scale = 1
 
-  let result: AnomalyResultPayload = {
-    anomalyType: def.type,
-    rpReward: 0n,
-    ppsMultiplier: 0,
-    ppsMultiplierDuration: 0,
-    researchSpeedMultiplier: 1,
-    researchSpeedDuration: 0,
-    instantRPPayout: 0n,
-    grantFreeResearch: false,
-    techCostReductionPercent: 0,
-    dustDropped: 0,
-    relicDropped: 0,
-    researchTimeReduction: r4Active ? 600 : 0, // R4: -10 minutes
-    wasMaxReward: interactionScore >= 1.0
+  if (
+    !state.activeChallengeRestrictions?.techMatrixDisabled &&
+    state.completedResearchNodes.includes('C6')
+  ) {
+    scale += 0.25
   }
 
-  switch (def.type) {
-    case 'quantum_surge': {
-      // 2x-5x PPS multiplier based on interaction score
-      const captures = Math.round(1 + interactionScore * 4)
-      const multiplier = Math.min(5, 2 + (captures - 1))
-      const duration = e7Active ? 60 : 30
-      result.ppsMultiplier = multiplier
-      result.ppsMultiplierDuration = duration
-      result.dustDropped = Math.floor(interactionScore * 3)
-      break
-    }
+  const sc5Tiers = state.challengeRecords['SC5']?.completedTiers ?? 0
+  if (sc5Tiers > 0) scale += 0.25 * sc5Tiers
 
-    case 'temporal_distortion': {
-      // 5x research speed while aligned - reward is duration of alignment
-      const alignedDuration = Math.round(
-        interactionScore * (e7Active ? 60 : 30)
-      )
-      result.researchSpeedMultiplier = 5
-      result.researchSpeedDuration = alignedDuration
-      result.dustDropped = Math.floor(interactionScore * 2)
-      break
-    }
+  const ac7Tiers = state.challengeRecords['AC7']?.completedTiers ?? 0
+  if (ac7Tiers > 0) scale += 0.5 * ac7Tiers
 
-    case 'containment_breach': {
-      // 30 minutes of passive RP as instant payout
-      const payoutMinutes = e7Active ? 60 : 30
-      result.instantRPPayout =
-        (pps *
-          BigInt(payoutMinutes * 60) *
-          BigInt(Math.round(interactionScore * 100))) /
-        100n
-      result.dustDropped = Math.floor(interactionScore * 4)
-      break
-    }
-
-    case 'arkalon_resonance': {
-      result.techCostReductionPercent = 25
-      result.grantFreeResearch = interactionScore >= 0.8
-      result.dustDropped = Math.floor(interactionScore * 5)
-      break
-    }
-
-    // Operation anomalies - rewards applied in Commit 15.2
-    case 'operation_chrono_freeze':
-    case 'operation_solar_flare':
-    case 'operation_gravity_sink':
-    case 'operation_matrix_inversion':
-      result.dustDropped = Math.floor(interactionScore * 3)
-      break
-  }
-
-  // E7: double base payout
-  if (e7Active) {
-    result.instantRPPayout *= 2n
-    result.rpReward *= 2n
-  }
-
-  // Relic drop check (5-15% depending on zone)
-  result.relicDropped = rollRelicDrop(def.type, interactionScore, state)
-
-  return result
-}
-
-// Rolls for a relic drop based on anomaly type and interaction quality
-function rollRelicDrop(
-  type: AnomalyType,
-  score: number,
-  state: GameState
-): number {
-  const relicDropChances: Partial<Record<AnomalyType, number>> = {
-    temporal_distortion: 0.05, // Fractured Chrono-Hourglass
-    quantum_surge: 0.05, // Quantum Die
-    containment_breach: 0.05, // Singularity Lens
-    arkalon_resonance: 0.05 // Planck Shell
-  }
-
-  const relicRewards: Partial<Record<AnomalyType, number>> = {
-    temporal_distortion: 2,
-    quantum_surge: 6,
-    containment_breach: 10,
-    arkalon_resonance: 15
-  }
-
-  const dropChance = relicDropChances[type] ?? 0
-  const relicId = relicRewards[type] ?? 0
-
-  if (!relicId) return 0
-  if (state.unlockedRelics.includes(relicId)) return 0
-  if (Math.random() < dropChance * score) return relicId
-  return 0
+  return scale
 }

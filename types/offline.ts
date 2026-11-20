@@ -11,4 +11,43 @@ export interface OfflineProgressPayload {
   efficiencyApplied: number
   // Max offline window in seconds that was applied
   maxOfflineWindowSeconds: number
+  // RP absorbed into active megaproject during offline window
+  megaprojectRPEarned?: bigint
+  // Raw RP siphoned from the player before absorption bonuses
+  megaprojectRPSiphoned?: bigint
+  // Megaproject ID if construction completed offline
+  megaprojectCompletedId?: import('@/types/game').MegaprojectId | null
+  // Labels of research nodes completed during offline window
+  researchCompletedNames?: string[]
+  // Number of probe scans finished during offline window
+  probesCompletedCount?: number
+  // Secondary resources synthesized during offline window
+  dustEarned?: number
+  operationPointsEarned?: number
+  // Cached simulation snapshots to avoid running offline simulations twice
+  cachedResearchResult?: {
+    completedResearchNodes: string[]
+    activeResearchSlots: import('@/types/game').ResearchSlotState[]
+    researchQueue: string[]
+    researchPointsAfterSpend: bigint
+    newlyCompletedCount: number
+  }
+  cachedProbeResult?: {
+    probes: import('@/types/game').ProbeState[]
+    dustEarned: number
+    newRelics: number[]
+    relic9PityGain: number
+  }
+  cachedDysonSwarmLevel?: number
+  cachedMegaprojectRPAbsorbed?: bigint
+  cachedFinalAnomalyState?: {
+    activeAnomalyType: import('@/types/game').AnomalyType | null
+    anomalyTimeRemaining: number
+    timeToNextAnomalyCheck: number
+  }
+  ec3CollapseTriggered?: boolean
+  ec3CollapseCount?: number
+  ec3FinalPrestigeTimeMs?: number
+  ec3PostCollapseRunSeconds?: number
+  anomaliesResolvedCount?: number
 }

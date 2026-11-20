@@ -1,12 +1,26 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { tick } from '@/app/stores/actions'
 import { TICK_INTERVAL_MS } from '@/constants/game'
+import { tick } from '@/app/stores/actions/tickActions'
+import { useGameStore } from '@/app/stores/gameStore'
+import { useUIStore } from '@/app/stores/uiStore'
+import {
+  calculateOfflineProgress,
+  applyOfflineProgress
+} from '@/lib/offlineCalc'
+import { saveToLocalStorage } from '@/lib/saveGame'
+import {
+  markUnlocksDirty,
+  markTutorialDirty,
+  markAchievementsDirty
+} from '@/lib/dirtyFlags'
+import { checkResearchSlotExpansion } from '@/lib/unlockWatcher'
+import { dispatchMegaprojectComplete } from '@/lib/dialogueDispatcher'
+import { awardRelic } from '@/app/stores/actions/relicActions'
 
-// Maximum catch-up ticks per interval when the tab was inactive
-// Caps at 5 seconds worth of missed ticks to prevent huge jumps
-const MAX_CATCHUP_TICKS = 50
+// Short browser hiccups catch up via ticks; longer gaps use offline calculation
+const MAX_FAST_CATCHUP_MS = 15_000
 
 // Establishes the 100ms game loop via setInterval
 // Handles missed ticks from tab inactivity via delta detection
@@ -29,7 +43,8 @@ export function useGameLoop(enabled: boolean) {
       if (!enabledRef.current) return
 
       const now = Date.now()
-      const delta = now - lastTickTimeRef.current
+      const prevTime = lastTickTimeRef.current
+      const delta = now - prevTime
       lastTickTimeRef.current = now
 
       // Normal case: delta close to TICK_INTERVAL_MS
@@ -38,12 +53,64 @@ export function useGameLoop(enabled: boolean) {
         return
       }
 
-      // Tab was inactive: apply accumulated ticks (capped)
-      const missedTicks = Math.floor(delta / TICK_INTERVAL_MS)
-      const ticksToApply = Math.min(missedTicks, MAX_CATCHUP_TICKS)
+      // Brief browser throttle (<= 15s): catch up tick-by-tick
+      if (delta <= MAX_FAST_CATCHUP_MS) {
+        const ticksToApply = Math.floor(delta / TICK_INTERVAL_MS)
+        for (let i = 0; i < ticksToApply; i++) {
+          tick()
+        }
+        return
+      }
 
-      for (let i = 0; i < ticksToApply; i++) {
-        tick()
+      // Background tab / sleep (> 15s): gaps under 60s retain 100% online efficiency
+      const store = useGameStore.getState()
+      const payload = calculateOfflineProgress(
+        store,
+        prevTime,
+        now,
+        delta < 60_000 ? 1.0 : undefined
+      )
+      const patch = applyOfflineProgress(store, payload)
+      const updatedOffline =
+        (store.stats.totalOfflineTime ?? 0) +
+        Math.floor(payload.actualElapsedSeconds)
+
+      store.applyState({
+        ...patch,
+        stats: {
+          ...(patch.stats ?? store.stats),
+          totalOfflineTime: updatedOffline
+        }
+      })
+
+      if (payload.megaprojectCompletedId) {
+        dispatchMegaprojectComplete(payload.megaprojectCompletedId)
+      }
+      if (updatedOffline >= 180_000) {
+        awardRelic(5)
+      }
+
+      checkResearchSlotExpansion(useGameStore.getState())
+      markUnlocksDirty()
+      markTutorialDirty()
+      markAchievementsDirty()
+      saveToLocalStorage(useGameStore.getState())
+
+      const hasSignificantActivity =
+        payload.rpEarned > 0n ||
+        (payload.dustEarned ?? 0) > 0 ||
+        (payload.operationPointsEarned ?? 0) > 0 ||
+        (payload.researchCompletedNames?.length ?? 0) > 0 ||
+        (payload.probesCompletedCount ?? 0) > 0
+
+      if (
+        delta >= 60_000 &&
+        hasSignificantActivity &&
+        !useUIStore.getState().welcomeModalOpen &&
+        !useUIStore.getState().updateModalOpen
+      ) {
+        useUIStore.getState().setOfflinePayload(payload)
+        useUIStore.getState().setOfflineModalOpen(true)
       }
     }, TICK_INTERVAL_MS)
 

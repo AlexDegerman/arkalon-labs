@@ -1,17 +1,22 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { buildProbe } from '@/app/stores/actions'
 import { meetsProbeGateRequirements, canBuildProbe } from '@/lib/excavationDefs'
 import { formatPoints } from '@/lib/format'
-import { PROBE_COST_RP, MAX_PROBES } from '@/constants/game'
+import {
+  PROBE_COST_RP,
+  MAX_PROBES,
+  PROBE_GATE_SERVER_CLUSTERS,
+  PROBE_GATE_QUANTUM_COMPUTERS
+} from '@/constants/game'
+import { buildProbe } from '@/app/stores/actions/excavationActions'
 
 export default function CoordinateLauncher() {
-  const store = useGameStore.getState()
+  const generators = useGameStore((s) => s.generators)
   const probes = useGameStore((s) => s.probes)
   const rp = useGameStore((s) => s.researchPoints)
 
-  const meetsGate = meetsProbeGateRequirements(store)
+  const meetsGate = meetsProbeGateRequirements({ generators })
   const activeCount = probes.filter((p) => p.status !== 'idle').length
   const idleCount = probes.filter((p) => p.status === 'idle').length
   const totalCount = probes.length
@@ -19,7 +24,7 @@ export default function CoordinateLauncher() {
   const atMax = totalCount >= MAX_PROBES
 
   return (
-    <div className="card rounded-xl p-3 sm:p-4 flex flex-col gap-3 border border-(--border-default) bg-(--bg-surface)">
+    <div className="card rounded-xl p-2.5 sm:p-3 flex flex-col gap-2 border border-(--border-default) bg-(--bg-surface)">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-(--text-primary)">
           Probe Assembly Bay
@@ -31,7 +36,8 @@ export default function CoordinateLauncher() {
 
       {!meetsGate && (
         <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono">
-          ⚠️ Requires 100 Server Clusters and 10 Quantum Computers to
+          ⚠️ Requires {PROBE_GATE_SERVER_CLUSTERS.toString()} Server Clusters
+          and {PROBE_GATE_QUANTUM_COMPUTERS.toString()} Quantum Computers to
           manufacture probes.
         </div>
       )}

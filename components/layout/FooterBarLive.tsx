@@ -17,7 +17,7 @@ const STATUS_LABELS: Record<string, string> = {
   synced: 'Synced',
   saving: 'Saving...',
   error: 'Save Error',
-  offline: 'Offline',
+  offline: 'Local Only',
   '--': '--'
 }
 

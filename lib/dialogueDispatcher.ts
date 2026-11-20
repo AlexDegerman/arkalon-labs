@@ -2,10 +2,15 @@
 // Maps game events to Arkalon dialogue trigger IDs
 // Called from app/stores/actions/* and unlockWatcher.ts to push lines to uiStore
 
+import { useGameStore } from '@/app/stores/gameStore'
 import { useMusicStore } from '@/app/stores/musicStore'
 import { useUIStore } from '@/app/stores/uiStore'
-import { getDialogue, getNextClickResponseId } from '@/lib/arkalonDialogue'
-import { speakArkalon } from './arkalonTTS'
+import {
+  ANOMALY_DIALOGUE_MAP,
+  getDialogue,
+  getNextClickResponseId
+} from '@/lib/arkalonDialogue'
+import { cancelArkalonSpeech, speakArkalon } from './arkalonTTS'
 
 // Generator index to unlock trigger mapping
 const GENERATOR_UNLOCK_TRIGGERS: Record<number, string> = {
@@ -70,7 +75,8 @@ function pushLine(triggerId: string): void {
   if (!text) return
   useUIStore.getState().pushTerminalLine(text)
   const { muted, volumeVoice } = useMusicStore.getState()
-  if (!muted) speakArkalon(text, volumeVoice)
+  const voiceEnabled = useGameStore.getState().settings.voiceEnabled
+  if (!muted && voiceEnabled) speakArkalon(text, volumeVoice)
 }
 
 // Exported dispatch functions called from game systems
@@ -99,6 +105,10 @@ export function dispatchChallengeComplete(): void {
   pushLine('challenge_complete')
 }
 
+export function dispatchChallengeFailed(): void {
+  pushLine('challenge_failed')
+}
+
 export function dispatchEraTransition(era: number): void {
   const triggerId = ERA_TRIGGERS[era]
   if (triggerId) pushLine(triggerId)
@@ -116,23 +126,53 @@ export function dispatchPrestigeComplete(tier: 1 | 2 | 3): void {
   else pushLine('prestige_tier3')
 }
 
-export function dispatchAnomalyResolved(maxReward: boolean): void {
-  pushLine(maxReward ? 'anomaly_resolved_max' : 'anomaly_resolved_partial')
+export function dispatchAnomalyResolved(): void {
+  pushLine('anomaly_resolved_partial')
 }
 
 export function dispatchRelicDiscovered(): void {
   pushLine('relic_discovered')
 }
 
+export function dispatchFeatureUnlock(key: string): void {
+  const triggerMap: Record<string, string> = {
+    techMatrix: 'unlock_tech_matrix',
+    statistics: 'stats_unlock',
+    modules: 'modules_unlock',
+    anomalies: 'anomaly_unlock',
+    relics: 'unlock_relics',
+    excavation: 'unlock_excavation',
+    megaprojects: 'unlock_megaprojects',
+    anomalousOperations: 'unlock_operations',
+    challenges: 'unlock_challenges'
+  }
+  const triggerId = triggerMap[key]
+  if (triggerId) pushLine(triggerId)
+}
+
+export function dispatchAnomalySpawn(type: string): void {
+  const triggerId = ANOMALY_DIALOGUE_MAP[type]
+  if (triggerId) pushLine(triggerId)
+}
+
+export function dispatchAnomalyIncoming(): void {
+  pushLine('anomaly_incoming')
+}
+
 export function dispatchOperationStart(): void {
   pushLine('operation_started')
 }
-
 export function dispatchOperationArtifact(): void {
   pushLine('operation_artifact_acquired')
 }
 
+let lastCoreClickDialogueTime = 0
+const CORE_CLICK_DIALOGUE_COOLDOWN_MS = 3500
+
 export function dispatchArkalonClick(): void {
+  const now = Date.now()
+  if (now - lastCoreClickDialogueTime < CORE_CLICK_DIALOGUE_COOLDOWN_MS) return
+  lastCoreClickDialogueTime = now
   const triggerId = getNextClickResponseId()
   pushLine(triggerId)
 }
@@ -145,17 +185,64 @@ export function dispatchTabInactive(durationSeconds: number): void {
   }
 }
 
+const DIRECTIVE_SUMMARIES: Record<string, string> = {
+  boot: 'Buy your first Research Desk in Facility Equipment.',
+  step_desks: 'Reach 10 Research Desks to unlock Research.',
+  step_research:
+    'Open Research in the Facility Directory and study your first node.',
+  tutorial_complete: 'Onboarding complete. Expand your facility.'
+}
+
 export function dispatchTutorialBeat(beatId: string): void {
   const triggerId = beatId
-  pushLine(triggerId)
   const text = getDialogue(triggerId)
-  if (text) {
-    useUIStore.getState().pushAlert({
+  if (!text) return
+
+  // Cut off previous speech and dismiss previous tutorial alert
+  cancelArkalonSpeech()
+  const ui = useUIStore.getState()
+
+  useUIStore.getState().pushTerminalLine(text)
+  const { muted, volumeVoice } = useMusicStore.getState()
+  const voiceEnabled = useGameStore.getState().settings.voiceEnabled
+  if (!muted && voiceEnabled) speakArkalon(text, volumeVoice, true)
+
+  // Actionable steps stick, feature advisories auto-dismiss, tutorial_end dismisses
+  const isAdvisory = [
+    'stats_unlock',
+    'modules_unlock',
+    'anomaly_unlock',
+    'tutorial_complete'
+  ].includes(beatId)
+
+  if (beatId === 'tutorial_complete') {
+    const cleanedQueue = ui.alertQueue.filter((a) => a.variant !== 'arkalon')
+    const prevQueue =
+      ui.activeAlert && ui.activeAlert.variant !== 'arkalon'
+        ? [ui.activeAlert, ...cleanedQueue]
+        : cleanedQueue
+
+    useUIStore.setState({
+      activeAlert: {
+        id: 'alert-tutorial-complete',
+        priority: 0,
+        variant: 'unlock',
+        title: 'Facility Online',
+        message: DIRECTIVE_SUMMARIES[beatId] ?? text,
+        autoDismissMs: 5000
+      },
+      alertQueue: prevQueue
+    })
+  } else {
+    if (ui.activeAlert?.variant === 'arkalon') {
+      ui.dismissAlert()
+    }
+    ui.pushAlert({
       priority: 4,
       variant: 'arkalon',
-      title: 'Arkalon Communication',
-      message: text,
-      autoDismissMs: 7000
+      title: isAdvisory ? 'Facility Advisory' : 'Primary Directive',
+      message: DIRECTIVE_SUMMARIES[beatId] ?? text,
+      autoDismissMs: isAdvisory ? 8000 : 0
     })
   }
 }

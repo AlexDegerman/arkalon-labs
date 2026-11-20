@@ -17,15 +17,16 @@ export default function ProgressBar({
   showPercent = false,
   animated = true
 }: Props) {
-  const clamped = Math.max(0, Math.min(1, progress))
+  const safeProgress = Number.isFinite(progress) ? progress : 0
+  const clamped = Math.max(0, Math.min(1, safeProgress))
   const pct = Math.round(clamped * 100)
 
-  const fillColor =
+  const liquidFillClass =
     variant === 'success'
-      ? 'bg-(--status-success) shadow-[0_0_8px_rgba(57,255,138,0.4)]'
+      ? 'progress-fill-liquid-success'
       : variant === 'warning'
-        ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-        : 'bg-(--border-accent) shadow-[0_0_8px_rgba(0,240,255,0.4)]'
+        ? 'progress-fill-liquid-warning'
+        : 'progress-fill-liquid'
 
   return (
     <div className="flex flex-col gap-1 w-full font-mono text-[11px]">
@@ -44,7 +45,7 @@ export default function ProgressBar({
         </div>
       )}
       <div
-        className="w-full bg-(--bg-elevated) border border-(--border-default)/70 rounded-full overflow-hidden"
+        className="w-full progress-track border border-(--border-default)/70 relative overflow-hidden"
         style={{ height }}
         role="progressbar"
         aria-valuenow={pct}
@@ -54,9 +55,8 @@ export default function ProgressBar({
       >
         <div
           className={[
-            fillColor,
-            'h-full rounded-full',
-            animated ? 'transition-all duration-300' : 'transition-none'
+            liquidFillClass,
+            animated ? 'transition-[width] duration-300' : 'transition-none'
           ].join(' ')}
           style={{ width: `${pct}%` }}
         />

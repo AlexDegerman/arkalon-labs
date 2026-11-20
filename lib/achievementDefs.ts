@@ -1,13 +1,29 @@
 // Achievement definitions - all checked via dirty flag in tick
 
 import type { GameState } from '@/types/game'
+import { bigIntLog10, formatPointsCompact } from '@/lib/format'
+
+function logBigIntFraction(current: bigint, target: bigint): number {
+  if (current >= target) return 1
+  if (current <= 0n || target <= 0n) return 0
+  if (target <= 10n ** 12n) {
+    return Math.min(1, Number((current * 10000n) / target) / 10000)
+  }
+  const curLog = bigIntLog10(current)
+  const tgtLog = bigIntLog10(target)
+  if (tgtLog <= 0) return 1
+  return Math.min(1, Math.max(0, curLog / tgtLog))
+}
 
 export interface AchievementDefinition {
   id: string
   name: string
   description: string
+  perkDescription?: string
   // Returns true if the achievement should be awarded
   condition: (state: GameState) => boolean
+  // Optional progress telemetry for unearned badges
+  progress?: (state: GameState) => { fraction: number; label: string }
   // Optional: category for display grouping
   category:
     | 'generators'
@@ -31,10 +47,17 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   {
     id: 'gen_10',
     name: 'Expanding Operations',
-    description: 'Own 10 generators of any type.',
+    description: 'Own 10 generators total.',
     category: 'generators',
     condition: (s) =>
-      s.generators.reduce((sum, g) => sum + Number(g.quantity), 0) >= 10
+      s.generators.reduce((sum, g) => sum + Number(g.quantity), 0) >= 10,
+    progress: (s) => {
+      const cur = s.generators.reduce((sum, g) => sum + Number(g.quantity), 0)
+      return {
+        fraction: Math.min(1, cur / 10),
+        label: `${Math.min(10, cur)}/10`
+      }
+    }
   },
   {
     id: 'gen_100',
@@ -42,22 +65,43 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     description: 'Own 100 generators total.',
     category: 'generators',
     condition: (s) =>
-      s.generators.reduce((sum, g) => sum + Number(g.quantity), 0) >= 100
+      s.generators.reduce((sum, g) => sum + Number(g.quantity), 0) >= 100,
+    progress: (s) => {
+      const cur = s.generators.reduce((sum, g) => sum + Number(g.quantity), 0)
+      return {
+        fraction: Math.min(1, cur / 100),
+        label: `${Math.min(100, cur)}/100`
+      }
+    }
   },
   {
     id: 'gen_1000',
     name: 'Megafacility',
     description: 'Own 1,000 generators total.',
+    perkDescription: '+10% global RP output',
     category: 'generators',
     condition: (s) =>
-      s.generators.reduce((sum, g) => sum + Number(g.quantity), 0) >= 1000
+      s.generators.reduce((sum, g) => sum + Number(g.quantity), 0) >= 1000,
+    progress: (s) => {
+      const cur = s.generators.reduce((sum, g) => sum + Number(g.quantity), 0)
+      return {
+        fraction: Math.min(1, cur / 1000),
+        label: `${Math.min(1000, cur)}/1,000`
+      }
+    }
   },
   {
     id: 'gen_all_types',
     name: 'Full Spectrum',
     description: 'Own at least one of each of the first 10 generator types.',
     category: 'generators',
-    condition: (s) => s.generators.slice(0, 10).every((g) => g.quantity >= 1n)
+    condition: (s) => s.generators.slice(0, 10).every((g) => g.quantity >= 1n),
+    progress: (s) => {
+      const cur = s.generators
+        .slice(0, 10)
+        .filter((g) => g.quantity >= 1n).length
+      return { fraction: cur / 10, label: `${cur}/10 tiers` }
+    }
   },
   {
     id: 'gen_tier20',
@@ -71,7 +115,17 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'Superrecursive',
     description: 'Reach stage 6 (250 owned) with any generator.',
     category: 'generators',
-    condition: (s) => s.generators.some((g) => g.quantity >= 250n)
+    condition: (s) => s.generators.some((g) => g.quantity >= 250n),
+    progress: (s) => {
+      const best = s.generators.reduce(
+        (m, g) => Math.max(m, Number(g.quantity)),
+        0
+      )
+      return {
+        fraction: Math.min(1, best / 250),
+        label: `${Math.min(250, best)}/250 max`
+      }
+    }
   },
   // Research milestones
   {
@@ -86,18 +140,35 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'Scholar',
     description: 'Complete 10 research nodes.',
     category: 'research',
-    condition: (s) => s.completedResearchNodes.length >= 10
+    condition: (s) => s.completedResearchNodes.length >= 10,
+    progress: (s) => {
+      const cur = s.completedResearchNodes.length
+      return {
+        fraction: Math.min(1, cur / 10),
+        label: `${Math.min(10, cur)}/10`
+      }
+    }
   },
   {
     id: 'research_all',
     name: 'Omniscient',
     description: 'Complete all 40 standard research nodes.',
+    perkDescription: '-10% all research study times',
     category: 'research',
     condition: (s) => {
       const standard = s.completedResearchNodes.filter(
         (id) => !id.includes('_INF')
       )
       return standard.length >= 40
+    },
+    progress: (s) => {
+      const cur = s.completedResearchNodes.filter(
+        (id) => !id.includes('_INF')
+      ).length
+      return {
+        fraction: Math.min(1, cur / 40),
+        label: `${Math.min(40, cur)}/40`
+      }
     }
   },
   {
@@ -120,42 +191,66 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'Research Begins',
     description: 'Generate 1,000 lifetime Research Points.',
     category: 'milestones',
-    condition: (s) => s.lifetimePoints >= 1_000n
+    condition: (s) => s.lifetimePoints >= 1_000n,
+    progress: (s) => ({
+      fraction: logBigIntFraction(s.lifetimePoints, 1_000n),
+      label: `${formatPointsCompact(s.lifetimePoints)} / 1K`
+    })
   },
   {
     id: 'rp_1m',
     name: 'Accelerating',
     description: 'Generate 1,000,000 lifetime Research Points.',
     category: 'milestones',
-    condition: (s) => s.lifetimePoints >= 1_000_000n
+    condition: (s) => s.lifetimePoints >= 1_000_000n,
+    progress: (s) => ({
+      fraction: logBigIntFraction(s.lifetimePoints, 1_000_000n),
+      label: `${formatPointsCompact(s.lifetimePoints)} / 1M`
+    })
   },
   {
     id: 'rp_1b',
     name: 'Threshold Reached',
     description: 'Generate 1,000,000,000 lifetime Research Points.',
     category: 'milestones',
-    condition: (s) => s.lifetimePoints >= 1_000_000_000n
+    condition: (s) => s.lifetimePoints >= 1_000_000_000n,
+    progress: (s) => ({
+      fraction: logBigIntFraction(s.lifetimePoints, 1_000_000_000n),
+      label: `${formatPointsCompact(s.lifetimePoints)} / 1B`
+    })
   },
   {
     id: 'rp_1e35',
     name: 'Timeline Fracture',
     description: 'Generate 10^35 lifetime Research Points.',
     category: 'milestones',
-    condition: (s) => s.lifetimePoints >= 10n ** 35n
+    condition: (s) => s.lifetimePoints >= 10n ** 35n,
+    progress: (s) => ({
+      fraction: logBigIntFraction(s.lifetimePoints, 10n ** 35n),
+      label: `${formatPointsCompact(s.lifetimePoints)} / ${formatPointsCompact(10n ** 35n)}`
+    })
   },
   {
     id: 'rp_1e85',
     name: 'Singularity Approached',
     description: 'Generate 10^85 lifetime Research Points.',
     category: 'milestones',
-    condition: (s) => s.lifetimePoints >= 10n ** 85n
+    condition: (s) => s.lifetimePoints >= 10n ** 85n,
+    progress: (s) => ({
+      fraction: logBigIntFraction(s.lifetimePoints, 10n ** 85n),
+      label: `${formatPointsCompact(s.lifetimePoints)} / ${formatPointsCompact(10n ** 85n)}`
+    })
   },
   {
     id: 'rp_1e155',
     name: 'The Final Observation',
     description: 'Generate 10^155 lifetime Research Points.',
     category: 'milestones',
-    condition: (s) => s.lifetimePoints >= 10n ** 155n
+    condition: (s) => s.lifetimePoints >= 10n ** 155n,
+    progress: (s) => ({
+      fraction: logBigIntFraction(s.lifetimePoints, 10n ** 155n),
+      label: `${formatPointsCompact(s.lifetimePoints)} / ${formatPointsCompact(10n ** 155n)}`
+    })
   },
   // Prestige milestones
   {
@@ -170,14 +265,23 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'Seasoned Director',
     description: 'Perform 10 Reality Recalibrations.',
     category: 'prestige',
-    condition: (s) => s.stats.totalPrestigesTier1 >= 10
+    condition: (s) => s.stats.totalPrestigesTier1 >= 10,
+    progress: (s) => ({
+      fraction: Math.min(1, s.stats.totalPrestigesTier1 / 10),
+      label: `${Math.min(10, s.stats.totalPrestigesTier1)}/10`
+    })
   },
   {
     id: 'prestige_50',
     name: 'Dimensional Veteran',
     description: 'Perform 50 Reality Recalibrations.',
+    perkDescription: '+10% AR awarded on Reality Recalibration',
     category: 'prestige',
-    condition: (s) => s.stats.totalPrestigesTier1 >= 50
+    condition: (s) => s.stats.totalPrestigesTier1 >= 50,
+    progress: (s) => ({
+      fraction: Math.min(1, s.stats.totalPrestigesTier1 / 50),
+      label: `${Math.min(50, s.stats.totalPrestigesTier1)}/50`
+    })
   },
   {
     id: 'prestige_tier2',
@@ -206,14 +310,23 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'Anomaly Hunter',
     description: 'Resolve 10 anomalies.',
     category: 'anomalies',
-    condition: (s) => s.stats.totalAnomaliesResolved >= 10
+    condition: (s) => s.stats.totalAnomaliesResolved >= 10,
+    progress: (s) => ({
+      fraction: Math.min(1, s.stats.totalAnomaliesResolved / 10),
+      label: `${Math.min(10, s.stats.totalAnomaliesResolved)}/10`
+    })
   },
   {
     id: 'anomaly_50',
     name: 'Reality Warden',
     description: 'Resolve 50 anomalies.',
+    perkDescription: '+10s duration to all anomalies',
     category: 'anomalies',
-    condition: (s) => s.stats.totalAnomaliesResolved >= 50
+    condition: (s) => s.stats.totalAnomaliesResolved >= 50,
+    progress: (s) => ({
+      fraction: Math.min(1, s.stats.totalAnomaliesResolved / 50),
+      label: `${Math.min(50, s.stats.totalAnomaliesResolved)}/50`
+    })
   },
   // Relic milestones
   {
@@ -228,21 +341,40 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     name: 'Collector',
     description: 'Unlock 5 relics.',
     category: 'relics',
-    condition: (s) => s.unlockedRelics.length >= 5
+    condition: (s) => s.unlockedRelics.length >= 5,
+    progress: (s) => ({
+      fraction: Math.min(1, s.unlockedRelics.length / 5),
+      label: `${Math.min(5, s.unlockedRelics.length)}/5`
+    })
   },
   {
     id: 'relic_all',
     name: 'Relic Master',
     description: 'Unlock all 20 relics.',
+    perkDescription: '+15% Artifact Dust from Synthesizers & Probes',
     category: 'relics',
-    condition: (s) => s.unlockedRelics.length >= 20
+    condition: (s) => s.unlockedRelics.length >= 20,
+    progress: (s) => ({
+      fraction: Math.min(1, s.unlockedRelics.length / 20),
+      label: `${Math.min(20, s.unlockedRelics.length)}/20`
+    })
   },
   {
     id: 'relic_max',
     name: 'Perfect Form',
     description: 'Upgrade any relic to level 100.',
     category: 'relics',
-    condition: (s) => Object.values(s.relicLevels).some((lvl) => lvl >= 100)
+    condition: (s) => Object.values(s.relicLevels).some((lvl) => lvl >= 100),
+    progress: (s) => {
+      const best = Object.values(s.relicLevels).reduce(
+        (m, lvl) => Math.max(m, lvl),
+        0
+      )
+      return {
+        fraction: Math.min(1, best / 100),
+        label: `Lv${Math.min(100, best)}/100`
+      }
+    }
   },
   // Challenge milestones
   {
@@ -257,6 +389,7 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
     id: 'challenge_all_standard',
     name: 'Standard Bearer',
     description: 'Complete all 12 Standard Challenges (Tier 1).',
+    perkDescription: '+25% global RP output',
     category: 'challenges',
     condition: (s) => {
       const standardIds = [
@@ -276,12 +409,33 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
       return standardIds.every(
         (id) => (s.challengeRecords[id]?.completedTiers ?? 0) >= 1
       )
+    },
+    progress: (s) => {
+      const standardIds = [
+        'SC1',
+        'SC2',
+        'SC3',
+        'SC4',
+        'SC5',
+        'SC6',
+        'SC7',
+        'SC8',
+        'SC9',
+        'SC10',
+        'SC11',
+        'SC12'
+      ]
+      const done = standardIds.filter(
+        (id) => (s.challengeRecords[id]?.completedTiers ?? 0) >= 1
+      ).length
+      return { fraction: done / 12, label: `${done}/12` }
     }
   },
   {
     id: 'challenge_ec4',
     name: 'The Final Watcher',
     description: 'Complete The Final Observation (EC4).',
+    perkDescription: '+0.02 master production exponent',
     category: 'challenges',
     condition: (s) => (s.challengeRecords['EC4']?.completedTiers ?? 0) >= 1
   }

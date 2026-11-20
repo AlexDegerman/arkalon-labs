@@ -1,38 +1,45 @@
 'use client'
 
+import { buyPrestigeUpgrade } from '@/app/stores/actions/prestigeActions'
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyPrestigeUpgrade } from '@/app/stores/actions'
 import { AR_UPGRADES, getUpgradeCost } from '@/lib/prestigeUpgradeDefs'
+import { formatPointsCompact } from '@/lib/format'
 
 export default function ARUpgradeShop() {
   const ar = useGameStore((s) => s.arkalonResonance)
   const arUpgrades = useGameStore((s) => s.arUpgrades)
+  const prestigeDisabled = useGameStore(
+    (s) => s.activeChallengeRestrictions?.prestigeUpgradesDisabled ?? false
+  )
 
   return (
     <div className="flex flex-col gap-2">
       <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
         Arkalon Resonance Upgrades
       </p>
-      <div className="grid grid-cols-1 gap-2">
+      <p className="text-[10px] font-mono text-(--text-secondary)/70">
+        Standard repeatables scale linearly; deep tiers scale exponentially.
+      </p>
+      <div className="grid grid-cols-1 gap-1.5">
         {AR_UPGRADES.map((def) => {
-          const currentLevel = (arUpgrades as any)[def.id] ?? 0
+          const currentLevel = arUpgrades[def.id] ?? 0
           const atCap = currentLevel >= def.maxLevel
           const cost = atCap ? 0 : getUpgradeCost(def, currentLevel)
-          const canAfford = ar >= cost && !atCap
+          const canAfford = ar >= cost && !atCap && !prestigeDisabled
 
           return (
             <div
               key={def.id}
               className={[
-                'card rounded-xl p-3 flex items-center justify-between gap-3 border transition-colors',
+                'card rounded-xl p-2 sm:p-2.5 flex items-center justify-between gap-2 border transition-colors',
                 atCap
                   ? 'border-(--status-success)/40 bg-(--status-success)/5'
                   : 'border-(--border-default) bg-(--bg-surface)'
               ].join(' ')}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-xs font-bold text-(--text-primary) truncate">
+                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                  <span className="text-xs font-bold text-(--text-primary)">
                     {def.label}
                   </span>
                   {def.maxLevel > 1 && !atCap && (
@@ -47,8 +54,13 @@ export default function ARUpgradeShop() {
                   )}
                 </div>
                 <p className="text-[11px] text-(--text-secondary) leading-snug">
-                  {def.effectAtLevel(currentLevel)}
+                  {def.description}
                 </p>
+                {currentLevel > 0 && (
+                  <p className="text-[10px] font-mono text-(--status-success) mt-0.5">
+                    Active: {def.effectAtLevel(currentLevel)}
+                  </p>
+                )}
               </div>
 
               {!atCap && (
@@ -62,7 +74,9 @@ export default function ARUpgradeShop() {
                       : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
                   ].join(' ')}
                 >
-                  {cost} AR
+                  {prestigeDisabled
+                    ? 'Suspended'
+                    : `${formatPointsCompact(BigInt(cost))} AR`}
                 </button>
               )}
             </div>

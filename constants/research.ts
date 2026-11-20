@@ -23,7 +23,8 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Asymptotic Compaction',
     cost: 100n,
     studyTimeSeconds: 5,
-    effectDescription: 'Reduces Research Desk Growth Factor by 0.02.',
+    effectDescription:
+      'Reduces Research Desk cost scaling (growth factor -0.02).',
     prerequisiteId: null,
     isInfinite: false
   },
@@ -80,8 +81,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Trans-Finite Recursion',
     cost: 85n * 10n ** 74n,
     studyTimeSeconds: 14400,
-    effectDescription:
-      'Passively generates 0.1% of active anomaly max reward per second when idle.',
+    effectDescription: 'Increases all active anomaly buff multipliers by +25%.',
     prerequisiteId: 'C5',
     isInfinite: false
   },
@@ -92,8 +92,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Non-Turing Architecture',
     cost: 4n * 10n ** 98n,
     studyTimeSeconds: 28800,
-    effectDescription:
-      'Compounds all computational building multipliers by 1.15x per level.',
+    effectDescription: '1.15x RP output to all Computation-class generators.',
     prerequisiteId: 'C6',
     isInfinite: false
   },
@@ -141,7 +140,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Kinetic Recycling',
     cost: 300n,
     studyTimeSeconds: 10,
-    effectDescription: 'Offline efficiency set to 75%.',
+    effectDescription: '+15% offline RP efficiency.',
     prerequisiteId: null,
     isInfinite: false
   },
@@ -152,7 +151,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Entropy Harvesting',
     cost: 15_000n,
     studyTimeSeconds: 120,
-    effectDescription: 'Offline efficiency set to 100%.',
+    effectDescription: '+20% offline RP efficiency.',
     prerequisiteId: 'E1',
     isInfinite: false
   },
@@ -175,7 +174,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Zero-Point Inflation',
     cost: 9n * 10n ** 40n,
     studyTimeSeconds: 7200,
-    effectDescription: '5.0x multiplier to all energy-generation systems.',
+    effectDescription: '5x RP output to all Energy-class generators.',
     prerequisiteId: 'E3',
     isInfinite: false
   },
@@ -187,7 +186,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 18n * 10n ** 61n,
     studyTimeSeconds: 14400,
     effectDescription:
-      '+0.5% global production per unspent AR (up to 500 AR cap).',
+      '+0.5% global production per AR earned (scales with Harmonic Cap).',
     prerequisiteId: 'E4',
     isInfinite: false
   },
@@ -198,7 +197,8 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Plasma Lattice Confinement',
     cost: 22n * 10n ** 83n,
     studyTimeSeconds: 28800,
-    effectDescription: 'Reduces energy-generator cost growth factors by 0.02.',
+    effectDescription:
+      'Reduces Energy-class generator cost scaling (growth factor -0.02).',
     prerequisiteId: 'E5',
     isInfinite: false
   },
@@ -209,8 +209,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Chronal Disruption Fuses',
     cost: 71n * 10n ** 107n,
     studyTimeSeconds: 57600,
-    effectDescription:
-      'Active anomalies last 2x longer and double base payout.',
+    effectDescription: 'All spatial anomalies last 2x longer.',
     prerequisiteId: 'E6',
     isInfinite: false
   },
@@ -222,7 +221,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 15n * 10n ** 125n,
     studyTimeSeconds: 115200,
     effectDescription:
-      'Energy-class structures gain exponential yield scaling based on lifetime energy generated.',
+      'Energy-class generators scale by 1 + 0.1 * ln(lifetime RP).',
     prerequisiteId: 'E7',
     isInfinite: false
   },
@@ -234,7 +233,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 10n ** 130n,
     studyTimeSeconds: 172800,
     effectDescription:
-      'Stellar Harvesters and Galactic Engines operate at 1.5x efficiency.',
+      '1.5x RP output for Stellar Harvesters and Galactic Engines.',
     prerequisiteId: 'E8',
     isInfinite: false
   },
@@ -259,7 +258,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 800n,
     studyTimeSeconds: 15,
     effectDescription:
-      'Lowers unlock threshold for Server Cluster and Quantum Computer by 15%.',
+      'Reduces the first purchase cost of Server Clusters and Quantum Computers by 15%.',
     prerequisiteId: null,
     isInfinite: false
   },
@@ -294,7 +293,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 5n * 10n ** 48n,
     studyTimeSeconds: 10800,
     effectDescription:
-      'Removes 10 minutes from running timers when anomaly is stabilized.',
+      'Research timers run 2x faster while any anomaly is active.',
     prerequisiteId: 'R3',
     isInfinite: false
   },
@@ -306,7 +305,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 13n * 10n ** 69n,
     studyTimeSeconds: 21600,
     effectDescription:
-      '+10% passive multiplier retention across prestige resets.',
+      'Persists across Tier I prestiges and grants 1.10x RP output to all generators.',
     prerequisiteId: 'R4',
     isInfinite: false
   },
@@ -318,7 +317,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 66n * 10n ** 91n,
     studyTimeSeconds: 43200,
     effectDescription:
-      '+1% production per physical generator currently owned across all classes.',
+      '+1% global generator RP per generator unit currently owned.',
     prerequisiteId: 'R5',
     isInfinite: false
   },
@@ -330,7 +329,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 8n * 10n ** 114n,
     studyTimeSeconds: 86400,
     effectDescription:
-      '10x reality engine speed for 5 minutes after prestige reset.',
+      'Persists across Tier I prestiges; Reality Engines produce 10x RP for 5 minutes after prestige.',
     prerequisiteId: 'R6',
     isInfinite: false
   },
@@ -379,7 +378,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 2_000n,
     studyTimeSeconds: 30,
     effectDescription:
-      'Unlocks Arkalon telemetry, Relic tab, awards Relic 1, unlocks Interactive Arkalon click.',
+      'Unlocks Arkalon telemetry, Relic tab, and awards Relic 1.',
     prerequisiteId: null,
     isInfinite: false
   },
@@ -390,8 +389,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Sub-Vocal Telemetry',
     cost: 100_000n,
     studyTimeSeconds: 300,
-    effectDescription:
-      '5% research speed boost when Arkalon sphere is clicked.',
+    effectDescription: 'Reduces Arkalon Branch research study times by 10%.',
     prerequisiteId: 'O1',
     isInfinite: false
   },
@@ -426,7 +424,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 41n * 10n ** 73n,
     studyTimeSeconds: 21600,
     effectDescription:
-      'Arkalon Interface count provides 0.01% cost reduction per building for all structures.',
+      'Reduces all generator RP costs by 0.01% per Arkalon Interface owned (max 90%).',
     prerequisiteId: 'O4',
     isInfinite: false
   },
@@ -461,7 +459,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 10n ** 127n,
     studyTimeSeconds: 172800,
     effectDescription:
-      'All four branches cross-amplify: +0.5% per completed node to all other branch generators.',
+      '+0.5% RP output to all generators per completed research node.',
     prerequisiteId: 'O7',
     isInfinite: false
   },
@@ -520,7 +518,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 25n * 10n ** 20n,
     studyTimeSeconds: 0,
     effectDescription:
-      'Reduces running research timers by 1% per level (multiplicative, 95% hard cap).',
+      'Reduces research study durations by 1% per level (multiplicative, 95% hard cap; applies to active studies).',
     prerequisiteId: 'R8',
     isInfinite: true
   },

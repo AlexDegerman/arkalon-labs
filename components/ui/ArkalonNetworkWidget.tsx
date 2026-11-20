@@ -9,7 +9,7 @@ import {
   MessageSquare
 } from 'lucide-react'
 
-/// Official Arkalon Network Vector Emblem
+// Official Arkalon Network Vector Emblem
 function ArkalonEmblem({
   size = 24,
   theme = 'dark'
@@ -42,11 +42,6 @@ function ArkalonEmblem({
       </g>
     </svg>
   )
-}
-
-export interface NetworkAlert {
-  id: string
-  type: 'new' | 'updated' | null
 }
 
 // Set type to 'new' (green) or 'updated' (golden/amber). Set to null when there are no active alerts.
@@ -137,55 +132,43 @@ export function ArkalonNetworkWidget({
   if (!mounted) return null
 
   const isUpdated = activeAlert === 'updated'
-  const pipColor = isUpdated ? 'bg-[#F59E0B]' : 'bg-accent-recall'
+  const pipColor = isUpdated ? 'bg-[#F59E0B]' : 'bg-(--status-success)'
   const showNotificationPip = Boolean(activeAlert) || isFirstTimeDiscovery
 
-  // Collapsed State: Logo Only (Floating in corner with discovery or alert pip)
-  if (collapsed) {
-    return (
-      <div className="fixed bottom-3 inset-x-0 sm:bottom-4 z-40 pointer-events-none px-3 sm:px-4">
-        <div className="mx-auto w-full max-w-lg lg:max-w-5xl xl:max-w-6xl flex justify-end">
-          <button
-            type="button"
-            onClick={toggleCollapse}
-            title="Open Arkalon Network Menu"
-            aria-label="Open Arkalon Network Menu"
-            className="pointer-events-auto relative flex items-center justify-center w-10 h-10 rounded-full border border-border-subtle bg-surface-panel/95 text-text-muted hover:text-text-primary hover:border-accent-recall transition-all shadow-2xl active:scale-95 cursor-pointer backdrop-blur-md"
-          >
-            <ArkalonEmblem size={20} theme={theme} />
-            {showNotificationPip && (
-              <span
-                className={`absolute top-0 right-0 w-2.5 h-2.5 rounded-full ${pipColor} border-2 border-[#0c111a] animate-pulse`}
-              />
-            )}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Expanded State: Floating Corner Dock with Scoped Bottom Blur
   return (
-    <>
-      {/* Scoped bottom blur: softens only the cleared bars area behind the widget without dimming the puzzles */}
-      <div
+    <div className="relative">
+      <button
+        type="button"
         onClick={toggleCollapse}
-        className="sm:hidden fixed bottom-0 inset-x-0 h-44 bg-linear-to-t from-bg-base via-bg-base/85 to-transparent backdrop-blur-sm z-30 animate-[fade-in_0.15s_ease-out_both]"
-        aria-hidden="true"
-      />
+        title="Open Arkalon Network Menu"
+        aria-label="Open Arkalon Network Menu"
+        className="relative flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-accent) transition-colors cursor-pointer"
+      >
+        <ArkalonEmblem size={18} theme={theme} />
+        {showNotificationPip && (
+          <span
+            className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ${pipColor} border-2 border-[#0c111a]`}
+          />
+        )}
+      </button>
 
-      <div className="fixed bottom-3 inset-x-0 sm:bottom-4 z-40 pointer-events-none px-3 sm:px-4">
-        <div className="mx-auto w-full max-w-lg lg:max-w-5xl xl:max-w-6xl flex justify-end">
-          <div className="pointer-events-auto w-[calc(100vw-24px)] max-w-64 rounded-xl border border-border-subtle bg-[#0c111a] p-3 flex flex-col gap-2 shadow-[0_0_25px_rgba(0,0,0,0.85)] animate-[fade-in_0.15s_ease-out_both]">
-            {/* Widget Header with Arkalon Logo and Collapse Button */}
-            <div className="flex items-center justify-between border-b border-border-subtle/60 pb-2">
+      {!collapsed && (
+        <>
+          <div
+            onClick={toggleCollapse}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs"
+            aria-hidden="true"
+          />
+
+          <div className="absolute top-full right-0 mt-2 z-50 w-64 rounded-xl border border-(--border-default) bg-[#0c111a] p-3 flex flex-col gap-2 shadow-[0_4px_25px_rgba(0,0,0,0.85)] animate-[fade-in_0.15s_ease-out_both]">
+            <div className="flex items-center justify-between border-b border-(--border-default)/60 pb-2">
               <div className="flex items-center gap-2">
-                <ArkalonEmblem size={22} theme={theme} />
+                <ArkalonEmblem size={20} theme={theme} />
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-mono font-black uppercase tracking-widest text-text-primary leading-none">
+                  <span className="text-[10px] font-mono font-black uppercase tracking-widest text-(--text-primary) leading-none">
                     ARKALON NETWORK
                   </span>
-                  <span className="text-[8px] text-text-muted font-mono leading-tight">
+                  <span className="text-[8px] text-(--text-secondary) font-mono leading-tight">
                     ECOSYSTEM PORTAL
                   </span>
                 </div>
@@ -196,14 +179,13 @@ export function ArkalonNetworkWidget({
                 onClick={toggleCollapse}
                 title="Collapse to logo only"
                 aria-label="Collapse to logo only"
-                className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-bg-base transition-colors cursor-pointer"
+                className="p-1 rounded-md text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-elevated) transition-colors cursor-pointer"
               >
                 <ChevronDown size={14} />
               </button>
             </div>
 
-            {/* 3 Rows of Links under the logo pointing to network.rpsleague.fi */}
-            <div className="flex flex-col divide-y divide-border-subtle/40">
+            <div className="flex flex-col divide-y divide-(--border-default)/40">
               {NETWORK_LINKS.map(({ label, href, icon: Icon }) => {
                 const isOtherGames = label === 'Other Arkalon Games'
                 return (
@@ -213,12 +195,12 @@ export function ArkalonNetworkWidget({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={isOtherGames ? handleOtherGamesClick : undefined}
-                    className="flex items-center justify-between py-1.5 px-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-bg-base/60 transition-colors group"
+                    className="flex items-center justify-between py-1.5 px-1.5 rounded-md text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--bg-elevated)/60 transition-colors group"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <Icon
                         size={12}
-                        className="text-text-muted group-hover:text-accent-recall transition-colors shrink-0"
+                        className="text-(--text-secondary) group-hover:text-(--border-accent) transition-colors shrink-0"
                       />
                       <span className="text-[11px] font-medium tracking-wide truncate">
                         {label}
@@ -228,7 +210,7 @@ export function ArkalonNetworkWidget({
                           className={`shrink-0 text-[8px] font-mono font-black uppercase px-1.5 py-0.2 rounded border leading-tight ${
                             isUpdated
                               ? 'bg-[#F59E0B]/20 text-[#F59E0B] border-[#F59E0B]/40'
-                              : 'bg-accent-recall/20 text-accent-recall border-accent-recall/30'
+                              : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                           }`}
                         >
                           {isUpdated ? 'UPDATED' : 'NEW'}
@@ -237,15 +219,15 @@ export function ArkalonNetworkWidget({
                     </div>
                     <ExternalLink
                       size={11}
-                      className="text-text-muted opacity-70 group-hover:opacity-100 transition-opacity shrink-0 ml-1"
+                      className="text-(--text-secondary) opacity-70 group-hover:opacity-100 transition-opacity shrink-0 ml-1"
                     />
                   </a>
                 )
               })}
             </div>
           </div>
-        </div>
-      </div>
-    </>
+        </>
+      )}
+    </div>
   )
 }

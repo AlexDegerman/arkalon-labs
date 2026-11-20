@@ -3,7 +3,6 @@
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import {
-  applyMegaprojectReward,
   getEffectiveConstructionCost,
   meetsMegaprojectRequirements,
   MEGAPROJECT_MAP
@@ -11,6 +10,7 @@ import {
 import { markUnlocksDirty } from '@/lib/dirtyFlags'
 import { dispatchMegaprojectComplete } from '@/lib/dialogueDispatcher'
 import type { MegaprojectId } from '@/types/game'
+import { playSound } from '@/hooks/useSound'
 
 // Megaproject actions
 
@@ -18,25 +18,36 @@ import type { MegaprojectId } from '@/types/game'
 export function activateMegaproject(id: MegaprojectId): void {
   const store = useGameStore.getState()
 
+  if (store.activeChallengeId) return
   if (!meetsMegaprojectRequirements(id, store)) return
   if (store.activeMegaprojectId === id) return
 
+  const rememberedAlloc =
+    store.lastMegaprojectAllocationPercent > 0
+      ? store.lastMegaprojectAllocationPercent
+      : 10
+
+  playSound('click')
   useGameStore.setState({
     activeMegaprojectId: id,
     megaprojectRPAbsorbed: 0n,
-    megaprojectAllocationPercent: 10 // Default 10% allocation
+    megaprojectAllocationPercent: rememberedAlloc
   })
 }
 
 // Updates the allocation percentage (0-100)
 export function setMegaprojectAllocation(percent: number): void {
   const clamped = Math.max(0, Math.min(100, Math.round(percent)))
-  useGameStore.setState({ megaprojectAllocationPercent: clamped })
+  useGameStore.setState({
+    megaprojectAllocationPercent: clamped,
+    ...(clamped > 0 ? { lastMegaprojectAllocationPercent: clamped } : {})
+  })
 }
 
 // Deactivates the current megaproject without completing it
 // (progress is lost)
 export function deactivateMegaproject(): void {
+  playSound('fail')
   useGameStore.setState({
     activeMegaprojectId: null,
     megaprojectRPAbsorbed: 0n,
@@ -48,28 +59,48 @@ export function deactivateMegaproject(): void {
 // Called from the tick loop
 export function checkMegaprojectCompletion(): void {
   const store = useGameStore.getState()
+  if (store.activeChallengeId) return
   if (!store.activeMegaprojectId) return
 
-  const cost = getEffectiveConstructionCost(store.activeMegaprojectId, store)
+  const id = store.activeMegaprojectId
+  const cost = getEffectiveConstructionCost(id, store)
   if (store.megaprojectRPAbsorbed < cost) return
 
-  const id = store.activeMegaprojectId
-  const rewardPatch = applyMegaprojectReward(id, store)
+  const def = MEGAPROJECT_MAP[id]
+
+  if (id === 'dyson_swarm') {
+    const nextLevel = (store.dysonSwarmLevel ?? 0) + 1
+    useGameStore.setState({
+      dysonSwarmLevel: nextLevel,
+      megaprojectRPAbsorbed: 0n
+    })
+
+    playSound('fanfare')
+    useGameStore.getState().recalcPPS()
+
+    useUIStore.getState().pushAlert({
+      priority: 0,
+      variant: 'unlock',
+      title: 'Dyson Swarm Array Completed',
+      message: `Swarm Level ${nextLevel} operational (Asymptotic Exponent & +10% Global RP). Constructing next satellite array.`,
+      autoDismissMs: 6000
+    })
+    return
+  }
 
   useGameStore.setState((s) => ({
-    ...rewardPatch,
     activeMegaprojectId: null,
     megaprojectRPAbsorbed: 0n,
     megaprojectAllocationPercent: 0,
     completedMegaprojects: [...s.completedMegaprojects, id]
   }))
 
+  playSound('fanfare')
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
 
   dispatchMegaprojectComplete(id)
 
-  const def = MEGAPROJECT_MAP[id]
   useUIStore.getState().pushAlert({
     priority: 0,
     variant: 'unlock',

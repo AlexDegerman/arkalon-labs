@@ -7,31 +7,49 @@ import { unlockArkalon, primeArkalonVoices } from '@/lib/arkalonTTS'
 import { getOrCreateLabsPlayer } from '@/app/actions/getOrCreateLabsPlayer'
 import { rerollPlayerName } from '@/app/actions/rerollPlayerName'
 import { UPDATES_VERSION } from '@/lib/updates'
+import { markTutorialDirty } from '@/lib/dirtyFlags'
 
 const VERSION_KEY = 'arkalon_labs_version'
 
 export default function WelcomeModal() {
-  const { welcomeModalOpen, setWelcomeModalOpen, setUpdateModalOpen } =
-    useUIStore()
+  const welcomeModalOpen = useUIStore((s) => s.welcomeModalOpen)
+  const setWelcomeModalOpen = useUIStore((s) => s.setWelcomeModalOpen)
+  const setUpdateModalOpen = useUIStore((s) => s.setUpdateModalOpen)
   const [displayName, setDisplayName] = useState<string>('Loading...')
   const [justRerolled, setJustRerolled] = useState(false)
   const [isRerolling, startReroll] = useTransition()
 
   useEffect(() => {
-    getOrCreateLabsPlayer().then(({ coreId, displayName }) => {
-      localStorage.setItem('arkalon_labs_player_id', coreId)
-      window.dispatchEvent(
-        new CustomEvent('arkalon_player_ready', { detail: coreId })
-      )
-      setDisplayName(displayName)
+    getOrCreateLabsPlayer()
+      .then(({ coreId, displayName }) => {
+        localStorage.setItem('arkalon_labs_player_id', coreId)
+        window.dispatchEvent(
+          new CustomEvent('arkalon_player_ready', { detail: coreId })
+        )
+        setDisplayName(displayName)
 
-      const storedVersion = localStorage.getItem(VERSION_KEY)
-      if (!storedVersion) {
-        setWelcomeModalOpen(true)
-      } else if (storedVersion !== UPDATES_VERSION && setUpdateModalOpen) {
-        setUpdateModalOpen(true)
-      }
-    })
+        const storedVersion = localStorage.getItem(VERSION_KEY)
+        if (!storedVersion) {
+          setWelcomeModalOpen(true)
+        } else if (storedVersion !== UPDATES_VERSION && setUpdateModalOpen) {
+          setUpdateModalOpen(true)
+        }
+      })
+      .catch(() => {
+        // Fallback for offline or dev environment without postgres
+        const fallbackId = '11111111-1111-4111-8111-111111111111'
+        const fallbackName = 'AncientGoldTurtle'
+        localStorage.setItem('arkalon_labs_player_id', fallbackId)
+        window.dispatchEvent(
+          new CustomEvent('arkalon_player_ready', { detail: fallbackId })
+        )
+        setDisplayName(fallbackName)
+
+        const storedVersion = localStorage.getItem(VERSION_KEY)
+        if (!storedVersion) {
+          setWelcomeModalOpen(true)
+        }
+      })
   }, [setWelcomeModalOpen, setUpdateModalOpen])
 
   const handleReroll = () => {
@@ -53,6 +71,7 @@ export default function WelcomeModal() {
 
     localStorage.setItem(VERSION_KEY, UPDATES_VERSION)
     setWelcomeModalOpen(false)
+    markTutorialDirty()
   }, [setWelcomeModalOpen])
 
   if (!welcomeModalOpen) return null
@@ -139,7 +158,7 @@ export default function WelcomeModal() {
           <button
             type="button"
             onClick={handleEnter}
-            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-150 active:scale-[0.98] cursor-pointer bg-(--border-accent) text-[#080c14] hover:brightness-110 font-mono shadow-[0_0_16px_rgba(0,240,255,0.35)]"
+            className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-150 cursor-pointer bg-(--border-accent) text-[#080c14] hover:brightness-110 font-mono shadow-[0_0_16px_rgba(0,240,255,0.35)]"
           >
             INITIALIZE FACILITY
           </button>

@@ -22,25 +22,44 @@ export async function getOrCreateLabsPlayer() {
   let networkShortId: string | undefined
 
   // Local development: use a mock player because Arkalon Network is not running
-  if (
-    process.env.NODE_ENV === 'development' &&
-    !process.env.INTERNAL_NETWORK_URL
-  ) {
+  const isLocalMock =
+    process.env.NODE_ENV === 'development' && !process.env.INTERNAL_NETWORK_URL
+
+  if (isLocalMock) {
     coreId = '11111111-1111-4111-8111-111111111111'
     sessionToken = 'mock-dev-session-token'
     nickname = 'AncientGoldTurtle'
+
+    cookieStore.set(CORE_ID_COOKIE, coreId, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: ONE_YEAR
+    })
+    cookieStore.set(SESSION_COOKIE, sessionToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: THIRTY_DAYS
+    })
   }
 
   // 1. If no root cookie, request identity from Network Hub API
   const networkUrl =
     process.env.INTERNAL_NETWORK_URL ?? 'http://arkalon-network:3000'
 
-  if (!coreId || !sessionToken) {
+  if (isLocalMock) {
+    // Skip Network Hub lookup when running locally without Arkalon Network
+  } else if (!coreId || !sessionToken) {
     const res = await fetch(`${networkUrl}/api/identity/provision`, {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'x-internal-secret': process.env.INTERNAL_SERVICE_SECRET || ''
-      }
+      },
+      ...(coreId ? { body: JSON.stringify({ coreId }) } : {})
     })
 
     if (!res.ok) {
@@ -48,7 +67,7 @@ export async function getOrCreateLabsPlayer() {
     }
 
     const data = await res.json()
-    coreId = data.coreId
+    coreId = coreId ?? data.coreId
     sessionToken = data.sessionToken
     nickname = data.nickname
     networkShortId = data.shortId
@@ -79,7 +98,8 @@ export async function getOrCreateLabsPlayer() {
           'Content-Type': 'application/json',
           'x-internal-secret': process.env.INTERNAL_SERVICE_SECRET || ''
         },
-        body: JSON.stringify({ coreId })
+        body: JSON.stringify({ coreId }),
+        signal: AbortSignal.timeout(3000)
       })
       if (res.ok) {
         const data = await res.json()
@@ -90,6 +110,13 @@ export async function getOrCreateLabsPlayer() {
   }
 
   // 2. Ensure player exists in Labs's local database
+  if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'development') {
+    return {
+      coreId: coreId!,
+      displayName: nickname ?? 'Director'
+    }
+  }
+
   const client = await pool.connect()
   try {
     const existing = await client.query(

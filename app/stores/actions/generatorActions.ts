@@ -1,33 +1,50 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import {
-  canAfford,
-  costToBuyN,
-  maxAffordable,
-  nextCost
-} from '@/lib/generatorCosts'
+import { useUIStore } from '@/app/stores/uiStore'
+import { GENERATORS } from '@/constants/generators'
+import { costToBuyN, maxAffordable } from '@/lib/generatorCosts'
+import { getNextMilestone } from '@/lib/generatorUtils'
 import {
   getModuleUpgradeCost as getModuleUpgradeCostFn,
   getModuleLevelCap as getModuleLevelCapFn
 } from '@/lib/moduleDefs'
-import { markUnlocksDirty, markTutorialDirty } from '@/lib/dirtyFlags'
+import { markUnlocksDirty, markTutorialDirty, markAchievementsDirty } from '@/lib/dirtyFlags'
 import { dispatchGeneratorUnlock } from '@/lib/dialogueDispatcher'
 import type { ModuleType } from '@/types/game'
 import type { BulkBuyAmount } from '@/constants/game'
+import { playSound } from '@/hooks/useSound'
+import { awardRelic } from './relicActions'
 
 // Module purchase action
 export function buyModule(
   generatorIndex: number,
   moduleType: ModuleType,
-  currentLevel: number
+  _currentLevel?: number,
+  silent = false
 ): void {
   const store = useGameStore.getState()
   // SC4, EC1, EC4: modules disabled
   if (store.activeChallengeRestrictions?.modulesDisabled) return
+  const gen = store.generators[generatorIndex]
+  if (!gen) return
+
+  const actualLevel =
+    moduleType === 'efficiency'
+      ? gen.efficiencyLevel
+      : moduleType === 'cost_reduction'
+        ? gen.costReductionLevel
+        : gen.synergyLevel
+
   const cap = getModuleLevelCapFn(store)
-  if (currentLevel >= cap) return
-  const cost = getModuleUpgradeCostFn(generatorIndex, moduleType, currentLevel)
+  if (actualLevel >= cap) return
+  const sc4Tiers = store.challengeRecords['SC4']?.completedTiers ?? 0
+  const cost = getModuleUpgradeCostFn(
+    generatorIndex,
+    moduleType,
+    actualLevel,
+    sc4Tiers
+  )
   if (store.researchPoints < cost) return
 
   useGameStore.setState((s) => {
@@ -50,27 +67,121 @@ export function buyModule(
     }
   })
 
+  if (!silent) playSound('purchase')
+
   // Modules affect production
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
+}
+
+export function buyAllModules(filterType?: ModuleType): void {
+  const store = useGameStore.getState()
+  if (
+    store.arUpgrades.bulk_procurement <= 0 ||
+    store.activeChallengeRestrictions?.prestigeUpgradesDisabled
+  ) {
+    return
+  }
+  if (store.activeChallengeRestrictions?.modulesDisabled) return
+
+  const cap = getModuleLevelCapFn(store)
+  const sc4Tiers = store.challengeRecords['SC4']?.completedTiers ?? 0
+  const types: ModuleType[] = filterType
+    ? [filterType]
+    : ['efficiency', 'cost_reduction', 'synergy']
+
+  let currentRP = store.researchPoints
+  let newGenerators = [...store.generators]
+  let upgradedAny = false
+
+  // Repeatedly purchase affordable upgrades across all owned generators
+  let canContinue = true
+  while (canContinue) {
+    canContinue = false
+
+    for (let i = 0; i < 20; i++) {
+      if (!newGenerators[i] || newGenerators[i].quantity === 0n) continue
+
+      for (const type of types) {
+        const gen = newGenerators[i]
+        const lvl =
+          type === 'efficiency'
+            ? gen.efficiencyLevel
+            : type === 'cost_reduction'
+              ? gen.costReductionLevel
+              : gen.synergyLevel
+
+        if (lvl >= cap) continue
+
+        const cost = getModuleUpgradeCostFn(i, type, lvl, sc4Tiers)
+        if (currentRP >= cost) {
+          currentRP -= cost
+          upgradedAny = true
+          canContinue = true
+
+          newGenerators[i] = {
+            ...gen,
+            efficiencyLevel:
+              type === 'efficiency'
+                ? gen.efficiencyLevel + 1
+                : gen.efficiencyLevel,
+            costReductionLevel:
+              type === 'cost_reduction'
+                ? gen.costReductionLevel + 1
+                : gen.costReductionLevel,
+            synergyLevel:
+              type === 'synergy' ? gen.synergyLevel + 1 : gen.synergyLevel
+          }
+        }
+      }
+    }
+  }
+
+  if (!upgradedAny) return
+
+  useGameStore.setState({
+    researchPoints: currentRP,
+    generators: newGenerators
+  })
+
+  playSound('purchase')
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
+  markAchievementsDirty()
 }
 
 // Generator purchase action
 // amount: 1 | 10 | 100 | 'max'
 export function buyGenerator(
   generatorIndex: number,
-  amount: BulkBuyAmount
+  amount: BulkBuyAmount,
+  silent = false
 ): void {
   const store = useGameStore.getState()
   const gen = store.generators[generatorIndex]
   if (!gen) return
 
+  // SC1, AC4, EC1: restrict buying disabled generator tiers
+  const maxTier = store.activeChallengeRestrictions?.maxGeneratorTier
+  if (maxTier !== null && maxTier !== undefined && generatorIndex >= maxTier)
+    return
+
   // Determine actual count to buy
   let count: number
   if (amount === 'max') {
     count = maxAffordable(generatorIndex, store)
+  } else if (amount === 'milestone') {
+    const mInfo = getNextMilestone(generatorIndex, gen.quantity, store)
+    count = Math.max(1, mInfo.next - Number(gen.quantity))
   } else {
     count = amount
+  }
+
+  const maxQty = store.activeChallengeRestrictions?.maxGeneratorQuantity
+  if (maxQty !== null && maxQty !== undefined) {
+    if (gen.quantity >= maxQty) return
+    const remaining = Number(maxQty - gen.quantity)
+    count = Math.min(count, remaining)
   }
 
   if (count <= 0) return
@@ -83,13 +194,40 @@ export function buyGenerator(
     return { ...g, quantity: g.quantity + BigInt(count) }
   })
 
+  const prevOnlyType = store.activeChallengeRestrictions?.onlyGeneratorType
+  const switchedOnlyType =
+    prevOnlyType !== null &&
+    prevOnlyType !== undefined &&
+    prevOnlyType !== generatorIndex
+
   useGameStore.setState((s) => ({
     researchPoints: s.researchPoints - totalCost,
-    generators: newGenerators
+    generators: newGenerators,
+    // EC2: switch active generator type to purchased tier
+    activeChallengeRestrictions:
+      s.activeChallengeRestrictions?.onlyGeneratorType !== null &&
+      s.activeChallengeRestrictions?.onlyGeneratorType !== undefined
+        ? {
+            ...s.activeChallengeRestrictions,
+            onlyGeneratorType: generatorIndex
+          }
+        : s.activeChallengeRestrictions
   }))
 
+  if (switchedOnlyType) {
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'info',
+      title: 'Singularity Paradox Switched',
+      message: `Production now flows exclusively through ${GENERATORS[generatorIndex]?.name ?? `Tier ${generatorIndex + 1}`}.`,
+      autoDismissMs: 3500
+    })
+  }
+
+  if (!silent) playSound('purchase')
   markUnlocksDirty()
   markTutorialDirty()
+  markAchievementsDirty()
 
   // Fire dialogue on first purchase of each generator type
   const prevQty = store.generators[generatorIndex]?.quantity ?? 0n
@@ -97,6 +235,109 @@ export function buyGenerator(
     dispatchGeneratorUnlock(generatorIndex)
   }
 
+  const updatedQty = newGenerators[generatorIndex]?.quantity ?? 0n
+  if (updatedQty >= 500n) awardRelic(11)
+  if (generatorIndex === 4 && updatedQty >= 250n) awardRelic(15)
+  if (generatorIndex === 5 && updatedQty >= 50n) awardRelic(10)
+  if (generatorIndex === 14 && updatedQty >= 50n) awardRelic(12)
+  if (generatorIndex === 13 && updatedQty >= 100n) awardRelic(17)
+  if (generatorIndex === 19 && updatedQty >= 10n) awardRelic(20)
+
   // Recalculate PPS since generator quantities changed
+  useGameStore.getState().recalcPPS()
+}
+
+export function buyMaxAllGenerators(): void {
+  const store = useGameStore.getState()
+  if (
+    store.arUpgrades.bulk_procurement <= 0 ||
+    store.activeChallengeRestrictions?.prestigeUpgradesDisabled
+  ) {
+    return
+  }
+  if (store.researchPoints <= 0n) return
+
+  let currentRP = store.researchPoints
+  let newGenerators = [...store.generators]
+  let activeRestrictions = store.activeChallengeRestrictions
+  let anyPurchased = false
+
+  // Buy from highest generator index down to 0 to prioritize optimal yield
+  for (let i = 19; i >= 0; i--) {
+    const gen = newGenerators[i]
+    if (!gen) continue
+
+    const onlyType = activeRestrictions?.onlyGeneratorType
+    if (onlyType !== null && onlyType !== undefined && i !== onlyType) continue
+
+    const maxTier = activeRestrictions?.maxGeneratorTier
+    if (maxTier !== null && maxTier !== undefined && i >= maxTier) continue
+
+    const maxQty = activeRestrictions?.maxGeneratorQuantity
+    if (maxQty !== null && maxQty !== undefined && gen.quantity >= maxQty)
+      continue
+
+    const tempState = {
+      ...store,
+      researchPoints: currentRP,
+      generators: newGenerators,
+      activeChallengeRestrictions: activeRestrictions
+    }
+
+    let count = maxAffordable(i, tempState)
+    if (maxQty !== null && maxQty !== undefined) {
+      const remaining = Number(maxQty - gen.quantity)
+      count = Math.min(count, remaining)
+    }
+
+    if (count <= 0) continue
+
+    const totalCost = costToBuyN(i, count, tempState)
+    if (currentRP < totalCost) continue
+
+    currentRP -= totalCost
+    anyPurchased = true
+
+    newGenerators[i] = {
+      ...gen,
+      quantity: gen.quantity + BigInt(count)
+    }
+
+    if (
+      activeRestrictions?.onlyGeneratorType !== null &&
+      activeRestrictions?.onlyGeneratorType !== undefined
+    ) {
+      activeRestrictions = {
+        ...activeRestrictions,
+        onlyGeneratorType: i
+      }
+    }
+
+    const prevQty = gen.quantity
+    if (prevQty === 0n && count > 0) {
+      dispatchGeneratorUnlock(i)
+    }
+
+    const updatedQty = newGenerators[i].quantity
+    if (updatedQty >= 500n) awardRelic(11)
+    if (i === 4 && updatedQty >= 250n) awardRelic(15)
+    if (i === 5 && updatedQty >= 50n) awardRelic(10)
+    if (i === 14 && updatedQty >= 50n) awardRelic(12)
+    if (i === 13 && updatedQty >= 100n) awardRelic(17)
+    if (i === 19 && updatedQty >= 10n) awardRelic(20)
+  }
+
+  if (!anyPurchased) return
+
+  useGameStore.setState({
+    researchPoints: currentRP,
+    generators: newGenerators,
+    activeChallengeRestrictions: activeRestrictions
+  })
+
+  playSound('purchase')
+  markUnlocksDirty()
+  markTutorialDirty()
+  markAchievementsDirty()
   useGameStore.getState().recalcPPS()
 }

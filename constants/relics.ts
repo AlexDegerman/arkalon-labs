@@ -1,5 +1,15 @@
 // Static relic definitions - display metadata and balance parameters
 
+export type RelicRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythical'
+
+export function getRelicRarity(id: number): RelicRarity {
+  if (id >= 17) return 'mythical'
+  if (id >= 13) return 'legendary'
+  if (id >= 9) return 'epic'
+  if (id >= 5) return 'rare'
+  return 'common'
+}
+
 export type RelicSource =
   | 'auto_awarded'
   | 'anomaly_drop'
@@ -18,6 +28,31 @@ export type RelicSource =
   | 'point_milestone'
   | 'purchase_os'
 
+export type RelicClass = 'computation' | 'energy' | 'reality' | 'arkalon'
+
+export const RELIC_CLASSES: Record<number, RelicClass> = {
+  1: 'arkalon',
+  2: 'reality',
+  3: 'energy',
+  4: 'computation',
+  5: 'reality',
+  6: 'computation',
+  7: 'computation',
+  8: 'reality',
+  9: 'arkalon',
+  10: 'energy',
+  11: 'computation',
+  12: 'energy',
+  13: 'computation',
+  14: 'reality',
+  15: 'reality',
+  16: 'arkalon',
+  17: 'energy',
+  18: 'energy',
+  19: 'reality',
+  20: 'arkalon'
+}
+
 export interface RelicDefinition {
   id: number // 1-20
   name: string
@@ -25,9 +60,9 @@ export interface RelicDefinition {
   source: RelicSource
   sourceDescription: string
   baseDustCost: number // cost per upgrade level
-  dustCostScaling: number // multiplier per level (1.12^level)
+  dustCostScaling: number // multiplier per level (1.08^level)
   effectPerLevel: string
-  maxLevel: number // always 100
+  maxLevel: number // 100 (20 for Relic 20)
 }
 
 export const RELICS: RelicDefinition[] = [
@@ -38,7 +73,7 @@ export const RELICS: RelicDefinition[] = [
     source: 'auto_awarded',
     sourceDescription: 'Auto-awarded on Relic tab unlock.',
     baseDustCost: 10,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+2% Arkalon Branch research speed per level',
     maxLevel: 100
   },
@@ -47,10 +82,10 @@ export const RELICS: RelicDefinition[] = [
     name: 'Fractured Chrono-Hourglass',
     description:
       'A shattered temporal measurement device leaking chronal energy.',
-    source: 'anomaly_specific',
-    sourceDescription: 'Temporal Distortion anomaly (5% drop).',
+    source: 'research_drop',
+    sourceDescription: 'Complete 10 standard research nodes.',
     baseDustCost: 15,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+1.5s anomaly duration per level',
     maxLevel: 100
   },
@@ -62,7 +97,7 @@ export const RELICS: RelicDefinition[] = [
     source: 'prestige_reset',
     sourceDescription: 'Singular Synthesis reset.',
     baseDustCost: 25,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+5% energy-class generator output per level',
     maxLevel: 100
   },
@@ -72,9 +107,10 @@ export const RELICS: RelicDefinition[] = [
     description:
       'A tome that records and reduces the cost of early generators.',
     source: 'research_drop',
-    sourceDescription: 'Research project completion (1% drop).',
+    sourceDescription:
+      'Research project completion (1% drop, guaranteed by 25th node).',
     baseDustCost: 30,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '-0.001 growth factor on first 5 generators per level',
     maxLevel: 100
   },
@@ -86,18 +122,19 @@ export const RELICS: RelicDefinition[] = [
     source: 'offline_hours',
     sourceDescription: '50 total hours offline progression.',
     baseDustCost: 40,
-    dustCostScaling: 1.12,
-    effectPerLevel: '+1% offline RP rate per level (cap 100%)',
+    dustCostScaling: 1.08,
+    effectPerLevel:
+      '+1% offline RP efficiency per level (total efficiency capped at 100%)',
     maxLevel: 100
   },
   {
     id: 6,
     name: 'Quantum Die',
     description: 'A probability manipulator that hastens anomaly emergence.',
-    source: 'anomaly_specific',
-    sourceDescription: 'Quantum Surge anomaly (5% drop).',
+    source: 'anomaly_drop',
+    sourceDescription: 'Experience 10 spatial anomalies.',
     baseDustCost: 50,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '-3s minimum anomaly spawn interval per level (floor 60s)',
     maxLevel: 100
   },
@@ -109,7 +146,7 @@ export const RELICS: RelicDefinition[] = [
     source: 'purchase_ar',
     sourceDescription: '50 AR spent.',
     baseDustCost: 75,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+10% computation-class generator output per level',
     maxLevel: 100
   },
@@ -121,7 +158,7 @@ export const RELICS: RelicDefinition[] = [
     source: 'prestige_tier2',
     sourceDescription: 'First Timeline Severance.',
     baseDustCost: 100,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+0.02 global production exponent per level',
     maxLevel: 100
   },
@@ -130,9 +167,10 @@ export const RELICS: RelicDefinition[] = [
     name: 'Void Compass',
     description: 'A navigation instrument tuned to Arkalon Resonance flows.',
     source: 'anomaly_specific',
-    sourceDescription: 'Empty Coordinates excavation scan (3%).',
+    sourceDescription:
+      'Unstable Rifts (5%) or Void Depths (15%) scan (guaranteed by 8th expedition).',
     baseDustCost: 125,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+3% AR awarded on Reality Recalibration per level',
     maxLevel: 100
   },
@@ -140,10 +178,10 @@ export const RELICS: RelicDefinition[] = [
     id: 10,
     name: 'Singularity Lens',
     description: 'A black-hole focusing array that amplifies reactor output.',
-    source: 'anomaly_specific',
-    sourceDescription: 'Containment Breach anomaly (5% drop).',
+    source: 'generator_owned',
+    sourceDescription: '50 Singularity Reactors owned.',
     baseDustCost: 150,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+15% Singularity Reactor output per level',
     maxLevel: 100
   },
@@ -155,9 +193,9 @@ export const RELICS: RelicDefinition[] = [
     source: 'generator_milestone',
     sourceDescription: 'Purchasing 500th unit of any generator.',
     baseDustCost: 200,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel:
-      'Quantity milestones trigger 2 units earlier per level (floor 5)',
+      'Quantity milestones trigger 2 units earlier per level (floor 10)',
     maxLevel: 100
   },
   {
@@ -168,8 +206,9 @@ export const RELICS: RelicDefinition[] = [
     source: 'generator_owned',
     sourceDescription: '50 Stellar Harvesters owned.',
     baseDustCost: 250,
-    dustCostScaling: 1.12,
-    effectPerLevel: '+0.5% per Harvester to all energy generators per level',
+    dustCostScaling: 1.08,
+    effectPerLevel:
+      '+0.5% Energy-class RP per Stellar Harvester owned per level',
     maxLevel: 100
   },
   {
@@ -177,9 +216,9 @@ export const RELICS: RelicDefinition[] = [
     name: 'Matter-Data Bridge',
     description: 'A cross-dimensional relay amplifying synergy coefficients.',
     source: 'operation_tier',
-    sourceDescription: 'Complete Tier 3 Anomalous Operation.',
+    sourceDescription: 'Acquire 3 Anomalous Operation artifacts.',
     baseDustCost: 300,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '+5% cross-generator synergy coefficients per level',
     maxLevel: 100
   },
@@ -188,9 +227,9 @@ export const RELICS: RelicDefinition[] = [
     name: 'Paradoxical Coil',
     description: 'A temporal loop device that reduces technology costs.',
     source: 'research_time',
-    sourceDescription: '24 cumulative hours on any single tech node.',
+    sourceDescription: 'Complete any research node requiring 24h+ study time.',
     baseDustCost: 400,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel: '-1.5% base cost of all tech nodes per level',
     maxLevel: 100
   },
@@ -198,11 +237,11 @@ export const RELICS: RelicDefinition[] = [
     id: 15,
     name: 'Planck Shell',
     description: 'A quantum containment field accelerating Reality Engines.',
-    source: 'anomaly_specific',
-    sourceDescription: 'Arkalon Resonance anomaly (5% drop).',
+    source: 'generator_owned',
+    sourceDescription: '250 Reality Engines owned.',
     baseDustCost: 500,
-    dustCostScaling: 1.12,
-    effectPerLevel: 'Reality Engines run 10% faster per level',
+    dustCostScaling: 1.08,
+    effectPerLevel: '+10% Reality Engine RP output per level',
     maxLevel: 100
   },
   {
@@ -212,9 +251,9 @@ export const RELICS: RelicDefinition[] = [
     source: 'research_drop',
     sourceDescription: 'Arkalon Branch Tier 8 completion.',
     baseDustCost: 600,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel:
-      'Arkalon Interfaces +2% per other active generator per level',
+      '+2% Arkalon Interface RP per other owned generator tier per level',
     maxLevel: 100
   },
   {
@@ -224,8 +263,9 @@ export const RELICS: RelicDefinition[] = [
     source: 'generator_owned',
     sourceDescription: '100 Dark Matter Synthesizers owned.',
     baseDustCost: 800,
-    dustCostScaling: 1.12,
-    effectPerLevel: '-2% base cost of dark-energy buildings per level',
+    dustCostScaling: 1.08,
+    effectPerLevel:
+      '-2% cost of Vacuum Fluctuators & Dark Matter Synthesizers per level',
     maxLevel: 100
   },
   {
@@ -235,7 +275,7 @@ export const RELICS: RelicDefinition[] = [
     source: 'purchase_os',
     sourceDescription: '10 OS spent.',
     baseDustCost: 1000,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel:
       'Galactic Engines boost Stellar Harvesters +1% per Engine per level',
     maxLevel: 100
@@ -248,8 +288,8 @@ export const RELICS: RelicDefinition[] = [
     source: 'point_milestone',
     sourceDescription: 'Reach 10^63 RP in a single run.',
     baseDustCost: 1200,
-    dustCostScaling: 1.12,
-    effectPerLevel: '-3% Reality Branch research costs per level',
+    dustCostScaling: 1.08,
+    effectPerLevel: '-3% Reality Branch research RP costs per level (max -90%)',
     maxLevel: 100
   },
   {
@@ -259,10 +299,10 @@ export const RELICS: RelicDefinition[] = [
     source: 'generator_owned',
     sourceDescription: '10 Absolute Void Compressors owned.',
     baseDustCost: 1500,
-    dustCostScaling: 1.12,
+    dustCostScaling: 1.08,
     effectPerLevel:
       '+50% Void Compressor output per level (capped at level 20)',
-    maxLevel: 100
+    maxLevel: 20
   }
 ]
 

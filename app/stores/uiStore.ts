@@ -1,5 +1,32 @@
 import { create } from 'zustand'
 import type { FacilityAlertPayload } from '@/types/alerts'
+import type { BulkBuyAmount } from '@/constants/game'
+import { WorkspaceTab } from '@/hooks/useActiveTab'
+
+export interface ChallengeCompletePayload {
+  challengeId: string
+  name: string
+  category: 'standard' | 'advanced' | 'extreme' | 'sandbox'
+  tierCompleted: number
+  maxTiers: number
+  restrictionSummary: string
+  rewardDescription: string
+  arEarned: number
+  targetReached: bigint
+  durationSeconds: number
+  runRestored: boolean
+}
+
+export interface VictoryPayload {
+  lifetimePoints: bigint
+  totalPlaytimeSeconds: number
+  totalPrestiges: number
+  achievementsCount: number
+  relicsCount: number
+  dysonSwarmLevel?: number
+  challengeTiersCompleted?: number
+  challengeTiersTotal?: number
+}
 
 interface UIStore {
   // Audio Settings
@@ -18,14 +45,39 @@ interface UIStore {
   // Settings panel visibility
   settingsPanelOpen: boolean
 
+  // Hotkey HUD modal visibility
+  hotkeyModalOpen: boolean
+
   // Welcome modal
   welcomeModalOpen: boolean
 
   // Update modal
   updateModalOpen: boolean
 
+  // Offline gains modal
+  offlineModalOpen: boolean
+  offlinePayload: import('@/types/offline').OfflineProgressPayload | null
+
+  // Challenge completion modal
+  challengeCompleteModalOpen: boolean
+  challengeCompletePayload: ChallengeCompletePayload | null
+
+  // Endgame victory modal (10^162 RP + Node O10)
+  victoryModalOpen: boolean
+  victoryPayload: VictoryPayload | null
+
   // Arkalon sphere prestige animation trigger
   prestigeAnimating: boolean
+
+  // Selected generator bulk purchase mode
+  bulkAmount: BulkBuyAmount
+
+  // Auto-prestige live countdown state
+  autoPrestigePendingTier: 0 | 1 | 2 | 3
+  autoPrestigeCountdown: number
+
+  // Newly unlocked workspace tabs not yet opened by the player
+  unseenUnlockedTabs: WorkspaceTab[]
 
   setMusicEnabled: (enabled: boolean) => void
   setMusicVolume: (volume: number) => void
@@ -36,9 +88,24 @@ interface UIStore {
   dismissAlert: () => void
   pushTerminalLine: (text: string) => void
   setSettingsPanelOpen: (open: boolean) => void
+  setHotkeyModalOpen: (open: boolean) => void
   setWelcomeModalOpen: (open: boolean) => void
   setUpdateModalOpen: (open: boolean) => void
+  setOfflineModalOpen: (open: boolean) => void
+  setOfflinePayload: (
+    payload: import('@/types/offline').OfflineProgressPayload | null
+  ) => void
+  setChallengeCompleteModalOpen: (open: boolean) => void
+  setChallengeCompletePayload: (
+    payload: ChallengeCompletePayload | null
+  ) => void
+  setVictoryModalOpen: (open: boolean) => void
+  setVictoryPayload: (payload: VictoryPayload | null) => void
   triggerPrestigeAnimation: () => void
+  setBulkAmount: (amount: BulkBuyAmount) => void
+  setAutoPrestigePending: (tier: 0 | 1 | 2 | 3, countdown: number) => void
+  markTabUnseen: (tab: WorkspaceTab) => void
+  clearTabUnseen: (tab: WorkspaceTab) => void
 }
 
 let alertIdCounter = 0
@@ -51,11 +118,22 @@ export const useUIStore = create<UIStore>((set, get) => ({
 
   alertQueue: [],
   activeAlert: null,
-  terminalLines: ['System check complete. Core online.'],
+  terminalLines: [],
   settingsPanelOpen: false,
+  hotkeyModalOpen: false,
   welcomeModalOpen: false,
   updateModalOpen: false,
+  offlineModalOpen: false,
+  offlinePayload: null,
+  challengeCompleteModalOpen: false,
+  challengeCompletePayload: null,
+  victoryModalOpen: false,
+  victoryPayload: null,
   prestigeAnimating: false,
+  bulkAmount: 1,
+  autoPrestigePendingTier: 0,
+  autoPrestigeCountdown: 0,
+  unseenUnlockedTabs: [],
 
   setMusicEnabled: (musicEnabled) => set({ musicEnabled }),
   setMusicVolume: (musicVolume) =>
@@ -65,15 +143,27 @@ export const useUIStore = create<UIStore>((set, get) => ({
     set({ sfxVolume: Math.max(0, Math.min(1, sfxVolume)) }),
 
   pushAlert: (alert) => {
-    const id = `alert-${++alertIdCounter}`
-    const payload: FacilityAlertPayload = { ...alert, id }
     const { activeAlert, alertQueue } = get()
 
-    // Deduplicate alerts to prevent UI spam
-    if (activeAlert?.id === id || alertQueue.some((a) => a.id === id)) return
+    // Deduplicate alerts by title and message content to prevent notification spam
+    const isDuplicate =
+      (activeAlert?.title === alert.title &&
+        activeAlert?.message === alert.message) ||
+      alertQueue.some(
+        (a) => a.title === alert.title && a.message === alert.message
+      )
+    if (isDuplicate) return
+
+    const id = `alert-${++alertIdCounter}`
+    const payload: FacilityAlertPayload = { ...alert, id }
 
     if (!activeAlert) {
       set({ activeAlert: payload })
+    } else if (payload.priority < activeAlert.priority) {
+      const newQueue = [activeAlert, ...alertQueue].sort(
+        (a, b) => a.priority - b.priority
+      )
+      set({ activeAlert: payload, alertQueue: newQueue })
     } else {
       const newQueue = [...alertQueue, payload].sort(
         (a, b) => a.priority - b.priority
@@ -99,11 +189,41 @@ export const useUIStore = create<UIStore>((set, get) => ({
     }),
 
   setSettingsPanelOpen: (settingsPanelOpen) => set({ settingsPanelOpen }),
+  setHotkeyModalOpen: (hotkeyModalOpen) => set({ hotkeyModalOpen }),
   setWelcomeModalOpen: (welcomeModalOpen) => set({ welcomeModalOpen }),
   setUpdateModalOpen: (open) => set({ updateModalOpen: open }),
+  setOfflineModalOpen: (offlineModalOpen) => set({ offlineModalOpen }),
+  setOfflinePayload: (offlinePayload) => set({ offlinePayload }),
+  setChallengeCompleteModalOpen: (challengeCompleteModalOpen) =>
+    set({ challengeCompleteModalOpen }),
+  setChallengeCompletePayload: (challengeCompletePayload) =>
+    set({ challengeCompletePayload }),
+  setVictoryModalOpen: (victoryModalOpen) => set({ victoryModalOpen }),
+  setVictoryPayload: (victoryPayload) => set({ victoryPayload }),
 
   triggerPrestigeAnimation: () => {
     set({ prestigeAnimating: true })
     setTimeout(() => set({ prestigeAnimating: false }), 2000)
-  }
+  },
+
+  setBulkAmount: (bulkAmount) => set({ bulkAmount }),
+
+  setAutoPrestigePending: (autoPrestigePendingTier, autoPrestigeCountdown) =>
+    set({ autoPrestigePendingTier, autoPrestigeCountdown }),
+
+  markTabUnseen: (tab) =>
+    set((s) =>
+      s.unseenUnlockedTabs.includes(tab)
+        ? s
+        : { unseenUnlockedTabs: [...s.unseenUnlockedTabs, tab] }
+    ),
+
+  clearTabUnseen: (tab) =>
+    set((s) =>
+      s.unseenUnlockedTabs.includes(tab)
+        ? {
+            unseenUnlockedTabs: s.unseenUnlockedTabs.filter((t) => t !== tab)
+          }
+        : s
+    )
 }))

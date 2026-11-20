@@ -1,6 +1,6 @@
 // Relic upgrade cost calculation and slot management utilities
 
-import { RELIC_MAP } from '@/constants/relics'
+import { RELIC_MAP, RELIC_CLASSES, type RelicClass } from '@/constants/relics'
 import type { GameState, RelicSlotState } from '@/types/game'
 import {
   RELIC_LEVEL_CAP,
@@ -10,6 +10,32 @@ import {
   RELIC_SLOT_COUNT_MAX
 } from '@/constants/game'
 
+export function getEquippedClassCounts(state: GameState): Record<RelicClass, number> {
+  const counts: Record<RelicClass, number> = {
+    computation: 0,
+    energy: 0,
+    reality: 0,
+    arkalon: 0
+  }
+  for (const slot of state.relicSlots) {
+    if (slot.relicId) {
+      const cls = RELIC_CLASSES[slot.relicId]
+      if (cls) counts[cls]++
+    }
+  }
+  return counts
+}
+
+export function getClassResonanceMultiplier(relicId: number, state: GameState): number {
+  const cls = RELIC_CLASSES[relicId]
+  if (!cls) return 1
+  const counts = getEquippedClassCounts(state)
+  const count = counts[cls]
+  if (count >= 3) return 1.35
+  if (count >= 2) return 1.15
+  return 1
+}
+
 // Returns the cost in artifact dust to upgrade a relic to the next level
 export function getRelicUpgradeCost(
   relicId: number,
@@ -17,12 +43,36 @@ export function getRelicUpgradeCost(
 ): number {
   const def = RELIC_MAP[relicId]
   if (!def) return 0
-  if (currentLevel >= RELIC_LEVEL_CAP) return 0
+  const maxLevel = def.maxLevel ?? RELIC_LEVEL_CAP
+  if (currentLevel >= maxLevel) return 0
 
   // cost = baseDustCost * (dustCostScaling ^ currentLevel)
   return Math.ceil(
     def.baseDustCost * Math.pow(def.dustCostScaling, currentLevel)
   )
+}
+
+// Returns how many levels can be bought (up to `amount` or 'max') and their total dust cost
+export function getRelicBulkUpgradeInfo(
+  relicId: number,
+  currentLevel: number,
+  availableDust: number,
+  amount: number | 'max'
+): { levels: number; cost: number } {
+  const def = RELIC_MAP[relicId]
+  if (!def) return { levels: 0, cost: 0 }
+  const maxLevel = def.maxLevel ?? RELIC_LEVEL_CAP
+  const cap = amount === 'max' ? maxLevel - currentLevel : Math.min(amount, maxLevel - currentLevel)
+
+  let levels = 0
+  let totalCost = 0
+  for (let i = 0; i < cap; i++) {
+    const nextCost = getRelicUpgradeCost(relicId, currentLevel + i)
+    if (nextCost <= 0 || totalCost + nextCost > availableDust) break
+    totalCost += nextCost
+    levels++
+  }
+  return { levels, cost: totalCost }
 }
 
 // Returns the number of active relic slots
@@ -32,8 +82,7 @@ export function getRelicSlotCount(state: GameState): number {
   return Math.min(RELIC_SLOT_COUNT_MAX, RELIC_SLOT_COUNT_BASE + sc11Tiers)
 }
 
-// Returns the swap cooldown in seconds
-// CF Relic Preservation reduces to 2 minutes
+// Returns the swap cooldown in seconds (0s with CF Relic Preservation)
 export function getSwapCooldownSeconds(state: GameState): number {
   if (state.cfUpgrades.relic_preservation > 0) {
     return RELIC_SWAP_COOLDOWN_CF_SECONDS
@@ -72,7 +121,7 @@ export function getRelicEffectAtLevel(relicId: number, level: number): string {
     case 4:
       return `-${(0.001 * level).toFixed(3)} growth factor (Gen 1-5)`
     case 5:
-      return `+${Math.min(100, level)}% offline RP rate`
+      return `+${Math.min(100, level)}% offline RP efficiency`
     case 6:
       return `-${3 * level}s min spawn interval`
     case 7:
@@ -86,17 +135,17 @@ export function getRelicEffectAtLevel(relicId: number, level: number): string {
     case 11:
       return `Milestones trigger ${2 * level} units earlier`
     case 12:
-      return `+${(0.5 * level).toFixed(1)}% per Harvester to energy`
+      return `+${(0.5 * level).toFixed(1)}% Energy RP per Stellar Harvester`
     case 13:
-      return `+${(5 * level).toFixed(0)}% synergy coefficients`
+      return `+${(5 * level).toFixed(0)}% module synergy bonuses`
     case 14:
-      return `-${(1.5 * level).toFixed(1)}% tech node costs`
+      return `-${Math.min(90, 1.5 * level).toFixed(1)}% research RP costs`
     case 15:
-      return `Reality Engines +${(10 * level).toFixed(0)}% speed`
+      return `+${(10 * level).toFixed(0)}% Reality Engine RP output`
     case 16:
-      return `Arkalon Interfaces +${(2 * level).toFixed(0)}% per active gen`
+      return `+${(2 * level).toFixed(0)}% Arkalon Interface RP per owned tier`
     case 17:
-      return `-${(2 * level).toFixed(0)}% dark-energy building costs`
+      return `-${Math.min(90, 2 * level).toFixed(0)}% Vacuum Fluctuator & Dark Matter Synthesizer cost`
     case 18:
       return `Galactic Engines boost Harvesters +${level}%/Engine`
     case 19:

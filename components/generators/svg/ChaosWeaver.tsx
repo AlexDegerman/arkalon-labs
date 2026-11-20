@@ -112,12 +112,6 @@ export default function ChaosWeaver({ stage, color, size }: Props) {
               fill={color}
               opacity={0.5}
             >
-              <animate
-                attributeName="r"
-                values={`${1.5 * s};${2.5 * s};${1.5 * s}`}
-                dur={`${0.8 + i * 0.1}s`}
-                repeatCount="indefinite"
-              />
             </circle>
           )
         })}

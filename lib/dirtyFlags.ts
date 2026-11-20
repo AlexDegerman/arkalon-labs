@@ -31,3 +31,8 @@ export function consumeAchievementsDirty(): boolean {
   _achievementsDirty = false
   return v
 }
+export function resetDirtyFlags(): void {
+  _unlocksDirty = true
+  _tutorialDirty = true
+  _achievementsDirty = true
+}

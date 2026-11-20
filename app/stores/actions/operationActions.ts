@@ -3,29 +3,73 @@
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import {
-  calculateOperationPoints,
   OPERATION_ARTIFACT_MAP,
-  getCurrentCycle
+  getCurrentCycle,
+  getAttunementCost,
+  getTemporalCost
 } from '@/lib/operationDefs'
 import {
   dispatchOperationArtifact,
   dispatchOperationStart
 } from '@/lib/dialogueDispatcher'
 import type { OperationArtifactId } from '@/types/game'
+import { playSound } from '@/hooks/useSound'
+import { awardRelic } from './relicActions'
 
 // Operations actions
 
-// Awards operation points from a resolved operation anomaly
-export function earnOperationPoints(
-  anomalyType: string,
-  interactionScore: number
-): void {
-  const points = calculateOperationPoints(anomalyType, interactionScore)
-  if (points <= 0) return
+export function retuneCosmicEpoch(cycleNumber: number): void {
+  const store = useGameStore.getState()
+  if (!store.unlocks.anomalousOperations) return
+  if (store.manualOperationCycle !== null) return
 
-  useGameStore.setState((s) => ({
-    currentOperationPoints: s.currentOperationPoints + points
-  }))
+  const cycle = getCurrentCycle(cycleNumber)
+  if (
+    getCurrentCycle(store.currentOperationCycle).cycleNumber ===
+    cycle.cycleNumber
+  ) {
+    return
+  }
+  useGameStore.setState({ manualOperationCycle: cycle.cycleNumber })
+  playSound('success')
+
+  useUIStore.getState().pushAlert({
+    priority: 1,
+    variant: 'unlock',
+    title: 'Observation Epoch Retuned',
+    message: `Facility aligned with ${cycle.name}. Active for the remainder of this prestige run.`,
+    autoDismissMs: 5000
+  })
+}
+
+export function buyRepeatableCosmicSink(type: 'attunement' | 'temporal'): void {
+  const store = useGameStore.getState()
+  const points = store.currentOperationPoints
+
+  if (type === 'attunement') {
+    const currentLevel = store.cosmicAttunementLevel ?? 0
+    const cost = getAttunementCost(currentLevel)
+    if (points < cost) return
+
+    useGameStore.setState({
+      currentOperationPoints: points - cost,
+      cosmicAttunementLevel: currentLevel + 1
+    })
+
+    playSound('purchase')
+    useGameStore.getState().recalcPPS()
+  } else {
+    const currentLevel = store.cosmicTemporalLevel ?? 0
+    const cost = getTemporalCost(currentLevel)
+    if (cost <= 0 || points < cost) return
+
+    useGameStore.setState({
+      currentOperationPoints: points - cost,
+      cosmicTemporalLevel: currentLevel + 1
+    })
+
+    playSound('purchase')
+  }
 }
 
 // Purchases an operation artifact with operation points
@@ -42,6 +86,7 @@ export function buyOperationArtifact(artifactId: OperationArtifactId): void {
     operationArtifactsUnlocked: [...s.operationArtifactsUnlocked, artifactId]
   }))
 
+  playSound('purchase')
   useGameStore.getState().recalcPPS()
   useUIStore.getState().pushAlert({
     priority: 2,
@@ -51,6 +96,10 @@ export function buyOperationArtifact(artifactId: OperationArtifactId): void {
     autoDismissMs: 5000
   })
   dispatchOperationArtifact()
+
+  if (store.operationArtifactsUnlocked.length + 1 >= 3) {
+    awardRelic(13)
+  }
 }
 
 // Checks if the operation cycle has advanced and initializes new cycle state
@@ -65,6 +114,9 @@ export function checkOperationCycle(serverCycleNumber: number): void {
     // Carry over points but reset to new cycle context
     // Operation artifacts are permanent - do not reset
   }))
+
+  // Silently sync cycle before Anomalous Operations is unlocked
+  if (!store.unlocks.anomalousOperations) return
 
   dispatchOperationStart()
   useUIStore.getState().pushAlert({

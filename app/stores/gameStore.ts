@@ -15,7 +15,7 @@ import type {
 } from '@/types/game'
 import type { FeatureKey } from '@/lib/featureRegistry'
 import { STARTING_RP, RELIC_SLOT_COUNT_BASE } from '@/constants/game'
-import { recalculatePPS } from '@/lib/productionEngine'
+import { recalculatePPS, computeProductionShares } from '@/lib/productionEngine'
 
 // Default generator state for all 20 generators
 function makeDefaultGenerators(): GeneratorState[] {
@@ -43,6 +43,7 @@ function makeDefaultRelicSlots(): RelicSlotState[] {
 const DEFAULT_AR_UPGRADES: ARUpgrades = {
   chronal_anchor: 0,
   dimensional_blueprinting: 0,
+  bulk_procurement: 0,
   neural_pipeline: 0,
   super_symmetry: 0,
   auto_buy_basic: 0,
@@ -52,7 +53,10 @@ const DEFAULT_AR_UPGRADES: ARUpgrades = {
   anomaly_extender: 0,
   milestone_sharpener: 0,
   relic_resonance: 0,
-  challenge_accelerant: 0
+  challenge_accelerant: 0,
+  quantum_overdrive: 0,
+  arkalon_harmonic_cap: 0,
+  resonance_compression: 0
 }
 
 const DEFAULT_CF_UPGRADES: CFUpgrades = {
@@ -60,6 +64,8 @@ const DEFAULT_CF_UPGRADES: CFUpgrades = {
   quantum_memory: 0,
   resonance_amplification: 0,
   auto_module_buyer: 0,
+  auto_buy_synthesizers: 0,
+  auto_upgrade_relics: 0,
   generator_transcendence: 0,
   deep_research_slots: 0,
   relic_preservation: 0,
@@ -70,33 +76,39 @@ const DEFAULT_OS_UPGRADES: OSUpgrades = {
   dimensional_transcendence: 0,
   exponential_catalyst: 0,
   the_automated_lab: 0,
-  automated_timeline_severance: 0
+  automated_timeline_severance: 0,
+  auto_dyson_swarm: 0,
+  automated_singular_synthesis: 0
 }
 
 const DEFAULT_AUTOMATION: AutomationState = {
   autoBuyBasic: false,
   autoBuyOptimal: false,
+  autoBuySynthesizers: false,
   autoResearchQueue: false,
-  autoStabilizeAnomaly: false,
   autoPrestigeTierI: false,
   autoPrestigeTierII: false,
+  autoPrestigeTierIII: false,
   autoEquipRelic: false,
+  autoUpgradeRelics: false,
   autoLaunchProbe: false,
-  autoModuleBuy: false
+  autoModuleBuy: false,
+  autoDysonSwarm: false
 }
+
 
 const DEFAULT_UNLOCKS: UnlockFlags = {
   techMatrix: false,
   statistics: false,
   modules: false,
   anomalies: false,
-  interactiveArkalon: false,
   achievements: false,
   relics: false,
   excavation: false,
   prestige: false,
   megaprojects: false,
-  anomalousOperations: false
+  anomalousOperations: false,
+  challenges: false
 }
 
 const DEFAULT_STATS: StatsState = {
@@ -106,8 +118,17 @@ const DEFAULT_STATS: StatsState = {
   totalPrestigesTier3: 0,
   totalResearchNodesCompleted: 0,
   peakRPPerSec: 0n,
+  peakLifetimePoints: 0n,
+  allTimePoints: STARTING_RP,
+  allTimeDust: 0,
+  o10EverCompleted: false,
+  bestChallengeTimes: {},
+  relic4PityCount: 0,
+  relic9PityCount: 0,
   totalSessionPlaytime: 0,
-  lastPrestigeTime: 0
+  totalOfflineTime: 0,
+  lastPrestigeTime: 0,
+  currentRunSeconds: 0
 }
 
 const DEFAULT_TUTORIAL: TutorialState = {
@@ -120,30 +141,34 @@ const DEFAULT_SETTINGS: SettingsState = {
   volumeMusic: 0.4,
   volumeSFX: 0.6,
   volumeVoice: 0.8,
+  voiceEnabled: false,
   currentUITheme: 'default',
   notationMode: 'suffix',
-  decimalPrecision: 2,
+  neonBloom: true,
+  crtScanlines: false,
   reducedMotion: false,
-  colorBlindMode: false,
-  gamePaused: false
+  audioMuted: false
 }
 
 export function makeInitialState(): GameState {
   return {
     researchPoints: STARTING_RP,
-    lifetimePoints: 0n,
+    lifetimePoints: STARTING_RP,
     arkalonResonance: 0,
     chronalFractures: 0,
     omniSpars: 0,
     artifactDust: 0,
 
     generators: makeDefaultGenerators(),
+    synthesizers: [0, 0, 0, 0],
 
     completedResearchNodes: [],
     activeResearchSlots: makeDefaultResearchSlots(),
     researchQueue: [],
     infiniteResearchLevels: {},
+    o6BypassUsed: false,
 
+    resonanceMemoryAR: 0,
     arUpgrades: DEFAULT_AR_UPGRADES,
     cfUpgrades: DEFAULT_CF_UPGRADES,
     osUpgrades: DEFAULT_OS_UPGRADES,
@@ -151,23 +176,27 @@ export function makeInitialState(): GameState {
     relicSlots: makeDefaultRelicSlots(),
     unlockedRelics: [],
     relicLevels: {},
+    relicPresets: [[], [], []],
 
     probes: [],
 
     activeMegaprojectId: null,
     megaprojectAllocationPercent: 0,
+    lastMegaprojectAllocationPercent: 10,
     megaprojectRPAbsorbed: 0n,
     completedMegaprojects: [],
+    dysonSwarmLevel: 0,
 
     activeAnomalyType: null,
     anomalyTimeRemaining: 0,
-    anomalyInteractionValue: 0,
-    timeToNextAnomalyCheck: 480, // 8 min initial wait
+    timeToNextAnomalyCheck: 180, // 3 min initial wait
 
     currentOperationPoints: 0,
-    operationMultiplierLevel: 0,
     operationArtifactsUnlocked: [],
     currentOperationCycle: 1,
+    manualOperationCycle: null,
+    cosmicAttunementLevel: 0,
+    cosmicTemporalLevel: 0,
 
     unlocks: DEFAULT_UNLOCKS,
     settings: DEFAULT_SETTINGS,
@@ -175,19 +204,35 @@ export function makeInitialState(): GameState {
     tutorial: DEFAULT_TUTORIAL,
 
     activeChallengeId: null,
+    challengeActiveSeconds: 0,
+    preChallengeSnapshot: null,
     challengeRecords: {},
+    sandboxTargetRP: 0n,
+    sandboxBestRP: 0n,
+    sandboxCompletions: 0,
 
     automation: DEFAULT_AUTOMATION,
+    autoPrestigeMode: 'ratio',
+    autoPrestigeTargetAR: 1000,
+    autoPrestigeRatio: 2,
+    autoPrestigeTargetCF: 10,
+    autoPrestigeTargetOS: 10,
+    autoPrestigeWaitForHigher: true,
+    autoPrestigeHoldForDyson: false,
+    autoBuyOptimalReservePercent: 25,
+    autoRelicTargetLevel: 20,
+    autoRelicDustReserve: 25,
 
     achievements: [],
 
     cachedPointsPerSecond: 0n,
+    cachedProductionShares: Array(20).fill(0),
+    lastSavedTime: 0,
 
     activeChallengeRestrictions: null
   }
 }
 
-// Store type with actions appended in gameActions.ts via immer-style merges
 export type GameStore = GameState & {
   _initialized: boolean
   setInitialized: (v: boolean) => void
@@ -214,6 +259,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // It is only triggered by user actions that change production inputs.
     const state = get()
     const pps = recalculatePPS(state)
+    const shares = computeProductionShares(state)
 
     // Update peak PPS stat if new PPS exceeds recorded peak
     const newPeakPPS =
@@ -221,6 +267,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({
       cachedPointsPerSecond: pps,
+      cachedProductionShares: shares,
       stats: { ...state.stats, peakRPPerSec: newPeakPPS }
     })
   },
@@ -231,6 +278,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const next = { ...s, ...partial }
       // Recalculate PPS whenever state is bulk-replaced
       next.cachedPointsPerSecond = recalculatePPS(next)
+      next.cachedProductionShares = computeProductionShares(next)
       return next
     })
 }))

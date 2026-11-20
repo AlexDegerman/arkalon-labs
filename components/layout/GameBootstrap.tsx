@@ -7,31 +7,24 @@ import { useSaveGame } from '@/hooks/useSaveGame'
 import FooterBarLive from '@/components/layout/FooterBarLive'
 import { useInactiveTabDetection } from '@/hooks/useInactiveTabDetection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { useUIStore } from '@/app/stores/uiStore'
 import { useBGM } from '@/hooks/useBGM'
+import { useSound } from '@/hooks/useSound'
 
 // Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
 export default function GameBootstrap() {
   const initialized = useGameStore((s) => s._initialized)
   const isDuplicate = useTabGuard()
+  useSound()
 
-  const { lastSaveLabel, saveStatus } = useSaveGame()
+  const { lastSaveLabel, saveStatus } = useSaveGame(!isDuplicate)
 
   // Start game loop once initialized and not a duplicate tab
   useGameLoop(initialized && !isDuplicate)
   useInactiveTabDetection()
-  useKeyboardShortcuts()
-  // Context-aware BGM: operation anomalies take priority, then prestige, then anomalies
-  const activeAnomalyType = useGameStore((s) => s.activeAnomalyType)
-  const prestigeAnimating = useUIStore((s) => s.prestigeAnimating)
-  useBGM({
-    anomalyActive:
-      activeAnomalyType !== null && !activeAnomalyType.startsWith('operation_'),
-    prestigeActive: prestigeAnimating,
-    operationActive: activeAnomalyType?.startsWith('operation_') ?? false
-  })
-
+  useKeyboardShortcuts(!isDuplicate)
+  useBGM()
+  
   if (isDuplicate) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--bg-primary)/95 backdrop-blur-md">

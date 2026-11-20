@@ -1,62 +1,106 @@
 // Prestige upgrade definitions for AR, CF, and OS shops
+import type { ARUpgrades, CFUpgrades, OSUpgrades } from '@/types/game'
 
-export interface PrestigeUpgradeDef {
-  id: string
+export interface PrestigeUpgradeDef<ID extends string = string> {
+  id: ID
   label: string
   description: string
   baseCost: number
   maxLevel: number
   currency: 'ar' | 'cf' | 'os'
+  costScaling?: number
   // Returns effect description at a given level
   effectAtLevel: (level: number) => string
 }
 
-export const AR_UPGRADES: PrestigeUpgradeDef[] = [
+export const AR_UPGRADES: PrestigeUpgradeDef<keyof ARUpgrades>[] = [
   {
-    id: 'chronal_anchor',
-    label: 'Chronal Anchor',
-    description:
-      'Start post-prestige with 5% of prior run peak PPS as flat RP.',
-    baseCost: 5,
-    maxLevel: 1,
+    id: 'generator_priming',
+    label: 'Generator Priming',
+    description: '1.35x compounding output to all generators per level.',
+    baseCost: 2,
+    maxLevel: 30,
+    costScaling: 1.6,
     currency: 'ar',
-    effectAtLevel: (l) =>
-      l > 0 ? 'Start with 5% of peak PPS' : 'Not purchased'
-  },
-  {
-    id: 'dimensional_blueprinting',
-    label: 'Dimensional Blueprinting',
-    description:
-      'Instantly purchase 5 units of the first three generators post-reset.',
-    baseCost: 10,
-    maxLevel: 1,
-    currency: 'ar',
-    effectAtLevel: (l) => (l > 0 ? 'Start with 5x Gen 1-3' : 'Not purchased')
+    effectAtLevel: (l) => `${Math.pow(1.35, l).toFixed(2)}x generator output`
   },
   {
     id: 'neural_pipeline',
     label: 'Neural Pipeline',
     description: '+10% anomaly spawn frequency per level.',
-    baseCost: 3,
+    baseCost: 6,
     maxLevel: 5,
     currency: 'ar',
     effectAtLevel: (l) => `+${l * 10}% anomaly frequency`
   },
   {
-    id: 'super_symmetry',
-    label: 'Super-Symmetry',
-    description: '+10% global production per unspent AR held (500 AR cap).',
-    baseCost: 15,
+    id: 'chronal_anchor',
+    label: 'Chronal Anchor',
+    description:
+      'Start post-prestige with 1 second of your prior run peak RP/s as flat RP.',
+    baseCost: 10,
     maxLevel: 1,
     currency: 'ar',
     effectAtLevel: (l) =>
-      l > 0 ? '+10% per unspent AR (cap 500)' : 'Not purchased'
+      l > 0 ? 'Start with 1s of peak RP/s' : 'Not purchased'
+  },
+  {
+    id: 'research_accelerant',
+    label: 'Research Accelerant',
+    description: '-3% research time per level (multiplicative).',
+    baseCost: 10,
+    maxLevel: 10,
+    currency: 'ar',
+    effectAtLevel: (l) =>
+      l > 0
+        ? `-${((1 - Math.pow(0.97, l)) * 100).toFixed(1)}% research time`
+        : 'Not purchased'
+  },
+  {
+    id: 'dimensional_blueprinting',
+    label: 'Dimensional Blueprinting',
+    description:
+      'Start each Tier I prestige with 5 free units of Generators 1-3.',
+    baseCost: 15,
+    maxLevel: 1,
+    currency: 'ar',
+    effectAtLevel: (l) => (l > 0 ? 'Start with 5x Gen 1-3' : 'Not purchased')
+  },
+  {
+    id: 'anomaly_extender',
+    label: 'Anomaly Extender',
+    description: '+5 seconds to all anomaly durations per level.',
+    baseCost: 15,
+    maxLevel: 5,
+    currency: 'ar',
+    effectAtLevel: (l) => `+${l * 5}s anomaly duration`
+  },
+  {
+    id: 'relic_resonance',
+    label: 'Relic Resonance',
+    description: '+5% to all equipped relic effects per level.',
+    baseCost: 20,
+    maxLevel: 10,
+    currency: 'ar',
+    effectAtLevel: (l) => `+${l * 5}% relic effects`
+  },
+  {
+    id: 'milestone_sharpener',
+    label: 'Milestone Sharpener',
+    description:
+      'Quantity milestones trigger 1 unit earlier per level (floor 10).',
+    baseCost: 25,
+    maxLevel: 5,
+    currency: 'ar',
+    effectAtLevel: (l) =>
+      l > 0 ? `Milestones ${l} unit(s) earlier` : 'Not purchased'
   },
   {
     id: 'auto_buy_basic',
     label: 'Auto-Buy (Basic)',
-    description: 'Auto-buy cheapest generator every 5 seconds.',
-    baseCost: 10,
+    description:
+      'Automatically buys 1 unit of the cheapest affordable generator every 5 seconds.',
+    baseCost: 75,
     maxLevel: 1,
     currency: 'ar',
     effectAtLevel: (l) => (l > 0 ? 'Active' : 'Not purchased')
@@ -64,74 +108,77 @@ export const AR_UPGRADES: PrestigeUpgradeDef[] = [
   {
     id: 'auto_research_queue',
     label: 'Auto-Research Queue',
-    description: 'Auto-start next queued research on completion.',
-    baseCost: 25,
+    description:
+      'Unlocks Study Queue, Smart Sort Presets, and auto-starts next queued node.',
+    baseCost: 100,
     maxLevel: 1,
     currency: 'ar',
     effectAtLevel: (l) => (l > 0 ? 'Active' : 'Not purchased')
   },
   {
-    id: 'research_accelerant',
-    label: 'Research Accelerant',
-    description: '-3% research time per level (multiplicative).',
-    baseCost: 8,
-    maxLevel: 10,
-    currency: 'ar',
-    effectAtLevel: (l) =>
-      l > 0
-        ? `-${(1 - Math.pow(0.97, l) * 100).toFixed(1)}% research time`
-        : 'Not purchased'
-  },
-  {
-    id: 'generator_priming',
-    label: 'Generator Priming',
-    description: '+2% base output to all generators per level.',
-    baseCost: 5,
-    maxLevel: 20,
-    currency: 'ar',
-    effectAtLevel: (l) => `+${l * 2}% all generator output`
-  },
-  {
-    id: 'anomaly_extender',
-    label: 'Anomaly Extender',
-    description: '+5 seconds to all anomaly durations per level.',
-    baseCost: 12,
-    maxLevel: 5,
-    currency: 'ar',
-    effectAtLevel: (l) => `+${l * 5}s anomaly duration`
-  },
-  {
-    id: 'milestone_sharpener',
-    label: 'Milestone Sharpener',
+    id: 'super_symmetry',
+    label: 'Super-Symmetry',
     description:
-      'Quantity milestones trigger 1 unit earlier per level (floor 10).',
-    baseCost: 20,
-    maxLevel: 5,
+      '+10% global production per AR earned (spent AR counts; follows Harmonic Cap).',
+    baseCost: 150,
+    maxLevel: 1,
     currency: 'ar',
     effectAtLevel: (l) =>
-      l > 0 ? `Milestones ${l} unit(s) earlier` : 'Not purchased'
-  },
-  {
-    id: 'relic_resonance',
-    label: 'Relic Resonance',
-    description: '+5% to all equipped relic effects per level.',
-    baseCost: 15,
-    maxLevel: 10,
-    currency: 'ar',
-    effectAtLevel: (l) => `+${l * 5}% relic effects`
+      l > 0 ? '+10% per AR earned (capped)' : 'Not purchased'
   },
   {
     id: 'challenge_accelerant',
     label: 'Challenge Accelerant',
     description: 'Challenge RP targets reduced by 25%.',
-    baseCost: 30,
+    baseCost: 250,
     maxLevel: 1,
     currency: 'ar',
     effectAtLevel: (l) => (l > 0 ? '-25% challenge targets' : 'Not purchased')
+  },
+  {
+    id: 'quantum_overdrive',
+    label: 'Quantum Overdrive',
+    description: 'Doubles (2x) global RP production per level.',
+    baseCost: 500,
+    maxLevel: 20,
+    costScaling: 2.0,
+    currency: 'ar',
+    effectAtLevel: (l) => `${Math.pow(2, l).toLocaleString()}x global RP`
+  },
+  {
+    id: 'arkalon_harmonic_cap',
+    label: 'Harmonic Resonance Cap',
+    description: 'Raises the passive AR bonus cap by +500 AR per level.',
+    baseCost: 1_500,
+    maxLevel: 10,
+    costScaling: 3.0,
+    currency: 'ar',
+    effectAtLevel: (l) => `AR cap: ${(500 + l * 500).toLocaleString()} AR`
+  },
+  {
+    id: 'resonance_compression',
+    label: 'Resonance Compression',
+    description: '+0.02 to global production exponent per level.',
+    baseCost: 25_000,
+    maxLevel: 5,
+    costScaling: 5.0,
+    currency: 'ar',
+    effectAtLevel: (l) => `+${(l * 0.02).toFixed(2)} exponent`
+  },
+  {
+    id: 'bulk_procurement',
+    label: 'Bulk Procurement',
+    description:
+      'Unlocks MAX ALL (M) equipment sweep and bulk module upgrade buttons.',
+    baseCost: 500_000,
+    maxLevel: 1,
+    currency: 'ar',
+    effectAtLevel: (l) =>
+      l > 0 ? 'MAX ALL & Bulk Modules active' : 'Not purchased'
   }
 ]
 
-export const CF_UPGRADES: PrestigeUpgradeDef[] = [
+export const CF_UPGRADES: PrestigeUpgradeDef<keyof CFUpgrades>[] = [
   {
     id: 'temporal_compression',
     label: 'Temporal Compression',
@@ -153,17 +200,37 @@ export const CF_UPGRADES: PrestigeUpgradeDef[] = [
   {
     id: 'resonance_amplification',
     label: 'Resonance Amplification',
-    description: 'Future AR yields x1.5 per CF held.',
+    description: 'Future AR yields multiplied by 1.5 x CF held (min 1.5x).',
     baseCost: 15,
     maxLevel: 1,
     currency: 'cf',
-    effectAtLevel: (l) => (l > 0 ? 'AR yields x1.5 per CF' : 'Not purchased')
+    effectAtLevel: (l) => (l > 0 ? 'AR yields x (1.5 x CF)' : 'Not purchased')
   },
   {
     id: 'auto_module_buyer',
     label: 'Auto-Module Buyer',
     description: 'Auto-purchases affordable module upgrades.',
     baseCost: 50,
+    maxLevel: 1,
+    currency: 'cf',
+    effectAtLevel: (l) => (l > 0 ? 'Active' : 'Not purchased')
+  },
+  {
+    id: 'auto_buy_synthesizers',
+    label: 'Auto-Buy Synthesizers',
+    description:
+      'Automatically buys the cheapest affordable unlocked Synthesizer every 5 seconds.',
+    baseCost: 20,
+    maxLevel: 1,
+    currency: 'cf',
+    effectAtLevel: (l) => (l > 0 ? 'Active' : 'Not purchased')
+  },
+  {
+    id: 'auto_upgrade_relics',
+    label: 'Auto-Upgrade Relics',
+    description:
+      'Automatically upgrades unlocked Relics using Dust up to your target level cap.',
+    baseCost: 35,
     maxLevel: 1,
     currency: 'cf',
     effectAtLevel: (l) => (l > 0 ? 'Active' : 'Not purchased')
@@ -191,11 +258,11 @@ export const CF_UPGRADES: PrestigeUpgradeDef[] = [
   {
     id: 'relic_preservation',
     label: 'Relic Preservation',
-    description: 'Relic swap cooldown reduced to 2 minutes.',
+    description: 'Relic swap cooldown removed (instant swaps).',
     baseCost: 30,
     maxLevel: 1,
     currency: 'cf',
-    effectAtLevel: (l) => (l > 0 ? '2min swap cooldown' : 'Not purchased')
+    effectAtLevel: (l) => (l > 0 ? 'Instant relic swaps' : 'Not purchased')
   },
   {
     id: 'megaproject_efficiency',
@@ -208,7 +275,7 @@ export const CF_UPGRADES: PrestigeUpgradeDef[] = [
   }
 ]
 
-export const OS_UPGRADES: PrestigeUpgradeDef[] = [
+export const OS_UPGRADES: PrestigeUpgradeDef<keyof OSUpgrades>[] = [
   {
     id: 'dimensional_transcendence',
     label: 'Dimensional Transcendence',
@@ -222,11 +289,13 @@ export const OS_UPGRADES: PrestigeUpgradeDef[] = [
   {
     id: 'exponential_catalyst',
     label: 'Exponential Catalyst',
-    description: '+0.05 to master production exponent per OS held.',
+    description:
+      '+0.15 + 0.08 * log10(1 + total OS earned) to production exponent (max +0.75).',
     baseCost: 10,
     maxLevel: 1,
     currency: 'os',
-    effectAtLevel: (l) => (l > 0 ? '+0.05 exponent per OS' : 'Not purchased')
+    effectAtLevel: (l) =>
+      l > 0 ? 'Logarithmic OS exponent (cap +0.75)' : 'Not purchased'
   },
   {
     id: 'the_automated_lab',
@@ -245,15 +314,41 @@ export const OS_UPGRADES: PrestigeUpgradeDef[] = [
     maxLevel: 1,
     currency: 'os',
     effectAtLevel: (l) => (l > 0 ? 'Auto Tier II prestige' : 'Not purchased')
+  },
+  {
+    id: 'auto_dyson_swarm',
+    label: 'Auto-Dyson Swarm',
+    description:
+      'Automatically initiates and maintains Arkalon Dyson Swarm construction.',
+    baseCost: 12,
+    maxLevel: 1,
+    currency: 'os',
+    effectAtLevel: (l) => (l > 0 ? 'Auto Dyson Swarm' : 'Not purchased')
+  },
+  {
+    id: 'automated_singular_synthesis',
+    label: 'Automated Singular Synthesis',
+    description:
+      'Auto-executes Tier III prestiges (requires Automated Timeline Severance).',
+    baseCost: 30,
+    maxLevel: 1,
+    currency: 'os',
+    effectAtLevel: (l) => (l > 0 ? 'Auto Tier III prestige' : 'Not purchased')
   }
 ]
 
-// Returns upgrade cost - flat baseCost per level purchase
+// Returns upgrade cost - exponential when costScaling is set, otherwise linear
 export function getUpgradeCost(
   def: PrestigeUpgradeDef,
   currentLevel: number
 ): number {
   if (currentLevel >= def.maxLevel) return 0
-  // Level upgrades cost baseCost per additional level
-  return def.baseCost
+  if (def.costScaling) {
+    return Math.min(
+      2_000_000_000,
+      Math.floor(def.baseCost * Math.pow(def.costScaling, currentLevel))
+    )
+  }
+  if (def.maxLevel <= 1) return def.baseCost
+  return def.baseCost * (currentLevel + 1)
 }

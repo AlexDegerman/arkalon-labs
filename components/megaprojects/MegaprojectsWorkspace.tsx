@@ -18,7 +18,7 @@ export default function MegaprojectsWorkspace() {
   const effectivePPS = activeMegaprojectId ? pps - allocatedPPS : pps
 
   return (
-    <div className="flex flex-col gap-3 p-3 sm:p-4 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
+    <div className="flex flex-col gap-2 p-2 sm:p-3 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
       {/* Header */}
       <div className="flex flex-col gap-0.5 px-1">
         <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
@@ -52,10 +52,8 @@ export default function MegaprojectsWorkspace() {
         </div>
       )}
 
-      <div className="section-divider" />
-
       {/* Megaprojects list */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2 pt-1 border-t border-(--border-default)/60">
         {MEGAPROJECTS.map((def) => (
           <MegaprojectCard key={def.id} def={def} />
         ))}

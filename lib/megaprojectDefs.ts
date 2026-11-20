@@ -19,6 +19,121 @@ export interface MegaprojectDefinition {
     | 'unlock_tier2_prestige'
     | 'arkalon_auto_research'
     | 'unlock_tier3_prestige_and_exponent'
+    | 'infinite_dyson_swarm'
+}
+
+export interface MegaprojectPhasePerk {
+  phase: 1 | 2 | 3 | 4
+  percentThreshold: number
+  title: string
+  description: string
+}
+
+export const MEGAPROJECT_PHASE_PERKS: Record<MegaprojectId, MegaprojectPhasePerk[]> = {
+  chronos_array: [
+    {
+      phase: 1,
+      percentThreshold: 25,
+      title: 'Chronal Dilation',
+      description: '-10% Reality study time'
+    },
+    {
+      phase: 2,
+      percentThreshold: 50,
+      title: 'Tachyon Condenser',
+      description: '+15% Quantum & Reality output'
+    },
+    {
+      phase: 3,
+      percentThreshold: 75,
+      title: 'Spacetime Siphon',
+      description: '+20% Megaproject absorption'
+    },
+    {
+      phase: 4,
+      percentThreshold: 100,
+      title: 'Array Operational',
+      description: 'Enables Tier II (at 10^35 RP) + 1.5x RP'
+    }
+  ],
+  arkalon_matrix_mirror: [
+    {
+      phase: 1,
+      percentThreshold: 25,
+      title: 'Optical Alignment',
+      description: '+25% Arkalon Interface output'
+    },
+    {
+      phase: 2,
+      percentThreshold: 50,
+      title: 'Quantum Reflection',
+      description: '-10% all research node costs'
+    },
+    {
+      phase: 3,
+      percentThreshold: 75,
+      title: 'Harmonic Synthesis',
+      description: '+5s anomaly duration'
+    },
+    {
+      phase: 4,
+      percentThreshold: 100,
+      title: 'Deep Sync Active',
+      description: 'Auto-completes T1-T2 research on reset'
+    }
+  ],
+  omega_singularity_sphere: [
+    {
+      phase: 1,
+      percentThreshold: 25,
+      title: 'Horizon Containment',
+      description: '+50% Singularity Reactor output'
+    },
+    {
+      phase: 2,
+      percentThreshold: 50,
+      title: 'Gravitational Lens',
+      description: '+0.05 production exponent'
+    },
+    {
+      phase: 3,
+      percentThreshold: 75,
+      title: 'Hawking Radiator',
+      description: '+15% offline efficiency'
+    },
+    {
+      phase: 4,
+      percentThreshold: 100,
+      title: 'Synthesis Operational',
+      description: 'Enables Tier III (at 10^85 RP) + 0.25 Exp'
+    }
+  ],
+  dyson_swarm: [
+    {
+      phase: 1,
+      percentThreshold: 25,
+      title: 'Array Launch',
+      description: '+2.5% global RP output'
+    },
+    {
+      phase: 2,
+      percentThreshold: 50,
+      title: 'Solar Concentrator',
+      description: '+5% global RP output'
+    },
+    {
+      phase: 3,
+      percentThreshold: 75,
+      title: 'Microwave Relay',
+      description: '+7.5% global RP output'
+    },
+    {
+      phase: 4,
+      percentThreshold: 100,
+      title: 'Array Integrated',
+      description: 'Asymptotic Exp (+0.50 cap) & +10% Global RP'
+    }
+  ]
 }
 
 export const MEGAPROJECTS: MegaprojectDefinition[] = [
@@ -27,13 +142,14 @@ export const MEGAPROJECTS: MegaprojectDefinition[] = [
     name: 'Chronos Array',
     description:
       'A temporal lattice that stabilizes local spacetime for Timeline Severance operations.',
-    constructionCost: 10n ** 27n,
+    constructionCost: 5n * 10n ** 25n,
     requiresGeneratorIndex: 2, // Quantum Computers
     requiresGeneratorCount: 100n,
     requiresGeneratorIndex2: 4, // Reality Engines
     requiresGeneratorCount2: 50n,
     requiresLifetimeRP: 10n ** 24n,
-    reward: 'Unlocks Tier II prestige. Permanent 1.5x global multiplier.',
+    reward:
+      'Enables Tier II Prestige (at 100.00 Decillion RP). Permanent 1.5x global multiplier.',
     rewardType: 'unlock_tier2_prestige'
   },
   {
@@ -41,7 +157,7 @@ export const MEGAPROJECTS: MegaprojectDefinition[] = [
     name: 'Arkalon Matrix Mirror',
     description:
       'A reflective dimensional construct that interfaces with Arkalon to accelerate research.',
-    constructionCost: 10n ** 48n,
+    constructionCost: 5n * 10n ** 46n,
     requiresAR: 200,
     requiresGeneratorIndex: 7, // Infinite Simulations
     requiresGeneratorCount: 100n,
@@ -56,15 +172,28 @@ export const MEGAPROJECTS: MegaprojectDefinition[] = [
     name: 'Omega Singularity Sphere',
     description:
       'The ultimate construct: a stable singularity enabling Singular Synthesis.',
-    constructionCost: 10n ** 84n,
+    constructionCost: 10n ** 82n,
     requiresGeneratorIndex: 14, // Stellar Harvesters
     requiresGeneratorCount: 50n,
     requiresGeneratorIndex2: 15, // Galactic Engines
     requiresGeneratorCount2: 25n,
     requiresMegaproject: 'arkalon_matrix_mirror',
     requiresLifetimeRP: 10n ** 80n,
-    reward: 'Unlocks Tier III prestige. +0.25 to master production exponent.',
+    reward:
+      'Enables Tier III Prestige (at 10.00 Septenvigintillion RP). +0.25 to master production exponent.',
     rewardType: 'unlock_tier3_prestige_and_exponent'
+  },
+  {
+    id: 'dyson_swarm',
+    name: 'Arkalon Dyson Swarm',
+    description:
+      'An infinite modular megastructure deploying orbital star-siphons around galactic cores.',
+    constructionCost: 10n ** 85n,
+    requiresMegaproject: 'omega_singularity_sphere',
+    requiresLifetimeRP: 10n ** 85n,
+    reward:
+      'Repeatable: +10% compounding Global RP per level & asymptotic Production Exponent (+0.02 base, +0.50 cap).',
+    rewardType: 'infinite_dyson_swarm'
   }
 ]
 
@@ -81,6 +210,9 @@ export function meetsMegaprojectRequirements(
 ): boolean {
   const def = MEGAPROJECT_MAP[id]
   if (!def) return false
+
+  // Megaproject construction is suspended during challenge runs
+  if (state.activeChallengeId) return false
 
   // Already completed
   if (state.completedMegaprojects.includes(id)) return false
@@ -143,40 +275,41 @@ export function getEffectiveConstructionCost(
   const def = MEGAPROJECT_MAP[id]
   if (!def) return 0n
 
-  const efficiencyLevel = state.cfUpgrades.megaproject_efficiency
-  if (efficiencyLevel === 0) return def.constructionCost
+  let baseCost = def.constructionCost
 
-  const discount = 1 - 0.1 * efficiencyLevel
-  return BigInt(Math.floor(Number(def.constructionCost) * discount))
+  // Dyson Swarm costs scale by 10^5 per level
+  if (id === 'dyson_swarm') {
+    const level = state.dysonSwarmLevel ?? 0
+    baseCost = 10n ** 85n * 10n ** BigInt(level * 5)
+  }
+
+  if (state.activeChallengeRestrictions?.prestigeUpgradesDisabled) {
+    return baseCost
+  }
+
+  const efficiencyLevel = state.cfUpgrades.megaproject_efficiency
+  if (efficiencyLevel === 0) return baseCost
+
+  const discountNumerator = BigInt(10 - efficiencyLevel)
+  return (baseCost * discountNumerator) / 10n
 }
 
-// Applies the megaproject reward to the game state
-// Returns a partial state update
-export function applyMegaprojectReward(
+export function getMegaprojectPhase(
   id: MegaprojectId,
-  _state: GameState
-): Record<string, unknown> {
-  const def = MEGAPROJECT_MAP[id]
-  if (!def) return {}
-
-  // Rewards are reflected in canPrestigeTier2/3 checks and productionEngine
-  // The completedMegaprojects array is the source of truth
-  // Additional state changes per reward type:
-  switch (def.rewardType) {
-    case 'unlock_tier2_prestige':
-      // canPrestigeTier2 already checks completedMegaprojects.includes('chronos_array')
-      return {}
-
-    case 'arkalon_auto_research':
-      // Handled in research completion logic
-      return {}
-
-    case 'unlock_tier3_prestige_and_exponent':
-      // +0.25 production exponent applied via getProductionExponentBonus
-      // canPrestigeTier3 checks completedMegaprojects.includes('omega_singularity_sphere')
-      return {}
-
-    default:
-      return {}
+  state: GameState
+): number {
+  if (state.completedMegaprojects.includes(id) && id !== 'dyson_swarm') {
+    return 4
   }
+  if (state.activeMegaprojectId !== id) return 0
+
+  const cost = getEffectiveConstructionCost(id, state)
+  if (cost <= 0n) return 0
+
+  const percent = Number((state.megaprojectRPAbsorbed * 100n) / cost)
+  if (percent >= 100) return 4
+  if (percent >= 75) return 3
+  if (percent >= 50) return 2
+  if (percent >= 25) return 1
+  return 0
 }

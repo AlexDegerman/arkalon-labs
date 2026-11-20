@@ -20,7 +20,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Low-level data entry, manual ledger calculations, and basic physical observations.',
     baseCost: 15n,
     growthFactor: 1.15,
-    baseOutput: 500n
+    baseOutput: 1_000n
   },
   {
     index: 1,
@@ -110,7 +110,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Spatially compresses local space, folding structural pathways to shorten computational distance.',
     baseCost: 3_200_000_000_000n,
     growthFactor: 1.04,
-    baseOutput: 720_000_000_000n // 720,000,000.0 RP/sec
+    baseOutput: 1_200_000_000_000n // 1,200,000,000.0 RP/sec
   },
   {
     index: 11,
@@ -119,7 +119,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Aligns multiple localized timelines to run parallel calculations.',
     baseCost: 85_000_000_000_000n,
     growthFactor: 1.04,
-    baseOutput: 8_100_000_000_000n // 8,100,000,000.0 RP/sec
+    baseOutput: 24_000_000_000_000n // 24,000,000,000.0 RP/sec
   },
   {
     index: 12,
@@ -128,7 +128,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Captures and amplifies random sub-atomic fluctuations in the spatial vacuum.',
     baseCost: 2_100_000_000_000_000n,
     growthFactor: 1.03,
-    baseOutput: 98_000_000_000_000n
+    baseOutput: 450_000_000_000_000n
   },
   {
     index: 13,
@@ -137,7 +137,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Compresses interstellar dark matter into stable high-density fuel rods.',
     baseCost: 54_000_000_000_000_000n,
     growthFactor: 1.03,
-    baseOutput: 1_200_000_000_000_000n
+    baseOutput: 8_700_000_000_000_000n
   },
   {
     index: 14,
@@ -145,7 +145,7 @@ export const GENERATORS: GeneratorDefinition[] = [
     description: 'Deploys sub-space siphons directly into regional stars.',
     baseCost: 1_600_000_000_000_000_000n,
     growthFactor: 1.03,
-    baseOutput: 16_000_000_000_000_000n
+    baseOutput: 195_000_000_000_000_000n
   },
   {
     index: 15,
@@ -154,7 +154,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Simulates the gravitational rotation of entire galaxies for data processing.',
     baseCost: 48_000_000_000_000_000_000n,
     growthFactor: 1.02,
-    baseOutput: 220_000_000_000_000_000n
+    baseOutput: 4_400_000_000_000_000_000n
   },
   {
     index: 16,
@@ -163,7 +163,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Opens a permanent gateway to adjacent realities, siphoning point streams.',
     baseCost: 1_500_000_000_000_000_000_000n,
     growthFactor: 1.02,
-    baseOutput: 3_100_000_000_000_000_000n
+    baseOutput: 103_000_000_000_000_000_000n
   },
   {
     index: 17,
@@ -171,7 +171,7 @@ export const GENERATORS: GeneratorDefinition[] = [
     description: 'Recreates physical conditions similar to the early universe.',
     baseCost: 50_000_000_000_000_000_000_000n,
     growthFactor: 1.02,
-    baseOutput: 45_000_000_000_000_000_000n
+    baseOutput: 2_600_000_000_000_000_000_000n
   },
   {
     index: 18,
@@ -180,7 +180,7 @@ export const GENERATORS: GeneratorDefinition[] = [
       'Deconstructs local probability lines into organized mathematical data arrays.',
     baseCost: 1_800_000_000_000_000_000_000_000n,
     growthFactor: 1.02,
-    baseOutput: 680_000_000_000_000_000_000n
+    baseOutput: 70_000_000_000_000_000_000_000n
   },
   {
     index: 19,
@@ -188,7 +188,7 @@ export const GENERATORS: GeneratorDefinition[] = [
     description: 'Collapses pure emptiness into ultra-dense storage nodes.',
     baseCost: 65_000_000_000_000_000_000_000_000n,
     growthFactor: 1.01,
-    baseOutput: 11_000_000_000_000_000_000_000n
+    baseOutput: 1_900_000_000_000_000_000_000_000n
   }
 ]
 

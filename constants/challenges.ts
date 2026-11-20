@@ -21,26 +21,28 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Manual Labor',
     restrictionSummary: 'No generators above Tier 3.',
     tier1TargetDescription: '1 x 10^6 lifetime RP',
-    rewardDescription: '+5% base output to Tiers 1-3 permanently per tier',
-    maxTiers: 5
+    rewardDescription:
+      '2x base output to Tiers 1-3 (compounding) & +5% global RP per tier',
+    maxTiers: 3
   },
   {
     id: 'SC2',
     category: 'standard',
     name: 'Blind Research',
-    restrictionSummary: 'Technology Matrix disabled.',
+    restrictionSummary: 'Research disabled.',
     tier1TargetDescription: '5 x 10^6 lifetime RP',
-    rewardDescription: '+3% global production per challenge tier completed',
-    maxTiers: 5
+    rewardDescription:
+      'Tier-1 research nodes complete instantly (0s) + 10% global RP per tier',
+    maxTiers: 3
   },
   {
     id: 'SC3',
     category: 'standard',
     name: 'Silence Protocol',
-    restrictionSummary: 'Arkalon dialogue and clicks disabled.',
+    restrictionSummary: 'Arkalon Branch research locked.',
     tier1TargetDescription: '1 x 10^7 lifetime RP',
-    rewardDescription: '+10% Arkalon Branch research speed per tier',
-    maxTiers: 5
+    rewardDescription: '+15% Arkalon Branch research speed per tier',
+    maxTiers: 3
   },
   {
     id: 'SC4',
@@ -48,8 +50,8 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Isolation Chamber',
     restrictionSummary: 'No generator modules allowed.',
     tier1TargetDescription: '2 x 10^7 lifetime RP',
-    rewardDescription: 'Module upgrade costs reduced by 5% per tier',
-    maxTiers: 5
+    rewardDescription: 'Module upgrade costs reduced by 10% per tier',
+    maxTiers: 3
   },
   {
     id: 'SC5',
@@ -57,60 +59,63 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Stable Reality',
     restrictionSummary: 'No anomalies spawn.',
     tier1TargetDescription: '5 x 10^7 lifetime RP',
-    rewardDescription: '+15% anomaly rewards when anomalies ARE active',
-    maxTiers: 5
+    rewardDescription:
+      '+25% anomaly buff power & +5s anomaly duration per tier',
+    maxTiers: 3
   },
   {
     id: 'SC6',
     category: 'standard',
-    name: 'Efficiency Mandate',
-    restrictionSummary: 'Generator costs are 3x normal.',
-    tier1TargetDescription: '1 x 10^8 lifetime RP',
-    rewardDescription: 'Cost growth factors reduced by 0.005 per tier globally',
-    maxTiers: 5
+    name: 'Asset Cap',
+    restrictionSummary: 'Maximum 30 units of any generator owned.',
+    tier1TargetDescription: '5 x 10^7 lifetime RP',
+    rewardDescription:
+      'Cost growth factors reduced by 0.01 per tier; Tier 3 unlocks Auto-Buy Optimal',
+    maxTiers: 3
   },
   {
     id: 'SC7',
     category: 'standard',
-    name: 'Slow Burn',
-    restrictionSummary: 'Research timers are 5x longer.',
-    tier1TargetDescription: '2 x 10^8 lifetime RP',
-    rewardDescription: '-10% research time per tier (multiplicative)',
-    maxTiers: 5
+    name: 'Branch Specialization',
+    restrictionSummary: 'Only one research branch permitted for the run.',
+    tier1TargetDescription: '1 x 10^8 lifetime RP',
+    rewardDescription: '-15% research study time per tier (multiplicative)',
+    maxTiers: 3
   },
   {
     id: 'SC8',
     category: 'standard',
     name: 'Unstable Constants',
     restrictionSummary: 'Milestone multipliers disabled.',
-    tier1TargetDescription: '5 x 10^8 lifetime RP',
-    rewardDescription: 'Milestones trigger 1 unit earlier per tier (floor 10)',
-    maxTiers: 5
+    tier1TargetDescription: '2 x 10^8 lifetime RP',
+    rewardDescription: 'Milestones trigger 2 units earlier per tier (floor 10)',
+    maxTiers: 3
   },
   {
     id: 'SC9',
     category: 'standard',
     name: 'Energy Crisis',
     restrictionSummary: 'Energy Branch research locked.',
-    tier1TargetDescription: '1 x 10^9 lifetime RP',
-    rewardDescription: 'Offline efficiency permanently +5% per tier',
-    maxTiers: 5
+    tier1TargetDescription: '5 x 10^8 lifetime RP',
+    rewardDescription: 'Offline efficiency permanently +10% per tier',
+    maxTiers: 3
   },
   {
     id: 'SC10',
     category: 'standard',
     name: 'Dimensional Lock',
     restrictionSummary: 'Only one research slot (R3 disabled).',
-    tier1TargetDescription: '2 x 10^9 lifetime RP',
-    rewardDescription: 'Research queue expanded by +1 slot per tier (max 8)',
-    maxTiers: 5
+    tier1TargetDescription: '1 x 10^9 lifetime RP',
+    rewardDescription: 'Research queue expanded by +1 slot per tier',
+    maxTiers: 3
   },
   {
     id: 'SC11',
     category: 'standard',
     name: 'Relic Vacuum',
-    restrictionSummary: 'No relics can be equipped.',
-    tier1TargetDescription: '5 x 10^9 lifetime RP',
+    restrictionSummary:
+      'Relics disabled (cannot be equipped and active relic effects are inactive).',
+    tier1TargetDescription: '2 x 10^9 lifetime RP',
     rewardDescription: '+1 relic slot per tier (max 6 total)',
     maxTiers: 3
   },
@@ -120,18 +125,20 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Total Isolation',
     restrictionSummary: 'SC1 + SC2 + SC5 combined.',
     tier1TargetDescription: '1 x 10^9 lifetime RP',
-    rewardDescription: '+1% to ALL permanent multipliers per tier',
-    maxTiers: 5
+    rewardDescription:
+      '+3% global RP production per tier; Tier 3 unlocks Auto-Launch Probe',
+    maxTiers: 3
   },
   // Advanced Challenges
   {
     id: 'AC1',
     category: 'advanced',
-    name: 'Entropy Reversal',
-    restrictionSummary: 'All generators produce at 10% base rate.',
+    name: 'Telemetry Starvation',
+    restrictionSummary:
+      'Generators only produce RP while active research is in progress.',
     tier1TargetDescription: '1 x 10^15 lifetime RP',
-    rewardDescription: '+0.5% to global production exponent per tier',
-    maxTiers: 5
+    rewardDescription: '+0.005 to global production exponent per tier',
+    maxTiers: 3
   },
   {
     id: 'AC2',
@@ -140,17 +147,17 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     restrictionSummary: 'No prestige upgrades active.',
     tier1TargetDescription: '1 x 10^12 lifetime RP',
     rewardDescription: 'AR upgrade effectiveness +20% per tier',
-    maxTiers: 5
+    maxTiers: 3
   },
   {
     id: 'AC3',
     category: 'advanced',
     name: 'Chronal Freeze',
     restrictionSummary:
-      'Research timers do not tick (R4 anomaly reduction only).',
+      'Research timers only tick while an anomaly is active (at 5x speed).',
     tier1TargetDescription: '1 x 10^10 lifetime RP',
     rewardDescription: 'All research timers permanently -20% per tier',
-    maxTiers: 5
+    maxTiers: 3
   },
   {
     id: 'AC4',
@@ -160,7 +167,7 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     tier1TargetDescription: '1 x 10^18 lifetime RP',
     rewardDescription:
       'Generators 1-5 base output tripled permanently per tier',
-    maxTiers: 5
+    maxTiers: 3
   },
   {
     id: 'AC5',
@@ -168,7 +175,7 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Module Overload',
     restrictionSummary: 'Module levels doubled but generator costs 10x.',
     tier1TargetDescription: '1 x 10^20 lifetime RP',
-    rewardDescription: 'Module cap increased to Level 8 per tier',
+    rewardDescription: 'Module cap increased by +1 per tier (max Level 8)',
     maxTiers: 3
   },
   {
@@ -176,10 +183,10 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     category: 'advanced',
     name: 'Relic Dependency',
     restrictionSummary:
-      'Only equipped relics provide production (no base output).',
+      'Base generator output replaced by 2% per equipped relic level (0 output without relics).',
     tier1TargetDescription: '1 x 10^16 lifetime RP',
     rewardDescription: '+1 relic level per completion (free upgrade)',
-    maxTiers: 5
+    maxTiers: 3
   },
   {
     id: 'AC7',
@@ -187,8 +194,8 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Anomaly Storm',
     restrictionSummary: 'Anomalies every 60s but last only 10s.',
     tier1TargetDescription: '1 x 10^14 lifetime RP',
-    rewardDescription: 'Anomaly base payout +50% permanently per tier',
-    maxTiers: 5
+    rewardDescription: 'Anomaly buff power +50% permanently per tier',
+    maxTiers: 3
   },
   {
     id: 'AC8',
@@ -196,8 +203,7 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Combined Entropy',
     restrictionSummary: 'AC1 + AC3 combined.',
     tier1TargetDescription: '1 x 10^22 lifetime RP',
-    rewardDescription:
-      'Unlock 5th research queue slot + 0.1 production exponent',
+    rewardDescription: '+1 research queue slot + 0.1 production exponent',
     maxTiers: 1
   },
   // Extreme Challenges
@@ -208,7 +214,8 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     restrictionSummary:
       'Generators above Tier 10 disabled. No prestige upgrades. No modules.',
     tier1TargetDescription: '1 x 10^100 lifetime RP',
-    rewardDescription: '+2% per completed EC to ALL production permanently',
+    rewardDescription:
+      '1.25x global RP & +0.01 production exponent per EC1 tier (+2% per unique EC)',
     maxTiers: 5
   },
   {
@@ -217,14 +224,15 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Singularity Paradox',
     restrictionSummary: 'Only one generator type at a time.',
     tier1TargetDescription: '1 x 10^120 lifetime RP',
-    rewardDescription: 'Unlock generator auto-switcher',
+    rewardDescription: '+0.05 to master production exponent permanently',
     maxTiers: 1
   },
   {
     id: 'EC3',
     category: 'extreme',
     name: 'Recursive Collapse',
-    restrictionSummary: 'Prestige resets every 5 minutes automatically.',
+    restrictionSummary:
+      'Prestige & challenge goal progress reset every 5 minutes automatically.',
     tier1TargetDescription: '1 x 10^140 lifetime RP',
     rewardDescription: 'Auto-prestige earns +25% bonus AR',
     maxTiers: 1

@@ -109,12 +109,6 @@ export default function InfiniteSimulation({ stage, color, size }: Props) {
             strokeWidth={0.5}
             opacity={0.15 + i * 0.05}
           >
-            <animate
-              attributeName="r"
-              values={`${r};${r * 1.04};${r}`}
-              dur={`${2 + i * 0.5}s`}
-              repeatCount="indefinite"
-            />
           </circle>
         ))}
     </svg>

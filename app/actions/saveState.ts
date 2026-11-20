@@ -4,7 +4,6 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import pool from '@/lib/db'
 import type { SerializedSave } from '@/lib/saveGame'
-import { SAVE_SANITY_MULTIPLIER } from '@/constants/game'
 
 interface SavePayload {
   save: SerializedSave
@@ -30,31 +29,64 @@ function isRateLimited(playerId: string): boolean {
 }
 
 function recordSave(playerId: string): void {
-  rateLimitMap.set(playerId, Date.now())
+  const now = Date.now()
+  rateLimitMap.set(playerId, now)
+  if (rateLimitMap.size > 1000) {
+    for (const [id, ts] of rateLimitMap) {
+      if (now - ts > 120_000) rateLimitMap.delete(id)
+    }
+  }
 }
 
-// Generous ceiling to avoid false positives from anomaly bursts
-// Uses pure BigInt arithmetic to avoid float overflow
+// Uses pure BigInt arithmetic to validate state sanity without blocking banked progression
 function sanityCheckPoints(
-  claimedPoints: bigint,
-  cachedPPS: bigint,
+  currentPoints: bigint,
+  lifetimePoints: bigint,
   lastSavedTime: number,
   serverNow: number
 ): boolean {
   // Reject future timestamps
-  if (lastSavedTime > serverNow + 5000) return false
+  if (lastSavedTime > serverNow + 300_000) return false
 
-  const elapsedSeconds = Math.max(0, (serverNow - lastSavedTime) / 1000)
-  if (elapsedSeconds <= 0) return true
+  // Current balance can never exceed lifetime points with starting buffer
+  if (currentPoints > lifetimePoints + 1000n) return false
 
-  // Max points that could have been earned = pps * elapsed * 1.5
-  const elapsedBn = BigInt(Math.ceil(elapsedSeconds)) + 3600n
-  const sanityBn = BigInt(Math.round(SAVE_SANITY_MULTIPLIER * 10))
-  const maxEarnable = (cachedPPS * elapsedBn * sanityBn) / 10n
+  return true
+}
 
-  // Base allowance of 10^12 handles early-game when PPS was 0
-  const baseCeiling = 1_000_000_000_000n
-  return claimedPoints <= maxEarnable + baseCeiling
+export async function resetCloudState(): Promise<{
+  success: boolean
+  error?: string
+}> {
+  const cookieStore = await cookies()
+  let playerId = cookieStore.get('arkalon_core_id')?.value
+
+  if (!playerId && process.env.NODE_ENV === 'development') {
+    playerId = '11111111-1111-4111-8111-111111111111'
+  }
+
+  if (!playerId) {
+    return { success: false, error: 'Unauthorized: No active Arkalon session' }
+  }
+
+  if (!process.env.DATABASE_URL) {
+    return { success: false, error: 'Database offline' }
+  }
+
+  let client
+  try {
+    client = await pool.connect()
+    await client.query('DELETE FROM game_states WHERE player_id = $1', [
+      playerId
+    ])
+    rateLimitMap.delete(playerId)
+    return { success: true }
+  } catch (err) {
+    console.error('[resetCloudState] db error:', err)
+    return { success: false, error: 'Database error' }
+  } finally {
+    client?.release()
+  }
 }
 
 export async function saveState(payload: SavePayload): Promise<{
@@ -114,7 +146,7 @@ export async function saveState(payload: SavePayload): Promise<{
     return { success: false, error: 'Negative point values rejected' }
   }
 
-  if (!sanityCheckPoints(lpBigInt, ppsBigInt, lastSavedTime, serverNow)) {
+  if (!sanityCheckPoints(cpBigInt, lpBigInt, lastSavedTime, serverNow)) {
     console.warn(`[saveState] sanity check failed for player ${playerId}`)
     return {
       success: false,
@@ -168,66 +200,107 @@ export async function saveState(payload: SavePayload): Promise<{
         playerId,
         currentPoints,
         lifetimePoints,
-        JSON.stringify((save as any).generators ?? []),
+        JSON.stringify(save.generators ?? []),
         JSON.stringify({
-          completedNodes: (save as any).completedResearchNodes ?? [],
-          activeSlots: (save as any).activeResearchSlots ?? [],
-          queue: (save as any).researchQueue ?? [],
-          infiniteLevels: (save as any).infiniteResearchLevels ?? {}
+          completedNodes: save.completedResearchNodes ?? [],
+          activeSlots: save.activeResearchSlots ?? [],
+          queue: save.researchQueue ?? [],
+          infiniteLevels: save.infiniteResearchLevels ?? {},
+          o6BypassUsed: Boolean(save.o6BypassUsed)
         }),
         JSON.stringify({
-          ar: (save as any).arUpgrades ?? {},
-          cf: (save as any).cfUpgrades ?? {},
-          os: (save as any).osUpgrades ?? {}
+          ar: save.arUpgrades ?? {},
+          cf: save.cfUpgrades ?? {},
+          os: save.osUpgrades ?? {},
+          resonanceMemoryAR: save.resonanceMemoryAR ?? 0,
+          autoPrestigeMode: save.autoPrestigeMode ?? 'ratio',
+          autoPrestigeTargetAR: save.autoPrestigeTargetAR ?? 1000,
+          autoPrestigeRatio: save.autoPrestigeRatio ?? 2,
+          autoPrestigeTargetCF: save.autoPrestigeTargetCF ?? 10,
+          autoPrestigeTargetOS: save.autoPrestigeTargetOS ?? 10,
+          autoPrestigeWaitForHigher: save.autoPrestigeWaitForHigher ?? true,
+          autoPrestigeHoldForDyson: save.autoPrestigeHoldForDyson ?? true,
+          autoBuyOptimalReservePercent: save.autoBuyOptimalReservePercent ?? 25,
+          autoRelicTargetLevel: save.autoRelicTargetLevel ?? 20,
+          autoRelicDustReserve: save.autoRelicDustReserve ?? 25
         }),
         JSON.stringify({
-          slots: (save as any).relicSlots ?? [],
-          unlocked: (save as any).unlockedRelics ?? [],
-          levels: (save as any).relicLevels ?? {}
+          slots: save.relicSlots ?? [],
+          unlocked: save.unlockedRelics ?? [],
+          levels: save.relicLevels ?? {},
+          presets: save.relicPresets ?? [[], [], []],
+          synthesizers: save.synthesizers ?? [0, 0, 0, 0],
+          artifactDust: Math.min(
+            Number.MAX_SAFE_INTEGER,
+            Math.max(0, Math.floor(save.artifactDust ?? 0))
+          )
         }),
-        JSON.stringify((save as any).probes ?? []),
+        JSON.stringify(save.probes ?? []),
         JSON.stringify({
-          activeId: (save as any).activeMegaprojectId ?? null,
-          allocationPercent: (save as any).megaprojectAllocationPercent ?? 0,
-          rpAbsorbed: (save as any).megaprojectRPAbsorbed ?? '0',
-          completed: (save as any).completedMegaprojects ?? []
+          activeId: save.activeMegaprojectId ?? null,
+          allocationPercent: save.megaprojectAllocationPercent ?? 0,
+          lastAllocationPercent: save.lastMegaprojectAllocationPercent ?? 10,
+          rpAbsorbed: save.megaprojectRPAbsorbed ?? '0',
+          completed: save.completedMegaprojects ?? [],
+          dysonSwarmLevel: save.dysonSwarmLevel ?? 0
         }),
         JSON.stringify({
-          activeType: (save as any).activeAnomalyType ?? null,
-          timeRemaining: (save as any).anomalyTimeRemaining ?? 0,
-          interactionValue: (save as any).anomalyInteractionValue ?? 0,
-          timeToNextCheck: (save as any).timeToNextAnomalyCheck ?? 480
+          activeType: save.activeAnomalyType ?? null,
+          timeRemaining: save.anomalyTimeRemaining ?? 0,
+          timeToNextCheck: save.timeToNextAnomalyCheck ?? 180
         }),
-        JSON.stringify((save as any).unlocks ?? {}),
-        JSON.stringify((save as any).tutorial ?? {}),
+        JSON.stringify(save.unlocks ?? {}),
+        JSON.stringify(save.tutorial ?? {}),
         JSON.stringify({
-          activeChallengeId: (save as any).activeChallengeId ?? null,
-          records: (save as any).challengeRecords ?? {}
+          activeChallengeId: save.activeChallengeId ?? null,
+          challengeActiveSeconds: save.challengeActiveSeconds ?? 0,
+          activeChallengeRestrictions: save.activeChallengeRestrictions ?? null,
+          preChallengeSnapshot: save.preChallengeSnapshot ?? null,
+          records: save.challengeRecords ?? {},
+          sandboxTargetRP: save.sandboxTargetRP ?? '0',
+          sandboxBestRP: save.sandboxBestRP ?? '0',
+          sandboxCompletions: save.sandboxCompletions ?? 0
         }),
-        JSON.stringify((save as any).automation ?? {}),
+        JSON.stringify(save.automation ?? {}),
         JSON.stringify({
-          points: (save as any).currentOperationPoints ?? 0,
-          multiplierLevel: (save as any).operationMultiplierLevel ?? 0,
-          artifactsUnlocked: (save as any).operationArtifactsUnlocked ?? [],
-          currentCycle: (save as any).currentOperationCycle ?? 1
+          points: save.currentOperationPoints ?? 0,
+          artifactsUnlocked: save.operationArtifactsUnlocked ?? [],
+          currentCycle: save.currentOperationCycle ?? 1,
+          manualCycle: save.manualOperationCycle ?? null,
+          cosmicAttunementLevel: save.cosmicAttunementLevel ?? 0,
+          cosmicTemporalLevel: save.cosmicTemporalLevel ?? 0
         }),
-        (save as any).achievements ?? [],
-        JSON.stringify((save as any).stats ?? {}),
-        JSON.stringify((save as any).settings ?? {}),
+        save.achievements ?? [],
+        JSON.stringify(save.stats ?? {}),
+        JSON.stringify(save.settings ?? {}),
         lastSavedTime,
-        (save as any).arkalonResonance ?? 0,
-        (save as any).chronalFractures ?? 0,
-        (save as any).omniSpars ?? 0,
-        (save as any).artifactDust ?? 0
+        Math.min(
+          2_147_483_647,
+          Math.max(0, Math.floor(save.arkalonResonance ?? 0))
+        ),
+        Math.min(
+          2_147_483_647,
+          Math.max(0, Math.floor(save.chronalFractures ?? 0))
+        ),
+        Math.min(2_147_483_647, Math.max(0, Math.floor(save.omniSpars ?? 0))),
+        Math.min(2_147_483_647, Math.max(0, Math.floor(save.artifactDust ?? 0)))
       ]
     )
 
     recordSave(playerId)
     return { success: true }
   } catch (err) {
+    const code = (err as { code?: string })?.code
+    if (
+      code === 'ECONNREFUSED' ||
+      code === 'ENOTFOUND' ||
+      process.env.NODE_ENV === 'development'
+    ) {
+      return { success: false, error: 'Database offline' }
+    }
     console.error('[saveState] db error:', err)
     return { success: false, error: 'Database error' }
   } finally {
-    client.release()
+    client?.release()
   }
 }

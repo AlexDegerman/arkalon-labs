@@ -1,12 +1,15 @@
 'use client'
 
+import { buyPrestigeUpgrade } from '@/app/stores/actions/prestigeActions'
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyPrestigeUpgrade } from '@/app/stores/actions'
 import { CF_UPGRADES, getUpgradeCost } from '@/lib/prestigeUpgradeDefs'
 
 export default function ExpandedCFShop() {
   const cf = useGameStore((s) => s.chronalFractures)
   const cfUpgrades = useGameStore((s) => s.cfUpgrades)
+  const prestigeDisabled = useGameStore(
+    (s) => s.activeChallengeRestrictions?.prestigeUpgradesDisabled ?? false
+  )
   const totalPrestigesTier2 = useGameStore((s) => s.stats.totalPrestigesTier2)
 
   if (totalPrestigesTier2 === 0) {
@@ -26,31 +29,31 @@ export default function ExpandedCFShop() {
         <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
           Chronal Fracture Upgrades
         </p>
-        <span className="text-[10px] font-mono font-bold text-cyan-400">
+        <span className="text-[10px] font-mono font-black g-sp">
           {cf} CF Available
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-1.5">
         {CF_UPGRADES.map((def) => {
-          const currentLevel = (cfUpgrades as any)[def.id] ?? 0
+          const currentLevel = cfUpgrades[def.id] ?? 0
           const atCap = currentLevel >= def.maxLevel
           const cost = atCap ? 0 : getUpgradeCost(def, currentLevel)
-          const canAfford = cf >= cost && !atCap
+          const canAfford = cf >= cost && !atCap && !prestigeDisabled
 
           return (
             <div
               key={def.id}
               className={[
-                'card rounded-xl p-3 flex items-center justify-between gap-3 border transition-colors',
+                'card rounded-xl p-2 sm:p-2.5 flex items-center justify-between gap-2 border transition-colors',
                 atCap
                   ? 'border-(--status-success)/40 bg-(--status-success)/5'
                   : 'border-(--border-default) bg-(--bg-surface)'
               ].join(' ')}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-xs font-bold text-(--text-primary) truncate">
+                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                  <span className="text-xs font-bold text-(--text-primary)">
                     {def.label}
                   </span>
                   {def.maxLevel > 1 && !atCap && (
@@ -65,8 +68,13 @@ export default function ExpandedCFShop() {
                   )}
                 </div>
                 <p className="text-[11px] text-(--text-secondary) leading-snug">
-                  {def.effectAtLevel(currentLevel)}
+                  {def.description}
                 </p>
+                {currentLevel > 0 && (
+                  <p className="text-[10px] font-mono text-(--status-success) mt-0.5">
+                    Active: {def.effectAtLevel(currentLevel)}
+                  </p>
+                )}
               </div>
 
               {!atCap && (
@@ -80,7 +88,7 @@ export default function ExpandedCFShop() {
                       : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
                   ].join(' ')}
                 >
-                  {cost} CF
+                  {prestigeDisabled ? 'Suspended' : `${cost} CF`}
                 </button>
               )}
             </div>

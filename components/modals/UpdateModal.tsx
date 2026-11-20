@@ -93,7 +93,7 @@ export function UpdateModal() {
             <button
               onClick={handleDismiss}
               autoFocus
-              className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border border-(--border-accent)/40 bg-(--border-accent)/10 text-(--border-accent) transition-all hover:bg-(--border-accent) hover:text-[#080c14] active:scale-[0.98] cursor-pointer font-mono"
+              className="w-full py-2.5 rounded-xl text-xs font-black uppercase tracking-widest border border-(--border-accent)/40 bg-(--border-accent)/10 text-(--border-accent) transition-all hover:bg-(--border-accent) hover:text-[#080c14] cursor-pointer font-mono"
             >
               Got it
             </button>

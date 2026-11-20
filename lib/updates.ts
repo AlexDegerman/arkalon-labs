@@ -10,12 +10,12 @@ export const UPDATES: UpdateEntry[] = [
   {
     id: 'v1.0.0-launch',
     version: '1.0.0',
-    date: '2025-01-01',
+    date: '2026-11-09',
     changes: [
       '20-tier generator scaling from Research Desk to Absolute Void Compressor.',
       '40-node research tree across Computation, Energy, Reality, and Arkalon branches.',
       'Three nested prestige loops: Reality Recalibration, Timeline Severance, Singular Synthesis.',
-      'Interactive anomaly events with four anomaly types.',
+      'Spontaneous anomaly booster surges with four anomaly types.',
       'Relic and artifact dust system with 20 relics.',
       'Excavation operations with sub-space probes.',
       'Three megaprojects unlocking prestige tiers.',

@@ -3,80 +3,71 @@
 import type { GameState } from '@/types/game'
 import {
   generatorEffectiveCost,
-  getMilestoneInterval,
-  marginalPPS
+  getNextMilestoneInfo,
+  CENTURY_MUTATIONS,
+  type CenturyMutation,
+  getMilestoneMultiplier
 } from '@/lib/productionEngine'
 import {
-  formatPoints,
-  formatRate,
+  formatPointsCompact,
   formatTimeToAfford,
-  formatPercent
+  getNetSpendablePPS
 } from '@/lib/format'
 import { getSuperrecursiveCoreLevel } from './relicEffects'
 
+export function getActiveCenturyMutations(quantity: bigint): CenturyMutation[] {
+  return CENTURY_MUTATIONS.filter((m) => quantity >= m.threshold)
+}
+
+export function getNextCenturyMutation(
+  quantity: bigint
+): CenturyMutation | null {
+  return CENTURY_MUTATIONS.find((m) => quantity < m.threshold) ?? null
+}
+
+// Shared visibility rule for GeneratorList and digit keyboard shortcuts
+export function isGeneratorVisible(
+  index: number,
+  state: {
+    generators: GameState['generators']
+    activeChallengeRestrictions: { maxGeneratorTier: number | null } | null
+  }
+): boolean {
+  const maxTier = state.activeChallengeRestrictions?.maxGeneratorTier ?? null
+  if (maxTier !== null && index >= maxTier) return false
+  if (index < 5) return true
+
+  const gen = state.generators[index]
+  if (gen && gen.quantity > 0n) return true
+
+  const highestOwned = state.generators.reduce((max, g, i) => {
+    if (maxTier !== null && i >= maxTier) return max
+    return g.quantity > 0n ? i : max
+  }, 0)
+
+  return index <= highestOwned + 2
+}
+
 // Returns the next milestone threshold for a generator
-// Interval honors Milestone Sharpener and Superrecursive Core via the
-// shared production-engine helper so display never drifts from production
+// Uses the shared cumulative step helper so display never drifts from production
 export function getNextMilestone(
   generatorIndex: number,
   quantity: bigint,
   state: GameState
-): { current: number; next: number; multiplier: number } {
-  const interval = getMilestoneInterval(
+): { current: number; next: number; doublings: number } {
+  const sc8Tiers = state.challengeRecords['SC8']?.completedTiers ?? 0
+  return getNextMilestoneInfo(
     generatorIndex,
     quantity,
     state.arUpgrades.milestone_sharpener,
-    getSuperrecursiveCoreLevel(state)
+    getSuperrecursiveCoreLevel(state),
+    sc8Tiers
   )
-  const q = Number(quantity)
-  const nextMilestone =
-    q === 0 ? interval : Math.ceil((q + 1) / interval) * interval
-  const doublings = Math.floor(nextMilestone / interval)
-  return {
-    current: q,
-    next: nextMilestone,
-    multiplier: Math.pow(2, doublings)
-  }
-}
-// Returns the milestone string for display on a generator card
-// e.g. "12/25 - 2x at 25", total multiplier at the next threshold
-export function getMilestoneString(
-  generatorIndex: number,
-  quantity: bigint,
-  state: GameState
-): string {
-  const { current, next, multiplier } = getNextMilestone(
-    generatorIndex,
-    quantity,
-    state
-  )
-  if (quantity === 0n) return `0/${next} - ${multiplier}x at ${next}`
-  return `${current}/${next} - ${multiplier}x at ${next}`
 }
 
-// Returns the marginal cost efficiency as a string
-// e.g. "+1.25M RP/s per 1K RP"
-export function getCostEfficiencyString(
-  generatorIndex: number,
-  state: GameState
-): string {
-  const gen = state.generators[generatorIndex]
-  if (!gen) return ''
-
-  const cost = generatorEffectiveCost(generatorIndex, gen.quantity, state)
-  if (cost <= 0n) return ''
-
-  const marginal = marginalPPS(generatorIndex, state)
-  if (marginal <= 0n) return ''
-
-  // RP/s gained per RP spent
-  const efficiency = Number(marginal) / Number(cost)
-
-  if (efficiency < 0.001) {
-    return `+${formatRate(marginal)} / ${formatPoints(cost)} RP`
-  }
-
-  return `${formatPercent(efficiency * 100, 2)} gain/cost`
+export function formatMilestoneMultiplier(steps: number): string {
+  if (steps <= 0) return '1x'
+  return `${formatPointsCompact(getMilestoneMultiplier(steps))}x`
 }
 
 // Returns the time-to-afford string
@@ -90,9 +81,11 @@ export function getTimeToAffordString(
   const cost = generatorEffectiveCost(generatorIndex, gen.quantity, state)
   if (state.researchPoints >= cost) return ''
 
-  return formatTimeToAfford(
-    cost,
-    state.researchPoints,
-    state.cachedPointsPerSecond
+  const netPPS = getNetSpendablePPS(
+    state.cachedPointsPerSecond,
+    state.activeMegaprojectId,
+    state.megaprojectAllocationPercent
   )
+
+  return formatTimeToAfford(cost, state.researchPoints, netPPS)
 }

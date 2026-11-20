@@ -41,7 +41,7 @@ export default function FacilityAlertQueue() {
 
   return (
     <div
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-3 pointer-events-none animate-[fade-in_0.15s_ease-out_both]"
+      className="fixed bottom-24 lg:bottom-auto lg:top-14 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-3 pointer-events-none animate-[fade-in_0.15s_ease-out_both]"
       role="status"
       aria-live="polite"
       aria-atomic="true"
@@ -60,6 +60,11 @@ export default function FacilityAlertQueue() {
         </span>
 
         <div className="flex-1 min-w-0">
+          {activeAlert.variant === 'arkalon' && (
+            <span className="text-[9px] font-mono font-black uppercase tracking-widest text-(--border-accent) block mb-0.5">
+              ARKALON OVERSEER // DIRECTIVE
+            </span>
+          )}
           <p className="text-xs font-black font-mono uppercase tracking-wider leading-tight">
             {activeAlert.title}
           </p>
@@ -73,7 +78,7 @@ export default function FacilityAlertQueue() {
           className="text-(--text-secondary) hover:text-(--text-primary) text-xs font-mono shrink-0 p-1 transition-colors cursor-pointer"
           aria-label="Dismiss alert"
         >
-          X
+          ✕
         </button>
       </div>
     </div>

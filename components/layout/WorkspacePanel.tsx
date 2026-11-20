@@ -13,11 +13,15 @@ import OperationsWorkspace from '../operations/OperationsWorkspace'
 import ChallengeWorkspace from '../challenges/ChallengeWorkspace'
 import StatsWorkspace from '../stats/StatsWorkspace'
 import AchievementsWorkspace from '../achievements/AchievementsWorkspace'
+import WorkspaceDirectory from './WorkspaceDirectory'
+import { useGameStore } from '@/app/stores/gameStore'
 
 export default function WorkspacePanel() {
-  const { workspaceTab } = useActiveTab()
+  const initialized = useGameStore((s) => s._initialized)
+  const workspaceTab = useActiveTab((s) => s.workspaceTab)
 
   const panels: Record<string, React.ReactNode> = {
+    directory: <WorkspaceDirectory />,
     research: (
       <FeatureLockOverlay feature={FEATURE_MAP.techMatrix}>
         <ResearchWorkspace />
@@ -54,7 +58,7 @@ export default function WorkspacePanel() {
       </FeatureLockOverlay>
     ),
     challenges: (
-      <FeatureLockOverlay feature={FEATURE_MAP.prestige}>
+      <FeatureLockOverlay feature={FEATURE_MAP.challenges}>
         <ChallengeWorkspace />
       </FeatureLockOverlay>
     ),
@@ -72,11 +76,19 @@ export default function WorkspacePanel() {
 
   return (
     <div
-      className="flex-1 overflow-y-auto scrollbar-dark min-h-0 bg-(--bg-primary)/40"
+      className="flex-1 flex flex-col overflow-hidden min-h-0 bg-(--bg-primary)/40"
       role="tabpanel"
       id={`workspace-panel-${workspaceTab}`}
     >
-      {panels[workspaceTab] ?? null}
+      {!initialized ? (
+        <div className="flex-1 flex items-center justify-center p-6">
+          <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-widest">
+            Synchronizing Workspace...
+          </p>
+        </div>
+      ) : (
+        (panels[workspaceTab] ?? <WorkspaceDirectory />)
+      )}
     </div>
   )
 }

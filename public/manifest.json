@@ -2,7 +2,7 @@
   "name": "Arkalon Laboratories",
   "short_name": "Labs",
   "description": "Sci-fi idle incremental game. Upgrade facility equipment, rack up research points, automate complex operations, and scale beyond 10^162.",
-  "start_url": "/game",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

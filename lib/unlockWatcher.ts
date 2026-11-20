@@ -1,132 +1,218 @@
 import type { GameState } from '@/types/game'
-import type { FeatureKey } from '@/lib/featureRegistry'
+import { FEATURE_MAP, type FeatureKey } from '@/lib/featureRegistry'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import { getActiveSlotCount } from './researchNodes'
+import { canPrestigeTier2, canPrestigeTier3 } from './prestigeCalc'
 import { ERA_THRESHOLDS } from '@/constants/game'
-import { dispatchEraTransition, dispatchPrestigeAvailable, dispatchTutorialBeat } from './dialogueDispatcher'
-import { ANOMALY_DIALOGUE_MAP } from './arkalonDialogue'
+import {
+  dispatchEraTransition,
+  dispatchFeatureUnlock,
+  dispatchPrestigeAvailable,
+  dispatchTutorialBeat
+} from './dialogueDispatcher'
 import { ACHIEVEMENTS } from './achievementDefs'
+import { CHALLENGE_DISPLAY } from '@/constants/challenges'
+import { playSound } from '@/hooks/useSound'
+import { awardRelic } from '@/app/stores/actions/relicActions'
+import { markUnlocksDirty } from '@/lib/dirtyFlags'
+
+// Ordered unlock evaluation so features announce one at a time in progression order
+const UNLOCK_ORDER: FeatureKey[] = [
+  'techMatrix',
+  'statistics',
+  'modules',
+  'achievements',
+  'anomalies',
+  'relics',
+  'excavation',
+  'prestige',
+  'megaprojects',
+  'anomalousOperations',
+  'challenges'
+]
 
 // Unlock condition evaluators - each returns true when the feature should unlock
 const UNLOCK_CONDITIONS: Record<FeatureKey, (s: GameState) => boolean> = {
   techMatrix: (s) => s.generators[0].quantity >= 10n,
 
-  statistics: (s) => s.lifetimePoints >= 1_000n,
+  statistics: (s) => s.lifetimePoints >= 5_000n,
 
-  modules: (s) => s.generators[1].quantity >= 1n,
-
-  anomalies: (s) =>
-    s.completedResearchNodes.some((id) =>
-      ['C1', 'E1', 'R1', 'O1'].includes(id)
-    ),
-
-  interactiveArkalon: (s) => s.completedResearchNodes.includes('O1'),
+  modules: (s) => s.generators[1].quantity >= 10n,
 
   achievements: (s) =>
-    s.stats.totalSessionPlaytime >= 300 || (s.achievements?.length ?? 0) > 0,
+    s.stats.totalSessionPlaytime >= 300 || (s.achievements?.length ?? 0) >= 3,
+
+  anomalies: (s) =>
+    s.tutorial.tutorialCompleted &&
+    s.completedResearchNodes.filter((id) => !id.includes('_INF')).length >= 2,
 
   relics: (s) =>
     s.stats.totalAnomaliesResolved > 0 ||
     s.completedResearchNodes.includes('O1'),
 
-  excavation: (s) => s.generators[2].quantity >= 5n,
+  excavation: (s) =>
+    s.generators[1].quantity >= 25n && s.generators[2].quantity >= 10n,
 
   prestige: (s) => s.lifetimePoints >= 1_000_000_000n,
 
   megaprojects: (s) =>
-    s.lifetimePoints >= 1_000_000_000n && s.generators[4].quantity >= 10n,
+    s.lifetimePoints >= 1_000_000_000_000n && s.generators[4].quantity >= 10n,
 
-  anomalousOperations: (s) => s.stats.totalPrestigesTier1 > 0
+  anomalousOperations: (s) => s.stats.totalPrestigesTier1 > 0,
+
+  challenges: (s) => s.stats.totalPrestigesTier1 > 0
 }
 
 // Alert messages shown when a feature first unlocks
 const UNLOCK_MESSAGES: Record<FeatureKey, { title: string; message: string }> =
   {
     techMatrix: {
-      title: 'Technology Matrix Online',
+      title: 'Research Online',
       message:
-        'Research nodes now available. Study them to permanently alter facility rules.'
+        'Open Research in the Facility Directory to study upgrades across four branches.'
     },
     statistics: {
-      title: 'Statistics Panel Active',
-      message: 'Historical operational data is now being recorded.'
+      title: 'Statistics Online',
+      message:
+        'Production telemetry and run history are now tracked under Statistics in the Directory.'
     },
     modules: {
-      title: 'Generator Modules Available',
-      message: 'Install specialized modules to compound generator efficiency.'
+      title: 'Generator Modules Online',
+      message:
+        'Open Generator Modules in the Directory to upgrade efficiency, cost curves, and synergies.'
     },
     anomalies: {
-      title: 'Anomalous Readings Detected',
+      title: 'Anomalies Detected',
       message:
-        'Spatial distortions will emerge at irregular intervals. Stabilize them for rewards.'
-    },
-    interactiveArkalon: {
-      title: 'Arkalon Interface Active',
-      message:
-        'The core sphere is now interactive. Click it to boost research speed.'
+        'Spatial anomalies will now appear periodically as temporary facility-wide boosts.'
     },
     achievements: {
-      title: 'Achievement Tracking Active',
-      message: 'Operational excellence is now being monitored.'
+      title: 'Achievements Online',
+      message:
+        'Each milestone unlocked in Achievements adds +1% permanent global RP output.'
     },
     relics: {
-      title: 'Relics & Artifacts Unlocked',
+      title: 'Relics & Artifacts Online',
       message:
-        'Relic 1 has been awarded. Equip it to begin passive amplification.'
+        "Relic 1 (Arkalon's Left Eye) has been awarded. Open Relics & Artifacts to socket it."
     },
     excavation: {
-      title: 'Excavation Terminal Online',
-      message: 'Sub-space probe deployment is now available.'
+      title: 'Excavation Bay Online',
+      message:
+        'Open Excavation in the Directory to assemble probes and scan sectors for Dust and Relics.'
     },
     prestige: {
-      title: 'Reality Recalibration Available',
+      title: 'Prestige Available',
       message:
-        'The construct has reached saturation. Timeline collapse is possible.'
+        'Open Prestige in the Directory to reset this run for permanent Arkalon Resonance.'
     },
     megaprojects: {
-      title: 'Megaproject Bay Unlocked',
+      title: 'Megaprojects Online',
       message:
-        'Allocate passive generation to construct permanent simulation structures.'
+        'Open Megaprojects in the Directory to divert passive RP into permanent structures.'
     },
     anomalousOperations: {
-      title: 'Anomalous Operations Active',
+      title: 'Anomalous Operations Online',
       message:
-        'Global operation cycle has begun. Join the 90-day anomaly campaign.'
+        'Open Anomalous Operations in the Directory to earn Operation Points for permanent artifacts.'
+    },
+    challenges: {
+      title: 'Challenges Online',
+      message:
+        'Open Challenges in the Directory to attempt restricted runs for permanent multipliers.'
     }
   }
+
+// Minimum stagger between consecutive feature unlocks so alerts and voice never overlap
+const UNLOCK_STAGGER_MS = 4500
+let lastUnlockTimestamp = 0
 
 // Tracks which features have already fired their unlock alert this session
 // to avoid re-alerting on every tick after unlock
 const alertedThisSession = new Set<FeatureKey>()
+let alertedTier2Available = false
+let alertedTier3Available = false
 
-// Called inside the tick loop when the dirty flag is set
-// Evaluates all 11 unlock conditions and sets flags on state transitions
+// Evaluates unlock conditions sequentially (at most one unlock per stagger window)
 export function checkUnlocks(state: GameState): void {
-  const store = useGameStore.getState()
   const pushAlert = useUIStore.getState().pushAlert
+  const now = Date.now()
 
-  const keysToCheck = Object.keys(UNLOCK_CONDITIONS) as FeatureKey[]
-  const newUnlocks: Partial<Record<FeatureKey, boolean>> = {}
-  let anyChanged = false
+  if (
+    !alertedTier2Available &&
+    state.stats.totalPrestigesTier2 === 0 &&
+    canPrestigeTier2(state)
+  ) {
+    alertedTier2Available = true
+    dispatchPrestigeAvailable(2)
+    useUIStore.getState().markTabUnseen('prestige')
+    pushAlert({
+      priority: 0,
+      variant: 'prestige',
+      title: 'Timeline Severance Ready',
+      message:
+        'Chronos Array and 10^35 RP achieved. Tier II Prestige is now available.',
+      autoDismissMs: 8000
+    })
+  }
 
-  for (const key of keysToCheck) {
-    // Already unlocked - skip evaluation
+  if (
+    !alertedTier3Available &&
+    state.stats.totalPrestigesTier3 === 0 &&
+    canPrestigeTier3(state)
+  ) {
+    alertedTier3Available = true
+    dispatchPrestigeAvailable(3)
+    useUIStore.getState().markTabUnseen('prestige')
+    pushAlert({
+      priority: 0,
+      variant: 'prestige',
+      title: 'Singular Synthesis Ready',
+      message:
+        'Omega Sphere and 10^85 RP achieved. Tier III Prestige is now available.',
+      autoDismissMs: 8000
+    })
+  }
+
+  // Find the first locked feature whose conditions are satisfied
+  let nextKey: FeatureKey | null = null
+  for (const key of UNLOCK_ORDER) {
     if (state.unlocks[key]) continue
+    if (UNLOCK_CONDITIONS[key](state)) {
+      nextKey = key
+      break
+    }
+  }
 
-    const shouldUnlock = UNLOCK_CONDITIONS[key](state)
-    if (!shouldUnlock) continue
+  if (!nextKey) return
 
-    newUnlocks[key] = true
-    anyChanged = true
+  // Hold briefly if another unlock just fired
+  if (
+    lastUnlockTimestamp > 0 &&
+    now - lastUnlockTimestamp < UNLOCK_STAGGER_MS
+  ) {
+    markUnlocksDirty()
+    return
+  }
 
-    // Fire unlock side effects
-    handleUnlockSideEffects(key, state)
+  lastUnlockTimestamp = now
 
-    // Push alert (once per session per feature)
-    if (!alertedThisSession.has(key)) {
-      alertedThisSession.add(key)
-      const msg = UNLOCK_MESSAGES[key]
+  useGameStore.setState((s) => ({
+    unlocks: { ...s.unlocks, [nextKey!]: true }
+  }))
+
+  const unlockedTab = FEATURE_MAP[nextKey]?.workspaceTab
+  if (unlockedTab) {
+    useUIStore.getState().markTabUnseen(unlockedTab)
+  }
+
+  handleUnlockSideEffects(nextKey, state)
+
+  if (!alertedThisSession.has(nextKey)) {
+    alertedThisSession.add(nextKey)
+    if (!(nextKey === 'techMatrix' && !state.tutorial.tutorialCompleted)) {
+      const msg = UNLOCK_MESSAGES[nextKey]
       pushAlert({
         priority: 2,
         variant: 'unlock',
@@ -137,25 +223,24 @@ export function checkUnlocks(state: GameState): void {
     }
   }
 
-  if (!anyChanged) return
-
-  // Apply all new unlock flags in a single setState
-  useGameStore.setState((s) => ({
-    unlocks: { ...s.unlocks, ...newUnlocks }
-  }))
+  // Re-mark dirty if another feature is also waiting in queue
+  const hasMoreWaiting = UNLOCK_ORDER.some(
+    (k) => k !== nextKey && !state.unlocks[k] && UNLOCK_CONDITIONS[k](state)
+  )
+  if (hasMoreWaiting) {
+    markUnlocksDirty()
+  }
 }
 
 // Side effects triggered when a specific feature first unlocks
-function handleUnlockSideEffects(key: FeatureKey, state: GameState): void {
+function handleUnlockSideEffects(key: FeatureKey, _state: GameState): void {
+  if (key !== 'achievements' && key !== 'prestige' && key !== 'relics') {
+    dispatchFeatureUnlock(key)
+  }
+
   switch (key) {
     case 'relics':
-      // Award Relic 1 (Arkalon's Left Eye) if not already unlocked
-      if (!state.unlockedRelics.includes(1)) {
-        useGameStore.setState((s) => ({
-          unlockedRelics: [...s.unlockedRelics, 1],
-          relicLevels: { ...s.relicLevels, 1: 1 }
-        }))
-      }
+      awardRelic(1, true)
       break
 
     case 'prestige':
@@ -177,7 +262,6 @@ function handleUnlockSideEffects(key: FeatureKey, state: GameState): void {
 }
 
 // Checks if research slot array needs expanding due to R3 or CF Deep Research Slots
-// Called from checkResearchSlotExpansion after each research completion
 export function checkResearchSlotExpansion(state: GameState): void {
   const needed = getActiveSlotCount(state)
   const current = state.activeResearchSlots.length
@@ -214,10 +298,11 @@ export function checkResearchSlotExpansion(state: GameState): void {
     })
   }
 }
+
 // Tracks which era dialogue has already been announced this session
 const announcedEras = new Set<number>()
 
-// Called by era progression checks
+// Announces Era threshold transitions
 export function checkEraTransition(state: GameState): void {
   const pushAlert = useUIStore.getState().pushAlert
 
@@ -240,6 +325,64 @@ export function checkEraTransition(state: GameState): void {
   }
 }
 
+let victoryTriggeredThisSession = false
+
+// Fires once when both Trequinquagintillion (10^162 RP) and Node O10 are reached
+export function checkEndgameVictory(state: GameState): void {
+  const hasO10 =
+    state.completedResearchNodes.includes('O10') ||
+    Boolean(state.stats.o10EverCompleted)
+  if (
+    state.completedResearchNodes.includes('O10') &&
+    !state.stats.o10EverCompleted
+  ) {
+    useGameStore.setState((s) => ({
+      stats: { ...s.stats, o10EverCompleted: true }
+    }))
+  }
+
+  if (victoryTriggeredThisSession) return
+  if (state.tutorial.tutorialBeatsCompleted.includes('endgame_victory')) return
+  if (state.lifetimePoints < 10n ** 162n) return
+  if (!hasO10) return
+
+  victoryTriggeredThisSession = true
+  useGameStore.setState((s) => ({
+    tutorial: {
+      ...s.tutorial,
+      tutorialBeatsCompleted: [
+        ...s.tutorial.tutorialBeatsCompleted,
+        'endgame_victory'
+      ]
+    }
+  }))
+
+  const challengeTiersCompleted = Object.values(state.challengeRecords).reduce(
+    (sum, r) => sum + r.completedTiers,
+    0
+  )
+  const challengeTiersTotal = CHALLENGE_DISPLAY.reduce(
+    (sum, c) => sum + c.maxTiers,
+    0
+  )
+
+  playSound('fanfare')
+  useUIStore.getState().setVictoryPayload({
+    lifetimePoints: state.lifetimePoints,
+    totalPlaytimeSeconds: state.stats.totalSessionPlaytime,
+    totalPrestiges:
+      state.stats.totalPrestigesTier1 +
+      state.stats.totalPrestigesTier2 +
+      state.stats.totalPrestigesTier3,
+    achievementsCount: state.achievements.length,
+    relicsCount: state.unlockedRelics.length,
+    dysonSwarmLevel: state.dysonSwarmLevel ?? 0,
+    challengeTiersCompleted,
+    challengeTiersTotal
+  })
+  useUIStore.getState().setVictoryModalOpen(true)
+}
+
 // Tutorial beat definitions
 interface TutorialBeat {
   id: string
@@ -252,96 +395,40 @@ interface TutorialBeat {
 }
 
 const TUTORIAL_BEATS: TutorialBeat[] = [
+  // Step 1: Purchase first generator
   {
     id: 'boot',
     condition: (s) =>
       s.generators[0].quantity === 0n &&
-      s.lifetimePoints === 0n &&
-      s.researchPoints <= 15n &&
       !s.tutorial.tutorialBeatsCompleted.includes('boot'),
     highlightTarget: 'generator-0-buy',
     dialogueTriggerId: 'boot'
   },
+  // Step 2: Accumulate 10 desks to unlock Research
   {
-    id: 'first_buy',
+    id: 'step_desks',
     condition: (s) =>
       s.generators[0].quantity >= 1n &&
-      !s.tutorial.tutorialBeatsCompleted.includes('first_buy'),
-    highlightTarget: 'rp-banner',
-    dialogueTriggerId: 'first_buy'
-  },
-  {
-    id: 'tech_preview',
-    condition: (s) =>
-      s.generators[0].quantity >= 7n &&
       s.generators[0].quantity < 10n &&
-      !s.unlocks.techMatrix &&
-      !s.tutorial.tutorialBeatsCompleted.includes('tech_preview'),
-    highlightTarget: 'workspace-tab-research',
-    dialogueTriggerId: 'tech_preview'
+      !s.tutorial.tutorialBeatsCompleted.includes('step_desks'),
+    highlightTarget: null,
+    dialogueTriggerId: 'step_desks'
   },
+  // Step 3: Technology Matrix unlocks, guide player to Research tab
   {
-    id: 'tech_unlock',
+    id: 'step_research',
     condition: (s) =>
       s.unlocks.techMatrix &&
-      !s.tutorial.tutorialBeatsCompleted.includes('tech_unlock'),
+      s.completedResearchNodes.length === 0 &&
+      !s.tutorial.tutorialBeatsCompleted.includes('step_research'),
     highlightTarget: 'workspace-tab-research',
-    dialogueTriggerId: 'tech_unlock'
+    dialogueTriggerId: 'step_research'
   },
-  {
-    id: 'first_research',
-    condition: (s) =>
-      s.activeResearchSlots.some((slot) => slot.nodeId !== null) &&
-      !s.tutorial.tutorialBeatsCompleted.includes('first_research'),
-    highlightTarget: 'research-active-slot',
-    dialogueTriggerId: 'first_research'
-  },
-  {
-    id: 'first_complete',
-    condition: (s) =>
-      s.completedResearchNodes.length >= 1 &&
-      !s.tutorial.tutorialBeatsCompleted.includes('first_complete'),
-    highlightTarget: 'research-queue',
-    dialogueTriggerId: 'first_complete'
-  },
-  {
-    id: 'stats_unlock',
-    condition: (s) =>
-      s.unlocks.statistics &&
-      !s.tutorial.tutorialBeatsCompleted.includes('stats_unlock'),
-    highlightTarget: 'workspace-tab-stats',
-    dialogueTriggerId: 'stats_unlock'
-  },
-  {
-    id: 'modules_unlock',
-    condition: (s) =>
-      s.unlocks.modules &&
-      !s.tutorial.tutorialBeatsCompleted.includes('modules_unlock'),
-    highlightTarget: 'workspace-tab-modules',
-    dialogueTriggerId: 'modules_unlock'
-  },
-  {
-    id: 'anomaly_unlock',
-    condition: (s) =>
-      s.unlocks.anomalies &&
-      !s.tutorial.tutorialBeatsCompleted.includes('anomaly_unlock'),
-    highlightTarget: 'anomaly-bar',
-    dialogueTriggerId: 'anomaly_unlock'
-  },
-  {
-    id: 'first_anomaly',
-    condition: (s) =>
-      s.activeAnomalyType !== null &&
-      !s.tutorial.tutorialBeatsCompleted.includes('first_anomaly'),
-    highlightTarget: 'anomaly-overlay',
-    dialogueTriggerId: 'anomaly_quantum_surge' // contextual per type handled below
-  },
+  // Step 4: First research node complete, tutorial ends forever
   {
     id: 'tutorial_end',
     condition: (s) =>
-      !s.tutorial.tutorialCompleted &&
-      s.stats.totalSessionPlaytime >= 300 &&
-      s.tutorial.tutorialBeatsCompleted.length >= 8,
+      s.completedResearchNodes.length >= 1 && !s.tutorial.tutorialCompleted,
     highlightTarget: null,
     dialogueTriggerId: 'tutorial_complete'
   }
@@ -352,6 +439,7 @@ const firedBeats = new Set<string>()
 
 export function checkTutorialBeats(state: GameState): void {
   if (state.tutorial.tutorialCompleted) return
+  if (useUIStore.getState().welcomeModalOpen) return
 
   const completedBeats = state.tutorial.tutorialBeatsCompleted
 
@@ -370,17 +458,11 @@ export function checkTutorialBeats(state: GameState): void {
     newBeat = beat.id
     newHighlight = beat.highlightTarget
 
-    // For first_anomaly, use the active anomaly type's dialogue
-    if (beat.id === 'first_anomaly' && state.activeAnomalyType) {
-      newDialogueTrigger =
-        ANOMALY_DIALOGUE_MAP[state.activeAnomalyType] ??
-        beat.dialogueTriggerId
-    } else {
-      newDialogueTrigger = beat.dialogueTriggerId
-    }
+    newDialogueTrigger = beat.dialogueTriggerId
 
     if (beat.id === 'tutorial_end') {
       completeTutorial = true
+      newHighlight = null
     }
 
     firedBeats.add(beat.id)
@@ -395,8 +477,8 @@ export function checkTutorialBeats(state: GameState): void {
       ...s.tutorial,
       tutorialBeatsCompleted: [...s.tutorial.tutorialBeatsCompleted, newBeat!],
       tutorialHighlightTarget: newHighlight,
-      tutorialCompleted: completeTutorial || s.tutorial.tutorialCompleted,
-    },
+      tutorialCompleted: completeTutorial || s.tutorial.tutorialCompleted
+    }
   }))
 
   // Push dialogue
@@ -404,27 +486,35 @@ export function checkTutorialBeats(state: GameState): void {
     dispatchTutorialBeat(newDialogueTrigger)
   }
 
-  // Clear highlight after 8 seconds
-  if (newHighlight) {
-    setTimeout(() => {
-      useGameStore.setState((s) => {
-        // Only clear if still pointing at the same target
-        if (s.tutorial.tutorialHighlightTarget === newHighlight) {
-          return {
-            tutorial: { ...s.tutorial, tutorialHighlightTarget: null },
-          }
-        }
-        return {}
-      })
-    }, 8000)
+  // Recap achievements earned silently during the tutorial once onboarding completes
+  if (completeTutorial && state.achievements.length > 0) {
+    const count = state.achievements.length
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'achievement',
+      title: 'Early Achievements Recorded',
+      message: `${count} Achievement${count === 1 ? '' : 's'} active (+${count}% Global RP).`,
+      autoDismissMs: 5000
+    })
   }
 }
 
 // Tracks which achievements have already fired this session
 const awardedThisSession = new Set<string>()
 
+const MAJOR_ACHIEVEMENT_IDS = new Set([
+  'research_all',
+  'research_o10',
+  'rp_1e155',
+  'prestige_tier3',
+  'relic_all',
+  'challenge_all_standard',
+  'challenge_ec4'
+])
+
 export function checkAchievements(state: GameState): void {
   const pushAlert = useUIStore.getState().pushAlert
+  const newlyAwarded: typeof ACHIEVEMENTS = []
 
   for (const achievement of ACHIEVEMENTS) {
     if (state.achievements.includes(achievement.id)) continue
@@ -432,17 +522,47 @@ export function checkAchievements(state: GameState): void {
     if (!achievement.condition(state)) continue
 
     awardedThisSession.add(achievement.id)
+    newlyAwarded.push(achievement)
+  }
 
-    useGameStore.setState((s) => ({
-      achievements: [...s.achievements, achievement.id],
-    }))
+  if (newlyAwarded.length === 0) return
 
+  useGameStore.setState((s) => ({
+    achievements: [...s.achievements, ...newlyAwarded.map((a) => a.id)]
+  }))
+
+  if (!state.tutorial.tutorialCompleted) return
+
+  const hasMajor = newlyAwarded.some((a) => MAJOR_ACHIEVEMENT_IDS.has(a.id))
+  playSound(hasMajor ? 'fanfare' : 'success')
+
+  if (newlyAwarded.length === 1) {
+    const single = newlyAwarded[0]
     pushAlert({
-      priority: 3,
+      priority: 1,
       variant: 'achievement',
-      title: `Achievement: ${achievement.name}`,
-      message: achievement.description,
-      autoDismissMs: 5000,
+      title: `Achievement: ${single.name}`,
+      message: single.description,
+      autoDismissMs: 3500
+    })
+  } else {
+    pushAlert({
+      priority: 1,
+      variant: 'achievement',
+      title: `${newlyAwarded.length} Achievements Unlocked`,
+      message: newlyAwarded.map((a) => a.name).join(', '),
+      autoDismissMs: 5000
     })
   }
+}
+// Clears session-scoped announcement caches on hard reset / save import
+export function resetUnlockSessionCaches(): void {
+  alertedThisSession.clear()
+  alertedTier2Available = false
+  alertedTier3Available = false
+  announcedEras.clear()
+  firedBeats.clear()
+  awardedThisSession.clear()
+  victoryTriggeredThisSession = false
+  lastUnlockTimestamp = 0
 }

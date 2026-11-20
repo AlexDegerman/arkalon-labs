@@ -14,10 +14,12 @@ export function useAnimatedBigInt(
   targetValue: bigint,
   options: AnimatedBigIntOptions = {}
 ) {
-  const { duration = 1000 } = options
+  const { duration = 150 } = options
 
   const displayRef = useRef<HTMLElement | null>(null)
+  const baseClassRef = useRef<string | null>(null)
   const rafRef = useRef<number>(0)
+  const currentValRef = useRef<bigint>(targetValue)
   const startRef = useRef<bigint>(targetValue)
   const targetRef = useRef<bigint>(targetValue)
   const startTimeRef = useRef<number>(0)
@@ -25,6 +27,10 @@ export function useAnimatedBigInt(
   const animate = useCallback(
     (timestamp: number) => {
       if (!displayRef.current) return
+
+      if (baseClassRef.current === null) {
+        baseClassRef.current = displayRef.current.className || ''
+      }
 
       const elapsed = timestamp - startTimeRef.current
       const progress = Math.min(elapsed / duration, 1)
@@ -37,11 +43,16 @@ export function useAnimatedBigInt(
       const current =
         startRef.current + (diff * BigInt(Math.floor(eased * 1000))) / 1000n
 
+      currentValRef.current = current
+
       const formatted = formatPoints(current)
       const colorClass = getAmountColor(current)
 
       displayRef.current.textContent = formatted
-      displayRef.current.className = colorClass
+      displayRef.current.className = baseClassRef.current
+        ? `${baseClassRef.current} ${colorClass}`.trim()
+        : colorClass
+      displayRef.current.setAttribute('data-text', formatted)
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(animate)
@@ -51,7 +62,7 @@ export function useAnimatedBigInt(
   )
 
   useEffect(() => {
-    startRef.current = targetRef.current
+    startRef.current = currentValRef.current
     targetRef.current = targetValue
     startTimeRef.current = performance.now()
 

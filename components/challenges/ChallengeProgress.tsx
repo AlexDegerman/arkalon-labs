@@ -1,8 +1,11 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { formatPoints } from '@/lib/format'
-import { getEffectiveTarget } from '@/lib/challengeDefs'
+import { formatPoints, formatTimeToAfford, getAmountColor } from '@/lib/format'
+import {
+  getEffectiveTarget,
+  isChallengeAccelerantActive
+} from '@/lib/challengeDefs'
 import ProgressBar from '@/components/ui/ProgressBar'
 
 interface Props {
@@ -17,14 +20,16 @@ export default function ChallengeProgress({
   maxTiers
 }: Props) {
   const lifetimePoints = useGameStore((s) => s.lifetimePoints)
-  const hasAccelerant = useGameStore(
-    (s) => s.arUpgrades.challenge_accelerant > 0
+  const hasAccelerant = useGameStore((s) =>
+    isChallengeAccelerantActive(challengeId, s)
   )
   const activeChallengeId = useGameStore((s) => s.activeChallengeId)
+  const pps = useGameStore((s) => s.cachedPointsPerSecond)
 
   const isActive = activeChallengeId === challengeId
   const nextTier = currentTiers + 1
   const target = getEffectiveTarget(challengeId, nextTier, hasAccelerant)
+  const eta = isActive ? formatTimeToAfford(target, lifetimePoints, pps) : ''
 
   if (currentTiers >= maxTiers) {
     return (
@@ -36,7 +41,7 @@ export default function ChallengeProgress({
 
   const progress =
     target > 0n && isActive
-      ? Math.min(1, Number(lifetimePoints) / Number(target))
+      ? Math.min(1, Number((lifetimePoints * 10000n) / target) / 10000)
       : 0
 
   return (
@@ -44,11 +49,11 @@ export default function ChallengeProgress({
       <div className="flex items-center justify-between">
         <span className="text-(--text-secondary)">Target Goal:</span>
         <span
-          className={
-            isActive
-              ? 'text-(--text-accent) font-bold'
-              : 'text-(--text-secondary)'
-          }
+          className={[
+            'font-bold',
+            getAmountColor(target) ||
+              (isActive ? 'text-(--text-accent)' : 'text-(--text-secondary)')
+          ].join(' ')}
         >
           {formatPoints(target)} RP{' '}
           {hasAccelerant && (
@@ -65,6 +70,7 @@ export default function ChallengeProgress({
               {formatPoints(lifetimePoints)} / {formatPoints(target)}
             </span>
             <span className="text-(--text-accent) font-bold">
+              {eta && <span className="text-amber-300 mr-2">ETA {eta}</span>}
               {Math.round(progress * 100)}%
             </span>
           </div>

@@ -1,12 +1,15 @@
 'use client'
 
+import { buyPrestigeUpgrade } from '@/app/stores/actions/prestigeActions'
 import { useGameStore } from '@/app/stores/gameStore'
-import { buyPrestigeUpgrade } from '@/app/stores/actions'
 import { OS_UPGRADES, getUpgradeCost } from '@/lib/prestigeUpgradeDefs'
 
 export default function OSUpgradeShop() {
   const os = useGameStore((s) => s.omniSpars)
   const osUpgrades = useGameStore((s) => s.osUpgrades)
+  const prestigeDisabled = useGameStore(
+    (s) => s.activeChallengeRestrictions?.prestigeUpgradesDisabled ?? false
+  )
   const totalPrestigesTier3 = useGameStore((s) => s.stats.totalPrestigesTier3)
 
   if (totalPrestigesTier3 === 0) {
@@ -25,36 +28,44 @@ export default function OSUpgradeShop() {
         <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
           Omni-Spar Upgrades
         </p>
-        <span className="text-[10px] font-mono font-bold text-yellow-300">
+        <span className="text-[10px] font-mono font-black g-tqgs">
           {os} OS Available
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-1.5">
         {OS_UPGRADES.map((def) => {
-          const currentLevel = (osUpgrades as any)[def.id] ?? 0
+          const currentLevel = osUpgrades[def.id] ?? 0
           const atCap = currentLevel >= def.maxLevel
           const cost = atCap ? 0 : getUpgradeCost(def, currentLevel)
-          const canAfford = os >= cost && !atCap
+          const canAfford = os >= cost && !atCap && !prestigeDisabled
 
           const requiresAutomatedLab =
             def.id === 'automated_timeline_severance' &&
             (osUpgrades.the_automated_lab ?? 0) === 0
+          const requiresTimelineSeverance =
+            def.id === 'automated_singular_synthesis' &&
+            (osUpgrades.automated_timeline_severance ?? 0) === 0
+          const missingPrereq =
+            requiresAutomatedLab || requiresTimelineSeverance
+          const prereqLabel = requiresAutomatedLab
+            ? 'Prerequisite: The Automated Lab'
+            : 'Prerequisite: Automated Timeline Severance'
 
           return (
             <div
               key={def.id}
               className={[
-                'card rounded-xl p-3 flex items-center justify-between gap-3 border transition-colors',
+                'card rounded-xl p-2 sm:p-2.5 flex items-center justify-between gap-2 border transition-colors',
                 atCap
                   ? 'border-(--status-success)/40 bg-(--status-success)/5'
                   : 'border-(--border-default) bg-(--bg-surface)',
-                requiresAutomatedLab ? 'opacity-40' : ''
+                missingPrereq ? 'opacity-40' : ''
               ].join(' ')}
             >
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="text-xs font-bold text-(--text-primary) truncate">
+                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                  <span className="text-xs font-bold text-(--text-primary)">
                     {def.label}
                   </span>
                   {atCap && (
@@ -64,11 +75,16 @@ export default function OSUpgradeShop() {
                   )}
                 </div>
                 <p className="text-[11px] text-(--text-secondary) leading-snug">
-                  {def.effectAtLevel(currentLevel)}
+                  {def.description}
                 </p>
-                {requiresAutomatedLab && (
+                {currentLevel > 0 && (
+                  <p className="text-[10px] font-mono text-(--status-success) mt-0.5">
+                    Active: {def.effectAtLevel(currentLevel)}
+                  </p>
+                )}
+                {missingPrereq && (
                   <p className="text-[10px] font-mono text-amber-400 mt-1">
-                    Prerequisite: The Automated Lab
+                    {prereqLabel}
                   </p>
                 )}
               </div>
@@ -76,15 +92,15 @@ export default function OSUpgradeShop() {
               {!atCap && (
                 <button
                   onClick={() => buyPrestigeUpgrade(def.id, 'os')}
-                  disabled={!canAfford || requiresAutomatedLab}
+                  disabled={!canAfford || missingPrereq}
                   className={[
                     'shrink-0 px-3 py-1.5 text-xs font-mono font-bold rounded-lg border transition-all cursor-pointer',
-                    canAfford && !requiresAutomatedLab
+                    canAfford && !missingPrereq
                       ? 'border-yellow-400 bg-yellow-400 text-black hover:brightness-110 shadow-[0_0_10px_rgba(250,204,21,0.35)]'
                       : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
                   ].join(' ')}
                 >
-                  {cost} OS
+                  {prestigeDisabled ? 'Suspended' : `${cost} OS`}
                 </button>
               )}
             </div>

@@ -1,8 +1,9 @@
 // Automation feature definitions
 // Each feature maps to an AutomationState boolean and unlock source
+import type { AutomationState } from '@/types/game'
 
 export interface AutomationFeatureDef {
-  id: string
+  id: keyof AutomationState
   label: string
   description: string
   unlockSource: string
@@ -24,17 +25,18 @@ export const AUTOMATION_FEATURES: AutomationFeatureDef[] = [
     unlockSource: 'Complete SC6 Tier 3'
   },
   {
+    id: 'autoBuySynthesizers',
+    label: 'Auto-Buy Synthesizers',
+    description:
+      'Automatically buys the cheapest affordable unlocked Synthesizer every 5 seconds.',
+    unlockSource: 'Auto-Buy Synthesizers CF upgrade'
+  },
+  {
     id: 'autoResearchQueue',
     label: 'Auto-Research Queue',
     description:
       'When active research completes, auto-starts next queued node if affordable.',
     unlockSource: 'Auto-Research Queue AR upgrade'
-  },
-  {
-    id: 'autoStabilizeAnomaly',
-    label: 'Auto-Stabilize Anomaly',
-    description: 'Automatically resolves anomalies at 50% of maximum reward.',
-    unlockSource: 'Complete SC5 Tier 5'
   },
   {
     id: 'autoPrestigeTierI',
@@ -52,6 +54,12 @@ export const AUTOMATION_FEATURES: AutomationFeatureDef[] = [
       'Automated Timeline Severance OS upgrade (requires The Automated Lab)'
   },
   {
+    id: 'autoPrestigeTierIII',
+    label: 'Auto-Prestige Tier III',
+    description: 'Auto-executes Tier III prestiges when available.',
+    unlockSource: 'Automated Singular Synthesis OS upgrade'
+  },
+  {
     id: 'autoEquipRelic',
     label: 'Auto-Equip Relic',
     description:
@@ -59,9 +67,17 @@ export const AUTOMATION_FEATURES: AutomationFeatureDef[] = [
     unlockSource: 'Complete AC6'
   },
   {
+    id: 'autoUpgradeRelics',
+    label: 'Auto-Upgrade Relics',
+    description:
+      'Automatically upgrades unlocked Relics up to your target level cap.',
+    unlockSource: 'Auto-Upgrade Relics CF upgrade'
+  },
+  {
     id: 'autoLaunchProbe',
     label: 'Auto-Launch Probe (Safe)',
-    description: 'Automatically launches idle probes to Safe Sectors.',
+    description:
+      'Automatically launches idle probes to Safe Sectors while preserving their subsystem.',
     unlockSource: 'Complete SC12 Tier 3'
   },
   {
@@ -69,6 +85,12 @@ export const AUTOMATION_FEATURES: AutomationFeatureDef[] = [
     label: 'Auto-Module Buyer',
     description: 'Automatically purchases affordable module upgrades.',
     unlockSource: 'Auto-Module Buyer CF upgrade'
+  },
+  {
+    id: 'autoDysonSwarm',
+    label: 'Auto-Dyson Swarm',
+    description: 'Automatically activates the Arkalon Dyson Swarm when idle.',
+    unlockSource: 'Auto-Dyson Swarm OS upgrade'
   }
 ]
 

@@ -1,7 +1,7 @@
 'use client'
 
+import { setMegaprojectAllocation } from '@/app/stores/actions/megaprojectActions'
 import { useGameStore } from '@/app/stores/gameStore'
-import { setMegaprojectAllocation } from '@/app/stores/actions'
 import { formatPoints } from '@/lib/format'
 
 interface Props {

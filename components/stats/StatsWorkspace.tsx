@@ -1,23 +1,33 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { formatPoints, formatDuration, formatRate } from '@/lib/format'
+import {
+  formatPoints,
+  formatDuration,
+  formatRate,
+  getAmountColor
+} from '@/lib/format'
 import { getCurrentEra } from '@/lib/eraThresholds'
 
 interface StatRowProps {
   label: string
   value: string
   accent?: boolean
+  valueClass?: string
 }
 
-function StatRow({ label, value, accent = false }: StatRowProps) {
+function StatRow({ label, value, accent = false, valueClass }: StatRowProps) {
   return (
-    <div className="flex items-center justify-between py-1.5 border-b border-(--border-default)/50 last:border-b-0 font-mono text-xs">
-      <span className="text-(--text-secondary)">{label}</span>
+    <div className="flex items-baseline justify-between gap-2 py-1 border-b border-(--border-default)/50 last:border-b-0 font-mono text-xs">
+      <span className="text-(--text-secondary) shrink-0">{label}</span>
       <span
         className={[
-          'font-bold',
-          accent ? 'text-(--text-accent)' : 'text-(--text-primary)'
+          'font-bold text-right wrap-break-word',
+          valueClass
+            ? valueClass
+            : accent
+              ? 'text-(--text-accent)'
+              : 'text-(--text-primary)'
         ].join(' ')}
       >
         {value}
@@ -33,8 +43,8 @@ interface StatSectionProps {
 
 function StatSection({ title, children }: StatSectionProps) {
   return (
-    <div className="card rounded-lg p-3 flex flex-col gap-0">
-      <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest mb-1.5 pb-1 border-b border-(--border-default)">
+    <div className="card rounded-lg p-2.5 flex flex-col gap-0">
+      <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest mb-1 pb-1 border-b border-(--border-default)">
         {title}
       </p>
       {children}
@@ -54,6 +64,7 @@ export default function StatsWorkspace() {
   const chronalFractures = useGameStore((s) => s.chronalFractures)
   const omniSpars = useGameStore((s) => s.omniSpars)
   const completedMegaprojects = useGameStore((s) => s.completedMegaprojects)
+  const dysonSwarmLevel = useGameStore((s) => s.dysonSwarmLevel ?? 0)
   const challengeRecords = useGameStore((s) => s.challengeRecords)
 
   const era = getCurrentEra(lifetimePoints)
@@ -76,7 +87,7 @@ export default function StatsWorkspace() {
   const bestPPSFormatted = formatRate(stats.peakRPPerSec)
 
   return (
-    <div className="flex flex-col gap-3 p-3 h-full overflow-y-auto scrollbar-dark">
+    <div className="flex flex-col gap-2 p-2 sm:p-3 h-full overflow-y-auto scrollbar-dark">
       <p className="text-xs font-mono text-(--text-secondary) uppercase tracking-wide">
         Operational Diagnostics
       </p>
@@ -86,16 +97,37 @@ export default function StatsWorkspace() {
         <StatRow
           label="Current RP"
           value={formatPoints(researchPoints)}
-          accent
+          valueClass={getAmountColor(researchPoints) || 'text-(--text-accent)'}
         />
         <StatRow
           label="Lifetime RP"
           value={formatPoints(lifetimePoints)}
-          accent
+          valueClass={getAmountColor(lifetimePoints) || 'text-(--text-accent)'}
         />
-        <StatRow label="RP/sec" value={formatRate(pps)} accent />
+        {stats.peakLifetimePoints !== undefined &&
+          stats.peakLifetimePoints > lifetimePoints && (
+            <StatRow
+              label="Peak Lifetime RP"
+              value={formatPoints(stats.peakLifetimePoints)}
+              valueClass={
+                getAmountColor(stats.peakLifetimePoints) ||
+                'text-(--text-accent)'
+              }
+            />
+          )}
+        <StatRow
+          label="RP/sec"
+          value={formatRate(pps)}
+          valueClass={getAmountColor(pps) || 'text-(--text-accent)'}
+        />
         <StatRow label="Peak RP/sec" value={bestPPSFormatted} />
-        <StatRow label="Current Era" value={`Era ${era.era}: ${era.name}`} />
+        <StatRow
+          label="Current Era"
+          value={`Era ${era.era}: ${era.name}`}
+          valueClass={getAmountColor(
+            stats.peakLifetimePoints ?? lifetimePoints
+          )}
+        />
       </StatSection>
 
       {/* Session */}
@@ -103,6 +135,10 @@ export default function StatsWorkspace() {
         <StatRow
           label="Session Time"
           value={formatDuration(stats.totalSessionPlaytime)}
+        />
+        <StatRow
+          label="Offline Time"
+          value={formatDuration(stats.totalOfflineTime ?? 0)}
         />
         {stats.lastPrestigeTime > 0 && (
           <StatRow
@@ -130,6 +166,14 @@ export default function StatsWorkspace() {
           label="Megaprojects Built"
           value={`${completedMegaprojects.length}/3`}
         />
+        {(dysonSwarmLevel > 0 ||
+          completedMegaprojects.includes('omega_singularity_sphere')) && (
+          <StatRow
+            label="Dyson Swarm Level"
+            value={`Lv${dysonSwarmLevel}`}
+            accent
+          />
+        )}
         <StatRow
           label="Challenge Tiers"
           value={totalChallengeCompletions.toLocaleString()}
@@ -162,27 +206,23 @@ export default function StatsWorkspace() {
           <StatRow
             label="Arkalon Resonance"
             value={`${formatPoints(BigInt(Math.floor(arkalonResonance)))} AR`}
+            valueClass="g-dd font-black"
           />
         )}
         {chronalFractures > 0 && (
           <StatRow
             label="Chronal Fractures"
             value={`${formatPoints(BigInt(Math.floor(chronalFractures)))} CF`}
+            valueClass="g-sp font-black"
           />
         )}
         {omniSpars > 0 && (
           <StatRow
             label="Omni-Spars"
             value={`${formatPoints(BigInt(Math.floor(omniSpars)))} OS`}
+            valueClass="g-tqgs font-black"
           />
         )}
-      </StatSection>
-
-      <StatSection title="Anomalous Event Diagnostics">
-        <StatRow
-          label="Total Anomalies Stabilized"
-          value={stats.totalAnomaliesResolved.toLocaleString()}
-        />
       </StatSection>
     </div>
   )

@@ -22,7 +22,6 @@ export default function CoolantPipe({
   animated = true,
   opacity = 0.7
 }: Props) {
-  const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
   return (
     <g opacity={opacity}>

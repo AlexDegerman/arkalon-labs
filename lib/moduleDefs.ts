@@ -2,8 +2,26 @@
 // Three module types per generator, each capped at level 5 (AC5: 8)
 
 import { GENERATORS } from '@/constants/generators'
-import type { ModuleType } from '@/types/game'
+import type { GeneratorState, ModuleType, GameState } from '@/types/game'
 import { MODULE_LEVEL_CAP, MODULE_LEVEL_CAP_AC5 } from '@/constants/game'
+
+export function isGeneratorChassisOverclocked(
+  gen: GeneratorState | undefined,
+  cap: number
+): boolean {
+  if (!gen || gen.quantity === 0n) return false
+  return (
+    gen.efficiencyLevel >= cap &&
+    gen.costReductionLevel >= cap &&
+    gen.synergyLevel >= cap
+  )
+}
+
+export function getOverclockedChassisCount(state: GameState): number {
+  const cap = getModuleLevelCap(state)
+  return state.generators.filter((g) => isGeneratorChassisOverclocked(g, cap))
+    .length
+}
 
 export interface ModuleDefinition {
   type: ModuleType
@@ -43,7 +61,8 @@ export const MODULE_DEFINITIONS: Record<ModuleType, ModuleDefinition> = {
 export function getModuleUpgradeCost(
   generatorIndex: number,
   moduleType: ModuleType,
-  currentLevel: number
+  currentLevel: number,
+  sc4Tiers = 0
 ): bigint {
   const def = GENERATORS[generatorIndex]
   if (!def) return 0n
@@ -52,13 +71,23 @@ export function getModuleUpgradeCost(
   const nextLevel = currentLevel + 1
 
   // Cost = generatorBaseCost * costMultiplierBase^nextLevel
-  const multiplier = Math.pow(moduleDef.costMultiplierBase, nextLevel)
+  let cost = BigInt(
+    Math.round(
+      Number(def.baseCost) * Math.pow(moduleDef.costMultiplierBase, nextLevel)
+    )
+  )
 
-  return BigInt(Math.round(Number(def.baseCost) * multiplier))
+  // SC4 reward: Module upgrade costs reduced by 10% per tier
+  if (sc4Tiers > 0) {
+    const discountFactor = BigInt(Math.max(50, 100 - 10 * sc4Tiers))
+    cost = (cost * discountFactor) / 100n
+  }
+
+  return cost
 }
 
 // Returns the effective level cap for modules
-// AC5 challenge completion raises cap to 8
+// AC5 challenge completion raises cap by +1 per tier up to 8
 export function getModuleLevelCap(state: {
   activeChallengeRestrictions: { moduleLevelCapOverride: number | null } | null
   challengeRecords: Record<string, { completedTiers: number }>
@@ -69,9 +98,10 @@ export function getModuleLevelCap(state: {
     return override
   }
 
-  // AC5 permanent reward: cap raised to 8
   const ac5Tiers = state.challengeRecords['AC5']?.completedTiers ?? 0
-  if (ac5Tiers > 0) return MODULE_LEVEL_CAP_AC5
+  if (ac5Tiers > 0) {
+    return Math.min(MODULE_LEVEL_CAP_AC5, MODULE_LEVEL_CAP + ac5Tiers)
+  }
   
   return MODULE_LEVEL_CAP
 }
@@ -79,21 +109,23 @@ export function getModuleLevelCap(state: {
 // Returns the effect description for a module at a given level
 export function getModuleEffectLabel(
   moduleType: ModuleType,
-  level: number
+  level: number,
+  ac5Active = false
 ): string {
   if (level === 0) return 'Not installed'
+  const effectiveLevel = ac5Active ? level * 2 : level
 
   switch (moduleType) {
     case 'efficiency': {
-      const mult = Math.pow(1.25, level).toFixed(2)
+      const mult = Math.pow(1.25, effectiveLevel).toFixed(2)
       return `x${mult} output`
     }
     case 'cost_reduction': {
-      const reduction = (0.015 * level).toFixed(3)
+      const reduction = (0.015 * effectiveLevel).toFixed(3)
       return `-${reduction} growth factor`
     }
     case 'synergy': {
-      return `Synergy active (Lv${level})`
+      return `Synergy active (Lv${effectiveLevel})`
     }
   }
 }

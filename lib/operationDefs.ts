@@ -86,25 +86,41 @@ export const OPERATION_CYCLES: OperationCycleDefinition[] = [
   }
 ]
 
-// Returns the current cycle definition (cycles repeat modulo 4)
 export function getCurrentCycle(cycleNumber: number): OperationCycleDefinition {
-  const idx = (cycleNumber - 1) % OPERATION_CYCLES.length
-  return OPERATION_CYCLES[idx]
+  const safeCycle = Math.max(1, Math.floor(cycleNumber || 1))
+  const idx = (safeCycle - 1) % OPERATION_CYCLES.length
+  return OPERATION_CYCLES[idx] ?? OPERATION_CYCLES[0]
 }
 
-// Calculates operation points earned from a resolved operation anomaly
-// interactionScore: 0.0-1.0
-export function calculateOperationPoints(
-  anomalyType: string,
-  interactionScore: number
-): number {
-  // Base points per operation anomaly type
-  const basePoints: Record<string, number> = {
-    operation_chrono_freeze: 50,
-    operation_solar_flare: 40,
-    operation_gravity_sink: 60,
-    operation_matrix_inversion: 45
+export function getAttunementCost(level: number): number {
+  return 500 + level * 250
+}
+
+export function getTemporalCost(level: number): number {
+  if (level >= 30) return 0
+  return 1000 + level * 500
+}
+
+export interface CosmicTitle {
+  title: string
+  pointsRequired: number
+  badge: string
+}
+
+export const COSMIC_TITLES: CosmicTitle[] = [
+  { title: 'Epoch Observer', pointsRequired: 5000, badge: 'OBS' },
+  { title: 'Chronal Navigator', pointsRequired: 15000, badge: 'NAV' },
+  { title: 'Void Mastermind', pointsRequired: 40000, badge: 'VOID' },
+  { title: 'Architect of Constants', pointsRequired: 100000, badge: 'ARCH' }
+]
+
+export function getActiveCosmicTitle(
+  totalPointsInvested: number
+): CosmicTitle | null {
+  let highest: CosmicTitle | null = null
+  for (const t of COSMIC_TITLES) {
+    if (totalPointsInvested >= t.pointsRequired) highest = t
+    else break
   }
-  const base = basePoints[anomalyType] ?? 30
-  return Math.floor(base * interactionScore)
+  return highest
 }

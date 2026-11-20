@@ -95,18 +95,6 @@ export default function PlanckEpochProjector({ stage, color, size }: Props) {
           strokeWidth={0.5}
           opacity={0.2}
         >
-          <animate
-            attributeName="r"
-            values={`${20 * s};${22 * s};${20 * s}`}
-            dur="4s"
-            repeatCount="indefinite"
-          />
-          <animate
-            attributeName="opacity"
-            values="0.2;0.4;0.2"
-            dur="4s"
-            repeatCount="indefinite"
-          />
         </circle>
       )}
     </svg>

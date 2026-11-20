@@ -22,31 +22,11 @@ export default function EnergyCore({
     pulseSpeed === 'slow' ? '3s' : pulseSpeed === 'fast' ? '0.8s' : '1.6s'
 
   return (
-    <g opacity={opacity}>
-      {/* Outer glow pulse */}
-      <circle cx={cx} cy={cy} r={r * 1.8} fill={color} opacity={0}>
-        <animate
-          attributeName="opacity"
-          values="0;0.15;0"
-          dur={dur}
-          repeatCount="indefinite"
-        />
-        <animate
-          attributeName="r"
-          values={`${r * 1.5};${r * 2.2};${r * 1.5}`}
-          dur={dur}
-          repeatCount="indefinite"
-        />
-      </circle>
+    <g opacity={opacity} data-speed={dur}>
+      {/* Outer glow */}
+      <circle cx={cx} cy={cy} r={r * 1.6} fill={color} opacity={0.12} />
       {/* Core body */}
-      <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.85}>
-        <animate
-          attributeName="opacity"
-          values="0.7;1;0.7"
-          dur={dur}
-          repeatCount="indefinite"
-        />
-      </circle>
+      <circle cx={cx} cy={cy} r={r} fill={color} opacity={0.85} />
       {/* Highlight */}
       <circle
         cx={cx - r * 0.25}

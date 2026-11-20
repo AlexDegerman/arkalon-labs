@@ -16,13 +16,15 @@ export async function GET(): Promise<NextResponse<HealthStatus>> {
   const uptime = process.uptime()
 
   let dbStatus: 'ok' | 'error' = 'error'
+  let client
   try {
-    const client = await pool.connect()
+    client = await pool.connect()
     await client.query('SELECT 1')
-    client.release()
     dbStatus = 'ok'
   } catch {
     // Database connection failed or unavailable
+  } finally {
+    client?.release()
   }
 
   const status: HealthStatus = {

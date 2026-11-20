@@ -2,7 +2,6 @@
 
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
-import { useMusicStore } from '@/app/stores/musicStore'
 import {
   canPrestigeTier1,
   calculateARGain,
@@ -23,6 +22,8 @@ import {
 import { checkResearchSlotExpansion } from '@/lib/unlockWatcher'
 import { dispatchPrestigeComplete } from '@/lib/dialogueDispatcher'
 import { markUnlocksDirty } from '@/lib/dirtyFlags'
+import { playSound } from '@/hooks/useSound'
+import { awardRelic } from './relicActions'
 
 // Prestige actions
 
@@ -39,7 +40,7 @@ export function triggerTierI(): void {
 
   useGameStore.setState((s) => ({
     ...resetPatch,
-    // Retain all unlocks except reset per design
+    // Retain all feature unlocks
     unlocks: {
       ...s.unlocks,
       anomalousOperations: firstPrestige ? true : s.unlocks.anomalousOperations
@@ -47,7 +48,8 @@ export function triggerTierI(): void {
     stats: {
       ...s.stats,
       totalPrestigesTier1: s.stats.totalPrestigesTier1 + 1,
-      lastPrestigeTime: Date.now()
+      lastPrestigeTime: Date.now(),
+      currentRunSeconds: 0
     },
     // Retain settings, achievements, relics, automation, operations
     settings: s.settings,
@@ -57,7 +59,6 @@ export function triggerTierI(): void {
     artifactDust: s.artifactDust,
     automation: s.automation,
     currentOperationPoints: s.currentOperationPoints,
-    operationMultiplierLevel: s.operationMultiplierLevel,
     operationArtifactsUnlocked: s.operationArtifactsUnlocked,
     currentOperationCycle: s.currentOperationCycle,
     cfUpgrades: s.cfUpgrades,
@@ -72,8 +73,7 @@ export function triggerTierI(): void {
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
 
-  useMusicStore.getState().setContext('prestige')
-  setTimeout(() => useMusicStore.getState().setContext('idle'), 3000)
+  playSound('success')
 
   dispatchPrestigeComplete(1)
   useUIStore.getState().triggerPrestigeAnimation()
@@ -87,11 +87,12 @@ export function triggerTierI(): void {
   })
 
   if (firstPrestige) {
+    useUIStore.getState().markTabUnseen('operations')
     useUIStore.getState().pushAlert({
       priority: 2,
       variant: 'unlock',
       title: 'Anomalous Operations Active',
-      message: 'Global 90-day operation cycle has begun.',
+      message: 'Macroscopic observation epoch has synchronized.',
       autoDismissMs: 5000
     })
   }
@@ -114,9 +115,9 @@ export function triggerTierII(): void {
     artifactDust: s.artifactDust,
     automation: s.automation,
     currentOperationPoints: s.currentOperationPoints,
-    operationMultiplierLevel: s.operationMultiplierLevel,
     operationArtifactsUnlocked: s.operationArtifactsUnlocked,
     currentOperationCycle: s.currentOperationCycle,
+    arUpgrades: s.arUpgrades,
     cfUpgrades: s.cfUpgrades,
     osUpgrades: s.osUpgrades,
     omniSpars: s.omniSpars,
@@ -126,19 +127,18 @@ export function triggerTierII(): void {
     stats: {
       ...s.stats,
       totalPrestigesTier2: s.stats.totalPrestigesTier2 + 1,
-      lastPrestigeTime: Date.now()
+      lastPrestigeTime: Date.now(),
+      currentRunSeconds: 0
     }
   }))
-
+  
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
 
-  useMusicStore.getState().setContext('prestige')
-  setTimeout(() => useMusicStore.getState().setContext('idle'), 3000)
-
+  playSound('success')
   dispatchPrestigeComplete(2)
+  awardRelic(8)
   useUIStore.getState().triggerPrestigeAnimation()
-
   useUIStore.getState().pushAlert({
     priority: 0,
     variant: 'prestige',
@@ -163,9 +163,8 @@ export function triggerTierIII(): void {
     unlockedRelics: s.unlockedRelics,
     relicLevels: s.relicLevels,
     artifactDust: s.artifactDust,
-    automation: s.automation,
+    automation: resetPatch.automation ?? s.automation,
     currentOperationPoints: s.currentOperationPoints,
-    operationMultiplierLevel: s.operationMultiplierLevel,
     operationArtifactsUnlocked: s.operationArtifactsUnlocked,
     currentOperationCycle: s.currentOperationCycle,
     osUpgrades: s.osUpgrades,
@@ -175,17 +174,17 @@ export function triggerTierIII(): void {
     stats: {
       ...s.stats,
       totalPrestigesTier3: s.stats.totalPrestigesTier3 + 1,
-      lastPrestigeTime: Date.now()
+      lastPrestigeTime: Date.now(),
+      currentRunSeconds: 0
     }
   }))
 
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
 
-  useMusicStore.getState().setContext('prestige')
-  setTimeout(() => useMusicStore.getState().setContext('idle'), 4000)
-
+  playSound('success')
   dispatchPrestigeComplete(3)
+  awardRelic(3)
   useUIStore.getState().triggerPrestigeAnimation()
 
   useUIStore.getState().pushAlert({
@@ -203,19 +202,34 @@ export function buyPrestigeUpgrade(
   currency: 'ar' | 'cf' | 'os'
 ): void {
   const store = useGameStore.getState()
-  const allDefs = [...AR_UPGRADES, ...CF_UPGRADES, ...OS_UPGRADES]
-  const def = allDefs.find((d: any) => d.id === upgradeId)
+  if (store.activeChallengeRestrictions?.prestigeUpgradesDisabled) return
+  const arDef =
+    currency === 'ar' ? AR_UPGRADES.find((d) => d.id === upgradeId) : undefined
+  const cfDef =
+    currency === 'cf' ? CF_UPGRADES.find((d) => d.id === upgradeId) : undefined
+  const osDef =
+    currency === 'os' ? OS_UPGRADES.find((d) => d.id === upgradeId) : undefined
+  const def = arDef ?? cfDef ?? osDef
   if (!def) return
+  if (
+    upgradeId === 'automated_timeline_severance' &&
+    store.osUpgrades.the_automated_lab <= 0
+  )
+    return
+  if (
+    upgradeId === 'automated_singular_synthesis' &&
+    store.osUpgrades.automated_timeline_severance <= 0
+  )
+    return
 
   // Get current level from appropriate slice
-  let currentLevel = 0
-  if (currency === 'ar') {
-    currentLevel = (store.arUpgrades as any)[upgradeId] ?? 0
-  } else if (currency === 'cf') {
-    currentLevel = (store.cfUpgrades as any)[upgradeId] ?? 0
-  } else {
-    currentLevel = (store.osUpgrades as any)[upgradeId] ?? 0
-  }
+  const currentLevel = arDef
+    ? (store.arUpgrades[arDef.id] ?? 0)
+    : cfDef
+      ? (store.cfUpgrades[cfDef.id] ?? 0)
+      : osDef
+        ? (store.osUpgrades[osDef.id] ?? 0)
+        : 0
 
   if (currentLevel >= def.maxLevel) return
 
@@ -248,21 +262,25 @@ export function buyPrestigeUpgrade(
         automation:
           upgradeId === 'auto_module_buyer'
             ? { ...s.automation, autoModuleBuy: true }
-            : s.automation
+            : upgradeId === 'auto_buy_synthesizers'
+              ? { ...s.automation, autoBuySynthesizers: true }
+              : upgradeId === 'auto_upgrade_relics'
+                ? { ...s.automation, autoUpgradeRelics: true }
+                : s.automation
       }
     } else {
       return {
         omniSpars: s.omniSpars - cost,
         osUpgrades: { ...s.osUpgrades, [upgradeId]: newLevel },
         automation:
-          upgradeId === 'the_automated_lab'
-            ? { ...s.automation, autoPrestigeTierI: true }
-            : upgradeId === 'automated_timeline_severance'
-              ? { ...s.automation, autoPrestigeTierII: true }
-              : s.automation
+          upgradeId === 'auto_dyson_swarm'
+            ? { ...s.automation, autoDysonSwarm: true }
+            : s.automation
       }
     }
   })
+
+  playSound('purchase')
 
   // Research slot expansion check for deep_research_slots
   if (upgradeId === 'deep_research_slots') {
@@ -271,4 +289,28 @@ export function buyPrestigeUpgrade(
 
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
+
+  if (currency === 'ar') {
+    const updatedStore = useGameStore.getState()
+    const totalArSpent = AR_UPGRADES.reduce((sum, u) => {
+      const lvl =
+        updatedStore.arUpgrades[u.id as keyof typeof updatedStore.arUpgrades] ??
+        0
+      let invested = 0
+      for (let l = 0; l < lvl; l++) invested += getUpgradeCost(u, l)
+      return sum + invested
+    }, 0)
+    if (totalArSpent >= 50) awardRelic(7)
+  } else if (currency === 'os') {
+    const updatedStore = useGameStore.getState()
+    const totalOsSpent = OS_UPGRADES.reduce((sum, u) => {
+      const lvl =
+        updatedStore.osUpgrades[u.id as keyof typeof updatedStore.osUpgrades] ??
+        0
+      let invested = 0
+      for (let l = 0; l < lvl; l++) invested += getUpgradeCost(u, l)
+      return sum + invested
+    }, 0)
+    if (totalOsSpent >= 10) awardRelic(18)
+  }
 }
