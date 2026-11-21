@@ -10,7 +10,7 @@ export const UPDATES: UpdateEntry[] = [
   {
     id: 'v1.0.0-launch',
     version: '1.0.0',
-    date: '2026-11-09',
+    date: '23.11.2026',
     changes: [
       '20-tier generator scaling from Research Desk to Absolute Void Compressor.',
       '40-node research tree across Computation, Energy, Reality, and Arkalon branches.',
