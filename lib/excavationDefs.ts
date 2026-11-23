@@ -30,7 +30,7 @@ export const SUBSYSTEM_DEFINITIONS: SubsystemDefinition[] = [
   {
     id: 'shielding',
     label: 'Aegis Shielding',
-    description: 'Prevents probe destruction in Void Depths; -50% repair time.',
+    description: '-50% repair time on failed scans (5m Unstable, 15m Void).',
     icon: '🛡'
   },
   {
@@ -148,7 +148,8 @@ export const ZONE_DEFINITIONS: ZoneDefinition[] = [
   {
     zone: 'void',
     label: 'Void Depths',
-    description: 'Extreme Dust yield; 50% failure destroys unshielded probes.',
+    description:
+      'Extreme Dust yield; 50% risk of heavy structural damage requiring 30m repair.',
     successRate: 0.5,
     durationSeconds: 43200, // 12 hours
     dustYieldMin: 450,
@@ -220,7 +221,6 @@ export function rollProbeResult(
   const success = Math.random() < effectiveSuccessRate
 
   if (!success) {
-    const hasShield = probe.subsystem === 'shielding'
     const isVoid = probe.zone === 'void'
     const salvageDust = isVoid ? 75 : 0
 
@@ -231,7 +231,7 @@ export function rollProbeResult(
       dustEarned: salvageDust,
       relicDropped: 0,
       needsRepair: true,
-      probeDestroyed: isVoid && !hasShield
+      probeDestroyed: false
     }
   }
 

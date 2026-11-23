@@ -101,10 +101,6 @@ export const RELIC_LEVEL_CAP = 100
 export const RELIC_SLOT_COUNT_BASE = 3
 export const RELIC_SLOT_COUNT_MAX = 6
 
-// 60 second swap cooldown; instant (0s) with CF Relic Preservation
-export const RELIC_SWAP_COOLDOWN_SECONDS = 60
-export const RELIC_SWAP_COOLDOWN_CF_SECONDS = 0
-
 // Excavation
 
 export const MAX_PROBES = 5

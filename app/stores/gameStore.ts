@@ -35,8 +35,7 @@ function makeDefaultResearchSlots(): ResearchSlotState[] {
 // Default relic slots (3 base)
 function makeDefaultRelicSlots(): RelicSlotState[] {
   return Array.from({ length: RELIC_SLOT_COUNT_BASE }, () => ({
-    relicId: null,
-    cooldownRemaining: 0
+    relicId: null
   }))
 }
 

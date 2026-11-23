@@ -133,18 +133,7 @@ export function tick(): void {
     nextState.activeResearchSlots = updatedSlots
   }
 
-  // 3. Decrement relic slot cooldowns
-  if (store.relicSlots.some((slot) => slot.cooldownRemaining > 0)) {
-    nextState.relicSlots = store.relicSlots.map((slot) => {
-      if (slot.cooldownRemaining <= 0) return slot
-      return {
-        ...slot,
-        cooldownRemaining: Math.max(0, slot.cooldownRemaining - 0.1)
-      }
-    })
-  }
-
-  // 4. Decrement anomaly timer
+  // 3. Decrement anomaly timer
   let anomalyCompleted = false
   if (store.activeAnomalyType && store.anomalyTimeRemaining > 0) {
     const nextTimer = Math.max(0, store.anomalyTimeRemaining - 0.1)

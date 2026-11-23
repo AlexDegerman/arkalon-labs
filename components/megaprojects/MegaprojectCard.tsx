@@ -9,7 +9,13 @@ import {
   MEGAPROJECT_PHASE_PERKS
 } from '@/lib/megaprojectDefs'
 import type { MegaprojectDefinition } from '@/lib/megaprojectDefs'
-import { formatPoints, formatDuration, getAmountColor } from '@/lib/format'
+import {
+  formatPoints,
+  formatPointsShort,
+  formatDuration,
+  getAmountColor
+} from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import ProgressBar from '@/components/ui/ProgressBar'
 import AllocationSlider from '@/components/megaprojects/AllocationSlider'
 import {
@@ -23,6 +29,8 @@ interface Props {
 }
 
 function MegaprojectCard({ def }: Props) {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const [confirmDeactivate, setConfirmDeactivate] = useState(false)
   const completedMegaprojects = useGameStore((s) => s.completedMegaprojects)
   const activeMegaprojectId = useGameStore((s) => s.activeMegaprojectId)
@@ -146,7 +154,7 @@ function MegaprojectCard({ def }: Props) {
               getAmountColor(cost) || 'text-(--text-primary)'
             ].join(' ')}
           >
-            {formatPoints(cost)} RP
+            {fmt(cost)} RP
           </span>
           {etaText !== null && (
             <span className="text-[10px] text-amber-400">{etaText}</span>
@@ -211,7 +219,7 @@ function MegaprojectCard({ def }: Props) {
         <div className="flex flex-col gap-1 font-mono text-[10px]">
           <div className="flex items-center justify-between text-(--text-secondary)">
             <span>
-              {formatPoints(megaprojectRPAbsorbed)} / {formatPoints(cost)}
+              {fmt(megaprojectRPAbsorbed)} / {fmt(cost)}
             </span>
             <span className="text-(--text-accent) font-bold">
               {Math.round(progress * 100)}%
@@ -259,8 +267,7 @@ function MegaprojectCard({ def }: Props) {
                     : 'text-(--text-secondary)'
                 }
               >
-                {formatPoints(lifetimePoints)} /{' '}
-                {formatPoints(def.requiresLifetimeRP)}{' '}
+                {fmt(lifetimePoints)} / {fmt(def.requiresLifetimeRP)}{' '}
                 {lifetimePoints >= def.requiresLifetimeRP ? '(met)' : ''}
               </span>
             </div>

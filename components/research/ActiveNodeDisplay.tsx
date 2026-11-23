@@ -3,7 +3,13 @@
 import { memo, useCallback } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
-import { formatCountdown, formatCompletionTime, formatPoints } from '@/lib/format'
+import {
+  formatCountdown,
+  formatCompletionTime,
+  formatPoints,
+  formatPointsShort
+} from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import ProgressBar from '@/components/ui/ProgressBar'
 import { getEffectiveStudyTime, getOverclockDetails } from '@/lib/researchNodes'
 import { getAnomalyBuffScale } from '@/lib/anomalyDefs'
@@ -17,6 +23,8 @@ interface Props {
 }
 
 function ActiveNodeDisplay({ slotIndex }: Props) {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const slot = useGameStore((s) => s.activeResearchSlots[slotIndex])
   const completedNodes = useGameStore((s) => s.completedResearchNodes)
   const rp = useGameStore((s) => s.researchPoints)
@@ -180,8 +188,7 @@ function ActiveNodeDisplay({ slotIndex }: Props) {
                 : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-50'
             ].join(' ')}
           >
-            ⚡ Overclock (-{actualSecondsReduced}s) ·{' '}
-            {formatPoints(overclockCost)} RP
+            ⚡ Overclock (-{actualSecondsReduced}s) · {fmt(overclockCost)} RP
           </button>
         </div>
       </div>

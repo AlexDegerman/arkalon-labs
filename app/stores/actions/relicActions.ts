@@ -4,7 +4,6 @@ import { useGameStore } from '@/app/stores/gameStore'
 import {
   getRelicBulkUpgradeInfo,
   getRelicSlotCount,
-  getSwapCooldownSeconds,
   canEquipToSlot,
   isRelicEquipped,
   getRelicSlotIndex
@@ -21,6 +20,16 @@ import { useUIStore } from '../uiStore'
 export function saveRelicPreset(presetIndex: number): void {
   const store = useGameStore.getState()
   const currentSlots = store.relicSlots.map((s) => s.relicId)
+  if (currentSlots.every((id) => id === null)) {
+    useUIStore.getState().pushAlert({
+      priority: 2,
+      variant: 'info',
+      title: 'No Relics Equipped',
+      message: 'Equip at least one relic before saving to a preset.',
+      autoDismissMs: 2500
+    })
+    return
+  }
   const presets = [...(store.relicPresets ?? [[], [], []])]
   while (presets.length < 3) presets.push([])
   presets[presetIndex] = currentSlots
@@ -42,7 +51,7 @@ export function loadRelicPreset(presetIndex: number): void {
 
   const presets = store.relicPresets ?? []
   const targetRelics = presets[presetIndex]
-  if (!targetRelics || targetRelics.length === 0) {
+  if (!targetRelics || targetRelics.every((id) => id === null)) {
     useUIStore.getState().pushAlert({
       priority: 2,
       variant: 'info',
@@ -54,16 +63,9 @@ export function loadRelicPreset(presetIndex: number): void {
   }
 
   const slotCount = getRelicSlotCount(store)
-  const cooldown = getSwapCooldownSeconds(store)
   const usedIds = new Set<number>()
-  let triggeredCooldown = false
-  let blockedByCooldown = false
 
   const newSlots = Array.from({ length: slotCount }, (_, i) => {
-    const current = store.relicSlots[i] ?? {
-      relicId: null,
-      cooldownRemaining: 0
-    }
     const rawDesired = targetRelics[i] ?? null
     const desiredId =
       rawDesired !== null &&
@@ -72,45 +74,14 @@ export function loadRelicPreset(presetIndex: number): void {
         ? rawDesired
         : null
 
-    if (current.relicId === desiredId) {
-      if (desiredId !== null) usedIds.add(desiredId)
-      return { ...current }
-    }
-
-    if (current.relicId !== null) {
-      if (cooldown > 0) {
-        triggeredCooldown = true
-        return { relicId: null, cooldownRemaining: cooldown }
-      }
-      if (desiredId !== null) usedIds.add(desiredId)
-      return { relicId: desiredId, cooldownRemaining: 0 }
-    }
-
-    if (current.cooldownRemaining > 0) {
-      if (desiredId !== null) blockedByCooldown = true
-      return { ...current }
-    }
-
     if (desiredId !== null) usedIds.add(desiredId)
-    return { relicId: desiredId, cooldownRemaining: 0 }
+    return { relicId: desiredId }
   })
 
   useGameStore.setState({ relicSlots: newSlots })
   playSound('equip')
   useGameStore.getState().recalcPPS()
   markAchievementsDirty()
-
-  if (triggeredCooldown || blockedByCooldown) {
-    useUIStore.getState().pushAlert({
-      priority: 2,
-      variant: 'info',
-      title: 'Socket Recalibration',
-      message: triggeredCooldown
-        ? `Replaced sockets entered ${cooldown}s cooldown. Re-apply preset when ready or unlock Relic Preservation.`
-        : 'Some sockets are still cooling down. Re-apply preset after recalibration completes.',
-      autoDismissMs: 3500
-    })
-  }
 }
 
 // Equips a relic into the first available slot
@@ -132,10 +103,7 @@ export function equipRelic(relicId: number, silent = false): void {
 
   useGameStore.setState((s) => {
     const newSlots = [...s.relicSlots]
-    newSlots[availableSlotIndex] = {
-      relicId,
-      cooldownRemaining: 0
-    }
+    newSlots[availableSlotIndex] = { relicId }
     return { relicSlots: newSlots }
   })
 
@@ -150,14 +118,9 @@ export function unequipRelic(relicId: number): void {
   const slotIndex = getRelicSlotIndex(relicId, store)
   if (slotIndex === -1) return
 
-  const cooldown = getSwapCooldownSeconds(store)
-
   useGameStore.setState((s) => {
     const newSlots = [...s.relicSlots]
-    newSlots[slotIndex] = {
-      relicId: null,
-      cooldownRemaining: cooldown
-    }
+    newSlots[slotIndex] = { relicId: null }
     return { relicSlots: newSlots }
   })
 

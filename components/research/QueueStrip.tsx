@@ -14,7 +14,7 @@ import {
   getNodeCost,
   isNodeAvailable
 } from '@/lib/researchNodes'
-import { formatPoints } from '@/lib/format'
+import { formatPointsShort } from '@/lib/format'
 
 export default function QueueStrip() {
   const queue = useGameStore((s) => s.researchQueue)
@@ -119,7 +119,7 @@ export default function QueueStrip() {
               statusLabel = 'Prereq pending'
               statusCls = 'border-amber-400/40 bg-amber-400/10 text-amber-300'
             } else if (rp < cost) {
-              statusLabel = `Needs ${formatPoints(cost)} RP`
+              statusLabel = `Needs ${formatPointsShort(cost)} RP`
               statusCls = 'border-rose-400/40 bg-rose-400/10 text-rose-300'
             }
 

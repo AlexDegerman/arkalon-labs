@@ -83,6 +83,8 @@ interface Props {
 
 export default function MobileMoreDrawer({ onClose }: Props) {
   const initialized = useGameStore((s) => s._initialized)
+  const mobileTab = useActiveTab((s) => s.mobileTab)
+  const workspaceTab = useActiveTab((s) => s.workspaceTab)
   const setWorkspaceTab = useActiveTab((s) => s.setWorkspaceTab)
   const setMobileTab = useActiveTab((s) => s.setMobileTab)
   const unseenUnlockedTabs = useUIStore((s) => s.unseenUnlockedTabs)
@@ -156,17 +158,17 @@ export default function MobileMoreDrawer({ onClose }: Props) {
 
       {/* Bottom sheet */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-50 bg-(--bg-elevated) border-t border-(--border-default) rounded-t-2xl shadow-2xl max-h-[90%] flex flex-col animate-[fade-in_0.15s_ease-out_both]"
+        className="absolute bottom-0 left-0 right-0 z-50 bg-(--bg-elevated) border-t border-(--border-default) rounded-t-2xl shadow-2xl max-h-[calc(100%-4px)] flex flex-col animate-[fade-in_0.15s_ease-out_both]"
         role="dialog"
         aria-label="More options"
       >
         {/* Drag handle + header */}
-        <div className="flex flex-col items-center gap-1 pt-2 pb-2 border-b border-(--border-default) shrink-0">
+        <div className="flex flex-col items-center gap-0.5 pt-1.5 pb-1.5 border-b border-(--border-default) shrink-0">
           <span
             className="w-10 h-1 rounded-full bg-(--border-default)"
             aria-hidden="true"
           />
-          <div className="w-full flex items-center justify-between px-4 pt-1.5">
+          <div className="w-full flex items-center justify-between px-4 pt-1">
             <span className="text-xs font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
               Facility Directory
             </span>
@@ -195,7 +197,7 @@ export default function MobileMoreDrawer({ onClose }: Props) {
         <div
           ref={scrollRef}
           onScroll={checkBelowFold}
-          className="flex-1 min-h-0 overflow-y-auto scrollbar-dark p-3"
+          className="flex-1 min-h-0 overflow-y-auto scrollbar-dark p-2.5"
         >
           {!initialized ? (
             <div className="py-10 text-center">
@@ -256,6 +258,8 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                     )
                   }
 
+                  const isCurrent =
+                    mobileTab === 'research' && workspaceTab === item.id
                   const isUnseen = unseenUnlockedTabs.includes(item.id)
                   const actionLabel = actionSignals[item.id]
                   const signalType = isUnseen
@@ -271,12 +275,14 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                       onClick={() => handleSelect(item.id)}
                       data-signal-type={signalType}
                       className={[
-                        'flex flex-col gap-1 p-2.5 rounded-xl border text-left active:bg-(--border-accent)/5 transition-all cursor-pointer select-none',
-                        isUnseen
-                          ? 'border-(--status-success) bg-(--status-success)/10 shadow-[0_0_14px_rgba(57,255,138,0.28)]'
-                          : actionLabel
-                            ? 'border-(--border-accent)/75 bg-(--border-accent)/5'
-                            : 'border-(--border-default) bg-(--bg-surface)'
+                        'flex flex-col gap-0.5 p-2 rounded-xl border text-left active:bg-(--border-accent)/5 transition-all cursor-pointer select-none',
+                        isCurrent
+                          ? 'border-(--border-accent) bg-(--border-accent)/12 shadow-[0_0_12px_rgba(0,240,255,0.2)]'
+                          : isUnseen
+                            ? 'border-(--status-success) bg-(--status-success)/10 shadow-[0_0_14px_rgba(57,255,138,0.28)]'
+                            : actionLabel
+                              ? 'border-amber-400/50 bg-amber-500/5'
+                              : 'border-(--border-default) bg-(--bg-surface)'
                       ].join(' ')}
                       aria-label={item.label}
                     >
@@ -287,7 +293,11 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                               'text-sm shrink-0',
                               isUnseen
                                 ? 'text-(--status-success)'
-                                : 'text-(--border-accent)'
+                                : isCurrent
+                                  ? 'text-(--border-accent)'
+                                  : actionLabel
+                                    ? 'text-amber-300'
+                                    : 'text-(--border-accent)'
                             ].join(' ')}
                             aria-hidden="true"
                           >
@@ -301,16 +311,21 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                       <p className="text-[9px] text-(--text-secondary) leading-snug">
                         {item.blurb}
                       </p>
-                      <div className="flex flex-col gap-0.5 mt-auto pt-1.5 border-t border-(--border-default)/30">
+                      <div className="flex flex-col gap-0.5 mt-auto pt-1 border-t border-(--border-default)/30">
                         <span className="text-[8px] font-mono uppercase tracking-wider text-(--text-secondary)/60">
                           Status
                         </span>
-                        {isUnseen ? (
+                        {isCurrent ? (
+                          <p className="text-[9px] font-mono font-black text-(--text-accent) leading-tight">
+                            ▸ CURRENT TAB
+                            {actionLabel ? ` · ${actionLabel}` : ''}
+                          </p>
+                        ) : isUnseen ? (
                           <p className="text-[9px] font-mono font-black text-(--status-success) leading-tight">
                             ★ NEW UNLOCK
                           </p>
                         ) : actionLabel ? (
-                          <p className="text-[9px] font-mono font-bold text-(--text-accent) leading-tight">
+                          <p className="text-[9px] font-mono font-bold text-amber-300 leading-tight">
                             ● {actionLabel}
                           </p>
                         ) : (

@@ -33,43 +33,55 @@ function AnomalyStatusPip() {
     anomalyStatusLabel = 'Anomaly: Standby'
   }
 
+  return (
+    <div className="flex items-center gap-1.5 truncate w-full">
+      <span
+        className={[
+          'w-2 h-2 rounded-full shrink-0',
+          activeAnomaly
+            ? 'bg-red-500'
+            : o3Complete
+              ? 'bg-(--border-accent)'
+              : 'bg-(--status-locked)'
+        ].join(' ')}
+      />
+      <span className="truncate text-(--text-secondary) text-[11px]">
+        {anomalyStatusLabel}
+      </span>
+    </div>
+  )
+}
+
+export function ParticleColliderButton() {
   const dust = useGameStore((s) => s.artifactDust)
   const anomaliesUnlocked = useGameStore((s) => s.unlocks.anomalies)
-  const canSynthesize = anomaliesUnlocked && !activeAnomaly && dust >= 25
+  const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
+  const anomaliesDisabled = useGameStore(
+    (s) => s.activeChallengeRestrictions?.anomaliesDisabled ?? false
+  )
+
+  if (!anomaliesUnlocked || anomaliesDisabled) return null
+
+  const canSynthesize = !activeAnomaly && dust >= 25
 
   return (
-    <div className="flex items-center justify-between gap-1.5 truncate w-full">
-      <div className="flex items-center gap-1.5 truncate">
-        <span
-          className={[
-            'w-2 h-2 rounded-full shrink-0',
-            activeAnomaly
-              ? 'bg-red-500'
-              : o3Complete
-                ? 'bg-(--border-accent)'
-                : 'bg-(--status-locked)'
-          ].join(' ')}
-        />
-        <span className="truncate text-(--text-secondary) text-[11px]">
-          {anomalyStatusLabel}
-        </span>
-      </div>
-      {anomaliesUnlocked && !activeAnomaly && (
-        <button
-          onClick={() => synthesizeAnomaly()}
-          disabled={!canSynthesize}
-          title="Synthesize an immediate anomaly event using 25 Artifact Dust"
-          className={[
-            'text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border transition-all cursor-pointer shrink-0 uppercase',
-            canSynthesize
-              ? 'border-cyan-400 bg-cyan-400/20 text-cyan-300 hover:bg-cyan-400 hover:text-black shadow-[0_0_8px_rgba(0,240,255,0.3)]'
-              : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary)/40 cursor-not-allowed opacity-50'
-          ].join(' ')}
-        >
-          ⚡ Collider (25 Dust)
-        </button>
-      )}
-    </div>
+    <button
+      onClick={() => synthesizeAnomaly()}
+      disabled={!canSynthesize}
+      title="Synthesize an immediate anomaly event using 25 Artifact Dust"
+      className={[
+        'col-span-2 w-full py-1.5 px-2.5 text-[11px] font-mono font-bold rounded-lg border transition-all uppercase tracking-wider flex items-center justify-center gap-1.5',
+        canSynthesize
+          ? 'border-cyan-400 bg-cyan-400/15 text-cyan-300 hover:bg-cyan-400 hover:text-[#080c14] shadow-[0_0_10px_rgba(0,240,255,0.25)] cursor-pointer'
+          : 'border-(--border-default) bg-(--bg-elevated)/50 text-(--text-secondary)/50 cursor-not-allowed opacity-65'
+      ].join(' ')}
+    >
+      <span>
+        {activeAnomaly
+          ? '⚡ Particle Collider // Surge Active'
+          : '⚡ Particle Collider (25 Dust)'}
+      </span>
+    </button>
   )
 }
 
@@ -113,14 +125,14 @@ export default function CenterColumn() {
         </p>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-between p-4 overflow-y-auto scrollbar-dark">
+      <div className="flex-1 min-h-0 flex flex-col items-center gap-2 p-2.5 sm:p-3 overflow-y-auto scrollbar-dark">
         {/* Animated vector sphere */}
-        <div className="my-auto flex flex-col items-center gap-2.5">
+        <div className="shrink-0 flex-1 min-h-36 flex flex-col items-center justify-center gap-1.5 py-1">
           <ArkalonSphere
             state={sphereState}
             interactive={true}
             onClick={handleSphereClick}
-            size={150}
+            size={128}
             stage={coreStage}
           />
           <span className="text-[10px] font-mono uppercase tracking-widest text-(--text-secondary)/80">
@@ -129,10 +141,12 @@ export default function CenterColumn() {
         </div>
 
         {/* Docked Active Anomaly Card */}
-        <AnomalyOverlay />
+        <div className="w-full shrink-0">
+          <AnomalyOverlay />
+        </div>
 
         {/* Live Typewriter Terminal Console */}
-        <div className="w-full my-2">
+        <div className="w-full shrink-0">
           <ArkalonTerminal lines={lines} maxLines={3} />
         </div>
 
@@ -153,6 +167,8 @@ export default function CenterColumn() {
               Probes: {initialized ? probeCount : '...'}
             </span>
           </div>
+
+          <ParticleColliderButton />
 
           {/* Prestige info - shown after first prestige */}
           {prestige1Done && (

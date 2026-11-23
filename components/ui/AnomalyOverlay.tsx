@@ -10,7 +10,7 @@ import {
   OPERATION_ANOMALY_DEFINITIONS,
   FUSED_ANOMALY_DEFINITIONS
 } from '@/lib/anomalyDefs'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 interface AnomalyTheme {
   textClass: string
@@ -155,11 +155,38 @@ function getScaledAnomalyReward(type: string, buffScale: number): string {
   }
 }
 
+function getCompactAnomalyReward(type: string, buffScale: number): string {
+  switch (type) {
+    case 'quantum_surge':
+      return `${formatMult(4 * buffScale)} RP`
+    case 'temporal_distortion':
+      return `${formatMult(10 * buffScale)} Research`
+    case 'containment_breach':
+    case 'operation_gravity_sink':
+      return `${formatMult(2 * buffScale)} RP · -50% Cost`
+    case 'arkalon_resonance':
+      return `${formatMult(3 * buffScale)} RP · -25% Tech`
+    case 'operation_chrono_freeze':
+      return `${formatMult(3 * buffScale)} RP · ${formatMult(5 * buffScale)} Res`
+    case 'operation_solar_flare':
+      return `${formatMult(5 * buffScale)} Energy`
+    case 'operation_matrix_inversion':
+      return `${formatMult(3 * buffScale)} AR`
+    case 'fused_singularity_surge':
+      return `${formatMult(4 * buffScale)} RP · -50% Cost`
+    case 'fused_chronal_breach':
+      return `${formatMult(10 * buffScale)} Res · ${formatMult(3 * buffScale)} RP`
+    default:
+      return 'Boost Active'
+  }
+}
+
 function getAnomalyInfo(type: string, buffScale: number) {
   const def = ALL_ANOMALY_DEFINITIONS.find((d) => d.type === type)
   return {
     label: def?.label ?? type,
-    reward: getScaledAnomalyReward(type, buffScale)
+    reward: getScaledAnomalyReward(type, buffScale),
+    compactReward: getCompactAnomalyReward(type, buffScale)
   }
 }
 
@@ -228,6 +255,7 @@ export default function AnomalyOverlay() {
 }
 
 export function MobileAnomalyBar() {
+  const [expanded, setExpanded] = useState(false)
   const activeType = useGameStore((s) => s.activeAnomalyType)
   const timeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
 
@@ -243,33 +271,45 @@ export function MobileAnomalyBar() {
 
   if (!activeType) return null
 
-  const { label, reward } = getAnomalyInfo(activeType, buffScale)
+  const { label, reward, compactReward } = getAnomalyInfo(activeType, buffScale)
   const theme = getAnomalyTheme(activeType)
   const progress = timeRemaining > 0 ? timeRemaining / baseDuration : 0
 
   return (
-    <div
-      className={`w-full flex flex-col ${theme.accentBg} border-y ${theme.borderColor} shrink-0 font-mono`}
+    <button
+      type="button"
+      onClick={() => setExpanded((prev) => !prev)}
+      className={`w-full text-left flex flex-col ${theme.accentBg} border-y ${theme.borderColor} shrink-0 font-mono cursor-pointer`}
+      aria-expanded={expanded}
     >
-      <div className="flex flex-col gap-0.5 px-3 py-1.5">
+      <div className="flex flex-col gap-0.5 px-3 py-1">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
             <span
-              className={`w-2 h-2 rounded-full ${theme.pingColor} shrink-0`}
+              className={`w-1.5 h-1.5 rounded-full ${theme.pingColor} shrink-0`}
             />
-            <span className="text-xs font-black uppercase tracking-wider leading-tight text-(--text-primary)">
+            <span className="text-[11px] font-black uppercase tracking-normal leading-tight text-(--text-primary) truncate">
               {label}
             </span>
+            {!expanded && (
+              <span
+                className={`text-[10px] font-bold leading-tight shrink-0 ${theme.textClass}`}
+              >
+                · {compactReward}
+              </span>
+            )}
           </div>
-          <span className="text-xs font-bold text-(--text-accent) shrink-0">
+          <span className="text-[11px] font-bold text-(--text-accent) shrink-0">
             {formatCountdown(timeRemaining)}
           </span>
         </div>
-        <span
-          className={`text-[11px] font-bold leading-tight ${theme.textClass}`}
-        >
-          ✦ {reward}
-        </span>
+        {expanded && (
+          <span
+            className={`text-[11px] font-bold leading-tight ${theme.textClass}`}
+          >
+            ✦ {reward}
+          </span>
+        )}
       </div>
       <ProgressBar
         progress={progress}
@@ -277,6 +317,6 @@ export function MobileAnomalyBar() {
         height={2}
         animated={false}
       />
-    </div>
+    </button>
   )
 }

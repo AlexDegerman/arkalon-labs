@@ -1,11 +1,12 @@
 'use client'
 
 import { useRef, useEffect, useCallback } from 'react'
-import { formatPoints, getAmountColor } from '@/lib/format'
+import { formatPoints, formatPointsShort, getAmountColor } from '@/lib/format'
 
 interface AnimatedBigIntOptions {
   // Duration in ms for the number to animate toward the target
   duration?: number
+  compact?: boolean
 }
 
 // Zero-rerender animation of bigint display values via direct DOM ref writes
@@ -14,7 +15,7 @@ export function useAnimatedBigInt(
   targetValue: bigint,
   options: AnimatedBigIntOptions = {}
 ) {
-  const { duration = 150 } = options
+  const { duration = 150, compact = false } = options
 
   const displayRef = useRef<HTMLElement | null>(null)
   const baseClassRef = useRef<string | null>(null)
@@ -45,7 +46,9 @@ export function useAnimatedBigInt(
 
       currentValRef.current = current
 
-      const formatted = formatPoints(current)
+      const formatted = compact
+        ? formatPointsShort(current)
+        : formatPoints(current)
       const colorClass = getAmountColor(current)
 
       displayRef.current.textContent = formatted
@@ -58,7 +61,7 @@ export function useAnimatedBigInt(
         rafRef.current = requestAnimationFrame(animate)
       }
     },
-    [duration]
+    [duration, compact]
   )
 
   useEffect(() => {

@@ -4,7 +4,6 @@ import { memo } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { RELIC_MAP } from '@/constants/relics'
 import { getRelicEffectAtLevel } from '@/lib/relicDefs'
-import { formatCountdown } from '@/lib/format'
 import { unequipRelic } from '@/app/stores/actions/relicActions'
 
 interface Props {
@@ -25,7 +24,6 @@ function RelicSlot({ slotIndex }: Props) {
   if (!slot) return null
 
   const isEmpty = slot.relicId === null
-  const onCooldown = slot.cooldownRemaining > 0
   const relic = slot.relicId !== null ? RELIC_MAP[slot.relicId] : null
   const level = relicLevel
 
@@ -35,8 +33,7 @@ function RelicSlot({ slotIndex }: Props) {
         'card rounded-xl p-2 sm:p-2.5 flex items-center justify-between gap-2 min-h-12 transition-all',
         relic
           ? 'border-(--border-accent)/60 bg-linear-to-r from-(--border-accent)/10 via-(--bg-surface) to-(--bg-surface)'
-          : 'border-dashed border-(--border-default)/70 bg-(--bg-surface)/40',
-        onCooldown ? 'opacity-70' : ''
+          : 'border-dashed border-(--border-default)/70 bg-(--bg-surface)/40'
       ].join(' ')}
     >
       <div className="flex items-center gap-2.5 min-w-0">
@@ -48,9 +45,7 @@ function RelicSlot({ slotIndex }: Props) {
 
         {isEmpty ? (
           <p className="text-xs font-mono text-(--text-secondary)/60">
-            {onCooldown
-              ? `Socket recalibrating... (${formatCountdown(slot.cooldownRemaining)})`
-              : 'Empty Socket Node · Select relic below'}
+            Empty Socket Node · Select relic below
           </p>
         ) : relic ? (
           <div className="flex flex-col min-w-0">

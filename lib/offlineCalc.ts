@@ -670,14 +670,6 @@ export function applyOfflineProgress(
     relic9PityGain: 0
   }
 
-  const relicSlots = state.relicSlots.map((slot) => {
-    if (slot.cooldownRemaining <= 0) return slot
-    return {
-      ...slot,
-      cooldownRemaining: Math.max(0, slot.cooldownRemaining - elapsed)
-    }
-  })
-
   let activeMegaprojectId = state.activeMegaprojectId
   let megaprojectAllocationPercent = state.megaprojectAllocationPercent
   let megaprojectRPAbsorbed =
@@ -788,7 +780,6 @@ export function applyOfflineProgress(
       probes: probeResult.probes,
       unlockedRelics: nextUnlockedRelics,
       relicLevels: nextRelicLevels,
-      relicSlots,
       activeChallengeId: state.activeChallengeId,
       challengeActiveSeconds:
         (state.challengeActiveSeconds ?? 0) +
@@ -851,7 +842,6 @@ export function applyOfflineProgress(
     probes: probeResult.probes,
     unlockedRelics: nextUnlockedRelics,
     relicLevels: nextRelicLevels,
-    relicSlots,
     activeMegaprojectId,
     megaprojectAllocationPercent,
     megaprojectRPAbsorbed,

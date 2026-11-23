@@ -233,16 +233,10 @@ function ProbeCard({ probe }: Props) {
                         {Math.round(effectiveSuccess * 100)}%
                       </span>
                       {isVoid && (
-                        <span
-                          className={`text-[9px] font-bold ${
-                            selectedSubsystem === 'shielding'
-                              ? 'text-amber-300'
-                              : 'text-rose-400'
-                          }`}
-                        >
+                        <span className="text-[9px] font-bold text-amber-300">
                           {selectedSubsystem === 'shielding'
                             ? '· Fail: 15m Repair'
-                            : '· Fail: Probe & Rank Lost'}
+                            : '· Fail: 30m Repair'}
                         </span>
                       )}
                       {isUnstable && (

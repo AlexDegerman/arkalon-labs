@@ -10,7 +10,8 @@ import {
   MODULE_DEFINITIONS
 } from '@/lib/moduleDefs'
 import { MODULE_SYNERGIES, GENERATORS } from '@/constants/generators'
-import { formatPoints } from '@/lib/format'
+import { formatPoints, formatPointsShort } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import type { ModuleType } from '@/types/game'
 import ProgressBar from '@/components/ui/ProgressBar'
 import { buyModule } from '@/app/stores/actions/generatorActions'
@@ -24,6 +25,7 @@ interface ModuleTrackProps {
   rp: bigint
   sc4Tiers: number
   ac5Active: boolean
+  isCompact: boolean
 }
 
 const ModuleTrack = memo(function ModuleTrack({
@@ -33,7 +35,8 @@ const ModuleTrack = memo(function ModuleTrack({
   levelCap,
   rp,
   sc4Tiers,
-  ac5Active
+  ac5Active,
+  isCompact
 }: ModuleTrackProps) {
   const def = MODULE_DEFINITIONS[moduleType]
   const atCap = currentLevel >= levelCap
@@ -82,7 +85,7 @@ const ModuleTrack = memo(function ModuleTrack({
                 : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
           >
-            {formatPoints(cost)} RP
+            {(isCompact ? formatPointsShort : formatPoints)(cost)} RP
           </button>
         ) : (
           <span className="text-[10px] font-mono font-bold text-(--status-success) px-1.5 py-0.2 rounded bg-(--status-success)/10 border border-(--status-success)/30">
@@ -99,6 +102,7 @@ interface Props {
 }
 
 function GeneratorModuleCard({ generatorIndex }: Props) {
+  const isCompact = useIsCompactViewport()
   const gen = useGameStore((s) => s.generators[generatorIndex])
   const rp = useGameStore((s) => s.researchPoints)
   const levelCap = useGameStore(getModuleLevelCap)
@@ -247,6 +251,7 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
             rp={rp}
             sc4Tiers={sc4Tiers}
             ac5Active={ac5Active}
+            isCompact={isCompact}
           />
         ))}
       </div>

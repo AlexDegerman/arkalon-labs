@@ -64,18 +64,18 @@ export default function OperationsWorkspace() {
           </span>
           <span className="text-[9px] text-(--text-secondary)">
             {manualCycle !== null
-              ? 'Tuned to Run (Resets on Prestige)'
-              : 'Available (1 Retune per Run)'}
+              ? 'Manual Override Active'
+              : 'Natural Rotation'}
           </span>
         </div>
         <p className="text-[11px] text-(--text-secondary)">
-          Override the facility&apos;s cosmic observation frequency to target a
-          specific operational anomaly for this prestige run:
+          Select which operational anomaly phase to align with (switchable
+          anytime):
         </p>
         <div className="grid grid-cols-2 @[420px]:grid-cols-4 gap-1.5 pt-1">
           {OPERATION_CYCLES.map((c) => {
             const isSelected = currentCycle.cycleNumber === c.cycleNumber
-            const canRetune = manualCycle === null && !isSelected
+            const canRetune = !isSelected
 
             return (
               <button
@@ -129,7 +129,7 @@ export default function OperationsWorkspace() {
           </div>
           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent)">
             {manualCycle !== null
-              ? 'Locked to Run (Overridden)'
+              ? 'Manual Override Active'
               : `Epoch Rotation: ~${daysRemaining}d`}
           </span>
         </div>
@@ -140,7 +140,7 @@ export default function OperationsWorkspace() {
           height={4}
           label={
             manualCycle !== null
-              ? 'Natural cycle timer (overridden for run)'
+              ? 'Natural cycle timer (manual override active)'
               : 'Cycle progress'
           }
           showPercent

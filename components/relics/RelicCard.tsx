@@ -12,11 +12,10 @@ import {
   getRelicEffectAtLevel
 } from '@/lib/relicDefs'
 import { RELIC_LEVEL_CAP } from '@/constants/game'
-import { formatPoints } from '@/lib/format'
+import { formatPoints, formatPointsShort } from '@/lib/format'
 import { equipRelic, upgradeRelic } from '@/app/stores/actions/relicActions'
 
 function getRelicRarityAura(id: number): string {
-  if (id === 20) return 'aura-godking'
   const rarity = getRelicRarity(id)
   return `aura-${rarity}`
 }
@@ -102,13 +101,13 @@ function RelicCard({ relicId }: Props) {
         )}
       </div>
 
-      <div className="flex items-center gap-2 pt-2 border-t border-(--border-default)/50 mt-auto">
+      <div className="flex items-center flex-wrap gap-1.5 pt-2 border-t border-(--border-default)/50 mt-auto">
         {!equipped ? (
           <button
             onClick={() => equipRelic(relicId)}
             disabled={!canEquip}
             className={[
-              'flex-1 py-1.5 text-xs font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none',
+              'shrink-0 px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap',
               canEquip
                 ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) hover:bg-(--status-success) hover:text-black'
                 : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
@@ -123,17 +122,17 @@ function RelicCard({ relicId }: Props) {
                   : 'Equip'}
           </button>
         ) : (
-          <div className="flex-1 py-1.5 text-xs font-mono font-bold uppercase text-center text-(--border-accent) bg-(--border-accent)/10 border border-(--border-accent)/30 rounded-lg">
+          <div className="shrink-0 px-2.5 py-1.5 text-[10px] font-mono font-bold uppercase text-center text-(--border-accent) bg-(--border-accent)/10 border border-(--border-accent)/30 rounded-lg whitespace-nowrap">
             Active
           </div>
         )}
 
-        <div className="flex items-center gap-1 flex-1">
+        <div className="flex items-center gap-1 flex-1 min-w-36">
           <button
             onClick={() => upgradeRelic(relicId, 1)}
             disabled={!canAffordUpgrade}
             className={[
-              'flex-1 py-1.5 px-1.5 text-[11px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none',
+              'flex-1 py-1.5 px-2 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap',
               atCap
                 ? 'border-(--status-success)/40 text-(--status-success) bg-(--status-success)/10 cursor-default'
                 : canAffordUpgrade
@@ -141,7 +140,7 @@ function RelicCard({ relicId }: Props) {
                   : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
           >
-            {atCap ? 'MAX' : `+1 · ${formatPoints(BigInt(upgradeCost))}`}
+            {atCap ? 'MAX' : `+1 · ${formatPointsShort(BigInt(upgradeCost))}`}
           </button>
           {!atCap && (
             <>

@@ -9,7 +9,14 @@ import {
   getEffectiveStudyTime,
   getBranchNodes
 } from '@/lib/researchNodes'
-import { formatPoints, formatCountdown, infNodeCostAtLevel, getAmountColor } from '@/lib/format'
+import {
+  formatPoints,
+  formatPointsShort,
+  formatCountdown,
+  infNodeCostAtLevel,
+  getAmountColor
+} from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import { INF_NODE_COST_SCALING } from '@/constants/research'
 import type { ResearchBranch } from '@/types/game'
 import InfNodePanel from './InfNodePanel'
@@ -20,6 +27,8 @@ interface NodeCardProps {
 }
 
 const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const node = RESEARCH_NODE_MAP[nodeId]
 
   const researchPoints = useGameStore((s) => s.researchPoints)
@@ -164,8 +173,8 @@ const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
           ].join(' ')}
         >
           {node.isInfinite
-            ? `Lv${infLevel + 1}: ${formatPoints(infNextCost)} RP`
-            : `${formatPoints(cost)} RP`}
+            ? `Lv${infLevel + 1}: ${fmt(infNextCost)} RP`
+            : `${fmt(cost)} RP`}
         </span>
         {!node.isInfinite && studyTime > 0 && !completed && (
           <span className="text-(--text-secondary) whitespace-nowrap shrink-0">

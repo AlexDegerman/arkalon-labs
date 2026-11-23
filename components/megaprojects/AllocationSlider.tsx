@@ -2,13 +2,16 @@
 
 import { setMegaprojectAllocation } from '@/app/stores/actions/megaprojectActions'
 import { useGameStore } from '@/app/stores/gameStore'
-import { formatPoints } from '@/lib/format'
+import { formatPoints, formatPointsShort } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 
 interface Props {
   effectivePPS: bigint
 }
 
 export default function AllocationSlider({ effectivePPS }: Props) {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const percent = useGameStore((s) => s.megaprojectAllocationPercent)
 
   const allocatedPPS =
@@ -42,13 +45,13 @@ export default function AllocationSlider({ effectivePPS }: Props) {
         <div className="flex flex-col">
           <span className="text-(--text-secondary)">To Construction Core:</span>
           <span className="font-bold text-(--text-accent)">
-            {formatPoints(allocatedPPS)}/s
+            {fmt(allocatedPPS)}/s
           </span>
         </div>
         <div className="flex flex-col text-right">
           <span className="text-(--text-secondary)">Surplus to Balance:</span>
           <span className="font-bold text-(--text-primary)">
-            {formatPoints(remainingPPS)}/s
+            {fmt(remainingPPS)}/s
           </span>
         </div>
       </div>

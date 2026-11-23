@@ -17,7 +17,15 @@ export function getRelicEffectiveMultiplier(
     ? 0
     : (state.arUpgrades.relic_resonance ?? 0)
   const resonanceBonus = 1 + 0.05 * resonanceLevel * arEffectivenessMult
-  return resonanceBonus * getClassResonanceMultiplier(relicId, state)
+  const preservationMult =
+    !prestigeDisabled && (state.cfUpgrades.relic_preservation ?? 0) > 0
+      ? 1.25
+      : 1
+  return (
+    resonanceBonus *
+    preservationMult *
+    getClassResonanceMultiplier(relicId, state)
+  )
 }
 
 // Returns per-generator multiplier from equipped relics for a specific generator

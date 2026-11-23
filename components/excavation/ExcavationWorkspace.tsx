@@ -74,7 +74,7 @@ function SectorStarmap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            50% Loss Risk (Repair w/ Shield) · 12h Duration
+            50% Repair Risk · 12h Duration
           </span>
           <div className="flex justify-between items-center text-[10px] pt-1 border-t border-purple-500/20 text-purple-200">
             <span>Active Probes:</span>

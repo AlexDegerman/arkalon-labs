@@ -113,7 +113,7 @@ export default function BranchTabs({
                 </span>
               )}
             </div>
-            <span className="text-[10px] hidden @[290px]:block max-w-full truncate @[380px]:tracking-wider font-bold">
+            <span className="text-[9px] @[360px]:text-[10px] hidden @[340px]:block max-w-full truncate @[380px]:tracking-wider font-bold">
               {config.label}
             </span>
             <span

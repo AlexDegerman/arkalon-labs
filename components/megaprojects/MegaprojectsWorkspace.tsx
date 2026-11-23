@@ -3,9 +3,12 @@
 import { useGameStore } from '@/app/stores/gameStore'
 import MegaprojectCard from '@/components/megaprojects/MegaprojectCard'
 import { MEGAPROJECTS } from '@/lib/megaprojectDefs'
-import { formatPoints } from '@/lib/format'
+import { formatPoints, formatPointsShort } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 
 export default function MegaprojectsWorkspace() {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const activeMegaprojectId = useGameStore((s) => s.activeMegaprojectId)
   const pps = useGameStore((s) => s.cachedPointsPerSecond)
   const allocationPercent = useGameStore((s) => s.megaprojectAllocationPercent)
@@ -38,7 +41,7 @@ export default function MegaprojectsWorkspace() {
               Effective Surplus RP/s
             </span>
             <span className="text-xs sm:text-sm font-mono font-bold text-(--text-primary)">
-              {formatPoints(effectivePPS)}/s
+              {fmt(effectivePPS)}/s
             </span>
           </div>
           <div className="flex flex-col text-right">
@@ -46,7 +49,7 @@ export default function MegaprojectsWorkspace() {
               Allocated
             </span>
             <span className="text-xs sm:text-sm font-mono font-black text-(--text-accent)">
-              {formatPoints(allocatedPPS)}/s ({allocationPercent}%)
+              {fmt(allocatedPPS)}/s ({allocationPercent}%)
             </span>
           </div>
         </div>

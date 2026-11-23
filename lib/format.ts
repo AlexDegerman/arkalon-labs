@@ -179,6 +179,30 @@ const COMPACT_TIERS: readonly [bigint, string][] = [
   [1_000n, 'K']
 ]
 
+export function formatPointsShort(value: bigint): string {
+  if (value < 0n) return '0'
+  if (value < 1_000n) return value.toString()
+
+  if (currentNotation === 'scientific' || value >= 10n ** 168n) {
+    return formatScientific(value)
+  }
+
+  for (let i = 0; i < COMPACT_TIERS.length; i++) {
+    const [threshold, symbol] = COMPACT_TIERS[i]
+    if (value >= threshold) {
+      const whole = value / threshold
+      if (whole >= 1_000_000n) return formatScientific(value)
+      const remainder = value % threshold
+      const fraction =
+        (remainder * 10n ** BigInt(DECIMAL_PRECISION)) / threshold
+      const fracStr = fraction.toString().padStart(DECIMAL_PRECISION, '0')
+      return `${whole}.${fracStr}${symbol}`
+    }
+  }
+
+  return value.toString()
+}
+
 export function formatPointsCompact(value: bigint): string {
   if (value < 0n) return '-' + formatPointsCompact(-value)
   if (value === 0n) return '0'

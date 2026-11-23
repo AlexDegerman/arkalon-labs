@@ -5,10 +5,12 @@ import { useGameStore } from '@/app/stores/gameStore'
 import { GENERATORS } from '@/constants/generators'
 import {
   formatPoints,
+  formatPointsShort,
   formatTimeToAfford,
   getAmountColor,
   getNetSpendablePPS
 } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import ProgressBar from '@/components/ui/ProgressBar'
 import { nextCost } from '@/lib/generatorCosts'
 
@@ -19,6 +21,7 @@ interface Props {
 // Absorbs leftover viewport height on tall screens; collapses to zero
 // once the generator list overflows so short devices keep full list space
 function ExpansionBay({ nextHiddenIndex }: Props) {
+  const isCompact = useIsCompactViewport()
   const [researchPoints, setResearchPoints] = useState(0n)
   const [pps, setPps] = useState(0n)
   const [effectiveCost, setEffectiveCost] = useState(0n)
@@ -93,7 +96,7 @@ function ExpansionBay({ nextHiddenIndex }: Props) {
               getAmountColor(effectiveCost) || 'text-(--text-secondary)/80'
             ].join(' ')}
           >
-            {formatPoints(effectiveCost)} RP
+            {(isCompact ? formatPointsShort : formatPoints)(effectiveCost)} RP
           </span>
           {pps > 0n && eta && (
             <span className="text-[9px] font-mono text-(--status-warning)">

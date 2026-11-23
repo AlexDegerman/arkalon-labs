@@ -5,21 +5,22 @@ import { useGameStore } from '@/app/stores/gameStore'
 import RelicSlot from '@/components/relics/RelicSlot'
 import RelicGrid from '@/components/relics/RelicGrid'
 import { getRelicSlotCount, getEquippedClassCounts } from '@/lib/relicDefs'
-import { formatPoints } from '@/lib/format'
+import { formatPoints, formatPointsShort } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import { saveRelicPreset, loadRelicPreset } from '@/app/stores/actions/relicActions'
-import type { RelicClass } from '@/constants/relics'
+import { RELIC_MAP, type RelicClass } from '@/constants/relics'
 import { getSynthesizerRates } from '@/lib/synthesizerDefs'
 import { getCurrentEra } from '@/lib/eraThresholds'
 
 const PRESET_NAMES = ['Speedrun', 'Deep Idle', 'Surge Hunter']
 
 export default function RelicsTab() {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const slotCount = useGameStore(getRelicSlotCount)
   const artifactDust = useGameStore((s) => s.artifactDust)
   const unlockedRelics = useGameStore((s) => s.unlockedRelics)
-  const instantSwapUnlocked = useGameStore(
-    (s) => (s.cfUpgrades.relic_preservation ?? 0) > 0
-  )
+  const relicPresets = useGameStore((s) => s.relicPresets ?? [[], [], []])
   const classCounts = useGameStore(useShallow(getEquippedClassCounts))
   const dustPerMin = useGameStore((s) => getSynthesizerRates(s).dustPerMin)
   const era = useGameStore((s) => getCurrentEra(s.lifetimePoints).era)
@@ -31,27 +32,32 @@ export default function RelicsTab() {
   return (
     <div className="flex flex-col gap-2.5 p-2 sm:p-3 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
       {/* Dust balance */}
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
-          Relics & Artifacts
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest whitespace-nowrap shrink-0">
+          <span className="sm:hidden">Relics</span>
+          <span className="hidden sm:inline">Relics &amp; Artifacts</span>
         </p>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-500/30 bg-amber-500/10 whitespace-nowrap min-w-0">
           <span className="text-[10px] font-mono text-amber-300 font-bold uppercase">
             Dust:
           </span>
           <span className="text-xs font-mono font-black text-amber-400">
-            {formatPoints(BigInt(artifactDust))}
+            {fmt(BigInt(artifactDust))}
           </span>
           {dustPerMin > 0 && (
             <span
               title={`Includes Era ${era} Dust bonus (${eraDustMult}x). Resets with run Era on Prestige.`}
-              className="text-[10px] font-mono text-amber-300/80"
+              className="text-[10px] font-mono text-amber-300/80 truncate"
             >
               (+
               {dustPerMin >= 10
                 ? dustPerMin.toFixed(1)
                 : dustPerMin.toFixed(2).replace(/\.00$/, '')}
-              /m · Era {era}: {eraDustMult}x)
+              /m ·{' '}
+              {isCompact
+                ? `E${era} ${eraDustMult}x`
+                : `Era ${era}: ${eraDustMult}x`}
+              )
             </span>
           )}
         </div>
@@ -66,41 +72,66 @@ export default function RelicsTab() {
 
       {/* Loadout Presets Bar - shown once player has enough relics to swap */}
       {unlockedRelics.length >= 4 && (
-        <div className="card rounded-xl p-2 bg-(--bg-surface) border border-(--border-default) flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-1.5">
+        <div className="card rounded-xl p-2 bg-(--bg-surface) border border-(--border-default) flex flex-col gap-1.5">
+          <div className="flex items-center justify-between flex-wrap gap-1.5">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-(--text-secondary)">
               Loadout Presets
             </span>
-            <span className="text-[9px] font-mono text-cyan-300/80">
-              (
-              {instantSwapUnlocked
-                ? 'Instant · Relic Preservation'
-                : 'Respects swap cooldown'}
-              )
+            <span className="text-[9px] font-mono text-(--text-secondary)/70">
+              Tap 💾 to save current slots · tap name to load
             </span>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap font-mono text-[10px]">
-            {PRESET_NAMES.map((name, i) => (
-              <div
-                key={name}
-                className="flex items-center border border-(--border-default) rounded-lg overflow-hidden bg-(--bg-elevated)"
-              >
-                <button
-                  onClick={() => loadRelicPreset(i)}
-                  title={`Equip Preset #${i + 1} (${name})`}
-                  className="px-2 py-1 hover:text-cyan-300 transition-colors cursor-pointer font-bold"
+            {PRESET_NAMES.map((name, i) => {
+              const savedIds = (relicPresets[i] ?? []).filter(
+                (id): id is number => id !== null
+              )
+              const hasSaved = savedIds.length > 0
+              const presetSummary = hasSaved
+                ? savedIds
+                    .map((id) => RELIC_MAP[id]?.name ?? `#${id}`)
+                    .join(', ')
+                : 'Empty — equip relics below and tap 💾 to save'
+
+              return (
+                <div
+                  key={name}
+                  className={[
+                    'flex items-center border rounded-lg overflow-hidden bg-(--bg-elevated)',
+                    hasSaved
+                      ? 'border-cyan-400/45'
+                      : 'border-(--border-default)'
+                  ].join(' ')}
                 >
-                  P{i + 1}: {name}
-                </button>
-                <button
-                  onClick={() => saveRelicPreset(i)}
-                  title={`Save current relics to Preset #${i + 1}`}
-                  className="px-1.5 py-1 bg-black/40 hover:bg-cyan-500/20 text-(--text-secondary) hover:text-white transition-colors border-l border-(--border-default)/50 cursor-pointer"
-                >
-                  💾
-                </button>
-              </div>
-            ))}
+                  <button
+                    onClick={() => loadRelicPreset(i)}
+                    title={`Equip Preset #${i + 1} (${name}): ${presetSummary}`}
+                    className={[
+                      'px-2 py-1 transition-colors cursor-pointer font-bold flex items-center gap-1',
+                      hasSaved
+                        ? 'text-(--text-primary) hover:text-cyan-300'
+                        : 'text-(--text-secondary)/70 hover:text-(--text-primary)'
+                    ].join(' ')}
+                  >
+                    <span>
+                      P{i + 1}: {name}
+                    </span>
+                    {hasSaved && (
+                      <span className="text-[9px] text-cyan-300">
+                        ({savedIds.length})
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => saveRelicPreset(i)}
+                    title={`Save currently equipped relics to Preset #${i + 1}`}
+                    className="px-1.5 py-1 bg-black/40 hover:bg-cyan-500/20 text-(--text-secondary) hover:text-white transition-colors border-l border-(--border-default)/50 cursor-pointer"
+                  >
+                    💾
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -135,9 +166,6 @@ export default function RelicsTab() {
           <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
             Active Slots ({slotCount})
           </p>
-          <span className="text-[9px] font-mono text-(--text-secondary)/70">
-            Unequipping triggers slot cooldown
-          </span>
         </div>
         <div className="flex flex-col gap-1.5">
           {Array.from({ length: slotCount }, (_, i) => (

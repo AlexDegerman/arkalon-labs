@@ -4,7 +4,13 @@ import { memo, useCallback, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useGameStore } from '@/app/stores/gameStore'
 import { CHALLENGE_MAP } from '@/constants/challenges'
-import { formatDuration, formatPoints, getAmountColor } from '@/lib/format'
+import {
+  formatDuration,
+  formatPoints,
+  formatPointsShort,
+  getAmountColor
+} from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import ChallengeProgress from '@/components/challenges/ChallengeProgress'
 import {
   enterChallenge,
@@ -22,6 +28,8 @@ interface Props {
 }
 
 function ChallengeCard({ challengeId }: Props) {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const [confirmAbandon, setConfirmAbandon] = useState(false)
   const def = CHALLENGE_MAP[challengeId]
 

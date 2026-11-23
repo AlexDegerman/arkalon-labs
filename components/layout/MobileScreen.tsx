@@ -1,6 +1,7 @@
 'use client'
 
-import { useActiveTab } from '@/hooks/useActiveTab'
+import { useEffect } from 'react'
+import { useActiveTab, type WorkspaceTab } from '@/hooks/useActiveTab'
 import MobileMoreDrawer from '@/components/layout/MobileMoreDrawer'
 import ArkalonSphere, {
   CORE_STAGE_LABELS,
@@ -19,6 +20,7 @@ import FeatureLockOverlay from '@/components/ui/FeatureLockOverlay'
 import { FEATURE_MAP, TAB_FEATURE } from '@/lib/featureRegistry'
 import { pulseArkalonCore } from '@/app/stores/actions/researchActions'
 import { useActionSignals } from '@/hooks/useActionSignals'
+import { ParticleColliderButton } from '@/components/layout/CenterColumn'
 
 function RelicsFeatureWrapper() {
   return (
@@ -72,12 +74,24 @@ function MobileArkalonTab() {
           Core Lattice {coreStage}/5 · {CORE_STAGE_LABELS[coreStage]}
         </span>
       </div>
-      <div className="w-full">
+      <div className="w-full flex flex-col gap-2">
         <ArkalonTerminalMobile />
+        <ParticleColliderButton />
       </div>
     </div>
   )
 }
+
+const MORE_TABS: WorkspaceTab[] = [
+  'stats',
+  'prestige',
+  'modules',
+  'excavation',
+  'megaprojects',
+  'operations',
+  'challenges',
+  'achievements'
+]
 
 export default function MobileScreen() {
   const mobileTab = useActiveTab((s) => s.mobileTab)
@@ -87,10 +101,18 @@ export default function MobileScreen() {
   const setMoreDrawerOpen = useActiveTab((s) => s.setMoreDrawerOpen)
   const unseenUnlockedTabs = useUIStore((s) => s.unseenUnlockedTabs)
   const actionSignals = useActionSignals()
-  const hasNewUnlock = unseenUnlockedTabs.length > 0
-  const hasOtherAction = Object.keys(actionSignals).some(
-    (k) => k !== workspaceTab
+  const unseenMoreCount = MORE_TABS.filter((t) =>
+    unseenUnlockedTabs.includes(t)
+  ).length
+  const hasOtherMoreAction = MORE_TABS.some(
+    (t) => t !== workspaceTab && Boolean(actionSignals[t])
   )
+
+  useEffect(() => {
+    if (mobileTab === 'research' && workspaceTab === 'directory') {
+      setWorkspaceTab('research')
+    }
+  }, [mobileTab, workspaceTab, setWorkspaceTab])
 
   return (
     <div className="lg:hidden flex-1 overflow-hidden relative min-h-0 flex flex-col bg-(--bg-primary)">
@@ -113,10 +135,10 @@ export default function MobileScreen() {
         {/* Core Telemetry View */}
         {mobileTab === 'arkalon' && <MobileArkalonTab />}
 
-        {/* Research / Workspace View */}
+        {/* Research & More Panels View */}
         {mobileTab === 'research' && (
           <div className="h-full flex flex-col min-h-0">
-            {workspaceTab !== 'directory' && (
+            {workspaceTab !== 'research' && workspaceTab !== 'directory' && (
               <div className="flex items-center justify-between px-3 py-1.5 border-b border-(--border-default) bg-(--bg-surface)/95 shrink-0 font-mono">
                 <span className="text-xs font-bold text-(--text-accent) uppercase tracking-wider truncate">
                   {TAB_FEATURE[workspaceTab]
@@ -124,20 +146,20 @@ export default function MobileScreen() {
                     : workspaceTab}
                 </span>
                 <button
-                  onClick={() => setWorkspaceTab('directory')}
+                  onClick={() => setMoreDrawerOpen(true)}
                   className={[
                     'text-[10px] font-bold px-2 py-0.5 rounded border cursor-pointer shrink-0 flex items-center gap-1 transition-all',
-                    hasNewUnlock
+                    unseenMoreCount > 0
                       ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) shadow-[0_0_10px_rgba(57,255,138,0.35)]'
-                      : hasOtherAction
-                        ? 'border-(--border-accent)/70 bg-(--border-accent)/10 text-(--text-accent)'
+                      : hasOtherMoreAction
+                        ? 'border-amber-400/60 bg-amber-500/10 text-amber-300'
                         : 'bg-(--bg-elevated) border-(--border-default) text-(--text-secondary) hover:text-(--text-primary)'
                   ].join(' ')}
                 >
-                  <span>← Directory</span>
-                  {hasNewUnlock && (
+                  <span>← More</span>
+                  {unseenMoreCount > 0 && (
                     <span className="px-1 rounded bg-(--status-success) text-[#080c14] text-[9px] font-black">
-                      +{unseenUnlockedTabs.length}
+                      +{unseenMoreCount}
                     </span>
                   )}
                 </button>

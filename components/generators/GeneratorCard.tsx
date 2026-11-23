@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useGameStore } from '@/app/stores/gameStore'
 import { buyGenerator } from '@/app/stores/actions/generatorActions'
 import { nextCost, costToBuyN, maxAffordable } from '@/lib/generatorCosts'
-import { formatPoints, getAmountColor } from '@/lib/format'
+import { formatPoints, formatPointsShort, getAmountColor } from '@/lib/format'
 import { GENERATORS, GENERATOR_CLASS } from '@/constants/generators'
 import type { BulkBuyAmount } from '@/constants/game'
 import GeneratorIcon from '@/components/generators/GeneratorIcon'
@@ -237,10 +237,12 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
     buyGenerator(generatorIndex, bulkAmount)
   }
 
+  const desktopRowSpan = quantity > 0n ? 'sm:row-span-3' : 'sm:row-span-2'
+
   return (
     <div
       className={[
-        'card flex items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl transition-all duration-150 relative border',
+        'card grid grid-cols-[auto_1fr_auto] items-center gap-x-2.5 gap-y-1.5 sm:gap-x-3 sm:gap-y-0.5 p-2 sm:p-3 rounded-xl transition-all duration-150 relative border',
         affordable
           ? `${CLASS_THEME.border} ${CLASS_THEME.bg} ${CLASS_THEME.glow}`
           : 'border-(--border-default) bg-(--bg-surface)',
@@ -249,7 +251,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
     >
       {/* Left: Framed Icon Badge with Class Glow (Daily Style) */}
       <div
-        className={`shrink-0 rounded-xl p-1.5 flex items-center justify-center border transition-all ${CLASS_THEME.border} bg-[#0c1322] ${CLASS_THEME.glow}`}
+        className={`col-start-1 row-start-1 ${desktopRowSpan} self-center shrink-0 rounded-xl p-1 sm:p-1.5 flex items-center justify-center border transition-all ${CLASS_THEME.border} bg-[#0c1322] ${CLASS_THEME.glow}`}
       >
         <GeneratorIcon
           generatorIndex={generatorIndex}
@@ -258,148 +260,157 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
         />
       </div>
 
-      {/* Middle: Info and Progression */}
-      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
-            {def.name}
-          </span>
-          {quantity > 0n && (
-            <div className="flex items-center gap-1 font-mono text-[10px] text-(--text-secondary)">
-              <span className={`w-1.5 h-1.5 rounded-full ${CLASS_THEME.dot}`} />
-              <span>{CLASS_THEME.label}</span>
-              <span>•</span>
-              <span className="font-bold text-(--text-primary)">
-                x{quantity.toString()}
+      {/* Header: Name, Class, Qty, Mutation Badges */}
+      <div className="col-start-2 col-span-2 sm:col-span-1 row-start-1 min-w-0 flex items-center gap-x-1.5 gap-y-0.5 flex-wrap">
+        <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
+          {def.name}
+        </span>
+        {quantity > 0n && (
+          <div className="flex items-center gap-1 font-mono text-[10px] text-(--text-secondary)">
+            <span className={`w-1.5 h-1.5 rounded-full ${CLASS_THEME.dot}`} />
+            <span className="hidden sm:inline">{CLASS_THEME.label}</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="font-bold text-(--text-primary)">
+              x{quantity.toString()}
+            </span>
+          </div>
+        )}
+        {!activeRestrictions?.milestonesDisabled &&
+          activeMutations.length > 0 &&
+          (() => {
+            const latest = activeMutations[activeMutations.length - 1]
+            const summary = activeMutations
+              .map((m) => `${m.badge} (${m.name}): ${m.description}`)
+              .join(' | ')
+            return (
+              <span
+                title={summary}
+                className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-500/40 text-amber-300 shrink-0"
+              >
+                {latest.badge}
+              </span>
+            )
+          })()}
+        {activeRestrictions?.onlyGeneratorType !== null &&
+          activeRestrictions?.onlyGeneratorType !== undefined &&
+          quantity > 0n && (
+            <span
+              className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                activeRestrictions.onlyGeneratorType === generatorIndex
+                  ? 'border-(--status-success) text-(--status-success) bg-(--status-success)/10'
+                  : 'border-amber-500/50 text-amber-400 bg-amber-500/10'
+              }`}
+            >
+              {activeRestrictions.onlyGeneratorType === generatorIndex
+                ? 'ACTIVE'
+                : 'INACTIVE (PARADOX)'}
+            </span>
+          )}
+      </div>
+
+      {/* Cost & Countdown */}
+      <div className="col-start-1 col-span-2 sm:col-start-2 sm:col-span-1 row-start-2 min-w-0 flex items-center gap-2 flex-wrap text-[11px] sm:text-xs font-mono">
+        <span
+          className={[
+            'font-bold',
+            getAmountColor(cost) || 'text-(--text-primary)',
+            !affordable ? 'opacity-55' : ''
+          ].join(' ')}
+        >
+          <span className="sm:hidden">{formatPointsShort(cost)} RP</span>
+          <span className="hidden sm:inline">{formatPoints(cost)} RP</span>
+        </span>
+        <TimeToAffordBadge
+          generatorIndex={generatorIndex}
+          cost={cost}
+          affordable={affordable}
+        />
+      </div>
+
+      {/* Milestone & Yield Footer (full-width on mobile, middle col on desktop) */}
+      {quantity > 0n && (
+        <div className="col-start-1 col-span-3 sm:col-start-2 sm:col-span-1 row-start-3 min-w-0 flex flex-col gap-0.5">
+          {activeRestrictions?.milestonesDisabled ? (
+            <span className="text-[9px] font-mono text-amber-400/80">
+              Milestones Inactive (Challenge)
+            </span>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] font-mono text-(--text-secondary)/80">
+                <span
+                  className="min-w-0"
+                  title={
+                    milestoneInfo.doublings > 8
+                      ? 'First 8 milestones double (2x up to 256x); steps 9-100 scale by 1.08x, then taper linearly (+5% per step).'
+                      : undefined
+                  }
+                >
+                  {milestoneStr}
+                  {milestoneInfo.doublings > 8 && (
+                    <span className="hidden sm:inline text-cyan-300/75 ml-1">
+                      (
+                      {milestoneInfo.doublings > 100
+                        ? 'linear taper'
+                        : '1.08x taper'}
+                      )
+                    </span>
+                  )}
+                </span>
+                {nextMutation && (
+                  <span
+                    title={`Next Mutation at ${nextMutation.threshold}: ${nextMutation.name} (${nextMutation.description})`}
+                    className="text-amber-400 font-bold shrink-0"
+                  >
+                    ★ {nextMutation.badge} in{' '}
+                    {Number(nextMutation.threshold - quantity)}
+                  </span>
+                )}
+              </div>
+              <div className="w-24 sm:w-28 opacity-80">
+                <ProgressBar
+                  progress={milestoneProgress}
+                  variant="default"
+                  height={2}
+                  animated={false}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Real-Time Production Share Bar */}
+          {productionShare > 0 && (
+            <div className="flex items-center gap-1.5 w-full mt-0.5 pt-1 border-t border-(--border-default)/40">
+              <span className="text-[9px] font-mono text-(--text-secondary)/70 shrink-0">
+                Yield:
+              </span>
+              <div className="flex-1 min-w-0">
+                <ProgressBar
+                  progress={productionShare / 100}
+                  variant={productionShare >= 20 ? 'success' : 'default'}
+                  height={2}
+                  animated={false}
+                />
+              </div>
+              <span
+                className={`text-[9px] font-mono font-bold shrink-0 ${
+                  productionShare >= 10
+                    ? 'text-(--text-accent)'
+                    : 'text-(--text-secondary)/80'
+                }`}
+              >
+                {productionShare < 0.1
+                  ? '<0.1%'
+                  : `${productionShare.toFixed(1)}%`}
               </span>
             </div>
           )}
-          {activeMutations.map((m) => (
-            <span
-              key={m.badge}
-              title={`${m.name}: ${m.description}`}
-              className="text-[8px] font-mono font-black px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-500/40 text-amber-300"
-            >
-              {m.badge}
-            </span>
-          ))}
-          {activeRestrictions?.onlyGeneratorType !== null &&
-            activeRestrictions?.onlyGeneratorType !== undefined &&
-            quantity > 0n && (
-              <span
-                className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${
-                  activeRestrictions.onlyGeneratorType === generatorIndex
-                    ? 'border-(--status-success) text-(--status-success) bg-(--status-success)/10'
-                    : 'border-amber-500/50 text-amber-400 bg-amber-500/10'
-                }`}
-              >
-                {activeRestrictions.onlyGeneratorType === generatorIndex
-                  ? 'ACTIVE'
-                  : 'INACTIVE (PARADOX)'}
-              </span>
-            )}
         </div>
-
-        {/* Cost & Countdown */}
-        <div className="flex items-center gap-2 flex-wrap text-[11px] sm:text-xs font-mono">
-          <span
-            className={[
-              'font-bold',
-              getAmountColor(cost) || 'text-(--text-primary)',
-              !affordable ? 'opacity-55' : ''
-            ].join(' ')}
-          >
-            {formatPoints(cost)} RP
-          </span>
-          <TimeToAffordBadge
-            generatorIndex={generatorIndex}
-            cost={cost}
-            affordable={affordable}
-          />
-        </div>
-
-        {/* Milestone Indicator */}
-        {quantity > 0n && (
-          <div className="flex flex-col gap-0.5 mt-0.5">
-            {activeRestrictions?.milestonesDisabled ? (
-              <span className="text-[9px] font-mono text-amber-400/80">
-                Milestones Inactive (Challenge)
-              </span>
-            ) : (
-              <>
-                <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-(--text-secondary)/80 truncate">
-                  <span
-                    title={
-                      milestoneInfo.doublings > 8
-                        ? 'First 8 milestones double (2x up to 256x); steps 9-100 scale by 1.08x, then taper linearly (+5% per step).'
-                        : undefined
-                    }
-                  >
-                    {milestoneStr}
-                    {milestoneInfo.doublings > 8 && (
-                      <span className="text-cyan-300/75 ml-1">
-                        (
-                        {milestoneInfo.doublings > 100
-                          ? 'linear taper'
-                          : '1.08x taper'}
-                        )
-                      </span>
-                    )}
-                  </span>
-                  {nextMutation && (
-                    <span
-                      title={`Next Mutation at ${nextMutation.threshold}: ${nextMutation.name} (${nextMutation.description})`}
-                      className="text-amber-400 font-bold ml-1 shrink-0"
-                    >
-                      ★ {nextMutation.badge} in{' '}
-                      {Number(nextMutation.threshold - quantity)}
-                    </span>
-                  )}
-                </div>
-                <div className="w-24 sm:w-28 opacity-80">
-                  <ProgressBar
-                    progress={milestoneProgress}
-                    variant="default"
-                    height={2}
-                    animated={false}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Real-Time Production Share Bar */}
-        {quantity > 0n && (
-          <div className="flex items-center gap-1.5 w-full mt-1 pt-1 border-t border-(--border-default)/40">
-            <span className="text-[9px] font-mono text-(--text-secondary)/70 shrink-0">
-              Yield:
-            </span>
-            <div className="flex-1 min-w-0">
-              <ProgressBar
-                progress={productionShare / 100}
-                variant={productionShare >= 20 ? 'success' : 'default'}
-                height={2}
-                animated={false}
-              />
-            </div>
-            <span
-              className={`text-[9px] font-mono font-bold shrink-0 ${
-                productionShare >= 10
-                  ? 'text-(--text-accent)'
-                  : 'text-(--text-secondary)/80'
-              }`}
-            >
-              {productionShare < 0.1 && productionShare > 0
-                ? '<0.1%'
-                : `${productionShare.toFixed(1)}%`}
-            </span>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Right: Buy action */}
-      <div className="shrink-0 flex flex-col items-center">
+      <div
+        className={`col-start-3 row-start-2 sm:row-start-1 ${desktopRowSpan} self-center shrink-0 flex flex-col items-center`}
+      >
         {generatorIndex === 0 && (
           <TutorialArrow targetId="generator-0-buy" direction="above" />
         )}

@@ -443,7 +443,7 @@ export function deserialiseState(raw: unknown): GameState {
   const rawRelicSlots: RelicSlotState[] = Array.isArray(s.relicSlots)
     ? s.relicSlots.map((slot) => {
         if (!slot || typeof slot !== 'object') {
-          return { relicId: null, cooldownRemaining: 0 }
+          return { relicId: null }
         }
         const rawId = (slot as { relicId?: unknown }).relicId
         const relicId =
@@ -453,23 +453,14 @@ export function deserialiseState(raw: unknown): GameState {
           rawId <= 20
             ? rawId
             : null
-        const cooldownRemaining = relicId
-          ? 0
-          : Math.max(
-              0,
-              parseNum(
-                (slot as { cooldownRemaining?: unknown }).cooldownRemaining,
-                0
-              )
-            )
-        return { relicId, cooldownRemaining }
+        return { relicId }
       })
     : initial.relicSlots
   const sc11Tiers = parseNum(s.challengeRecords?.['SC11']?.completedTiers, 0)
   const targetSlotCount = Math.min(6, 3 + sc11Tiers)
   const relicSlots: RelicSlotState[] = [...rawRelicSlots]
   while (relicSlots.length < targetSlotCount) {
-    relicSlots.push({ relicId: null, cooldownRemaining: 0 })
+    relicSlots.push({ relicId: null })
   }
 
   const synthesizers: number[] = Array.isArray(s.synthesizers)

@@ -48,6 +48,7 @@ const VOLUME_MULTIPLIERS: Partial<Record<SoundKey, number>> = {
   purchase: 0.9,
   alert: 0.8,
   build: 0.5,
+  spawn: 0.5
 }
 
 // Standard HTML5 Audio pool for non-rapid sounds
@@ -135,7 +136,7 @@ export function playSound(
     if (now - (lastPlayAt.get(key) ?? 0) < SFX_DEDUPE_MS) return
     lastPlayAt.set(key, now)
   }
-  
+
   const vol = Math.max(
     0,
     Math.min(1, sfxVolume * (VOLUME_MULTIPLIERS[key] ?? 1))

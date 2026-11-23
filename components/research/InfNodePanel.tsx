@@ -3,7 +3,12 @@
 import { useGameStore } from '@/app/stores/gameStore'
 import { RESEARCH_NODES, INF_NODE_COST_SCALING } from '@/constants/research'
 import { getNodeCost, isNodeAvailable } from '@/lib/researchNodes'
-import { formatPoints, infNodeCostAtLevel } from '@/lib/format'
+import {
+  formatPoints,
+  formatPointsShort,
+  infNodeCostAtLevel
+} from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import type { ResearchBranch } from '@/types/game'
 import {
   buyInfiniteResearchBulk,
@@ -23,6 +28,8 @@ const INF_NODE_IDS: Record<ResearchBranch, string> = {
 }
 
 export default function InfNodePanel({ branch }: Props) {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const nodeId = INF_NODE_IDS[branch]
   const node = RESEARCH_NODES.find((n) => n.id === nodeId)
 
@@ -125,7 +132,7 @@ export default function InfNodePanel({ branch }: Props) {
                   : rawPreview
               return (
                 <span key={offset} className="whitespace-nowrap">
-                  Lv{previewLevel}: {formatPoints(previewCost)} RP
+                  Lv{previewLevel}: {fmt(previewCost)} RP
                 </span>
               )
             })}
@@ -149,8 +156,8 @@ export default function InfNodePanel({ branch }: Props) {
               ].join(' ')}
             >
               {canAfford
-                ? `+1 Lv${level + 1} (${formatPoints(cost)} RP)`
-                : `Requires ${formatPoints(cost)} RP`}
+                ? `+1 Lv${level + 1} (${fmt(cost)} RP)`
+                : `Requires ${fmt(cost)} RP`}
             </button>
             <button
               onClick={() => buyInfiniteResearchBulk(nodeId, 10)}

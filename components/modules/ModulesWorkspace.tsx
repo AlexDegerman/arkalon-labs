@@ -72,8 +72,8 @@ export default function ModulesWorkspace() {
 
       {/* Distribute Modules Master Bar */}
       <div className="card rounded-xl p-2.5 bg-(--bg-surface) border border-(--border-default) flex flex-col gap-2 shadow-sm">
-        <div className="flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-1.5 text-xs font-mono">
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span className="text-[10px] font-bold text-(--text-secondary) uppercase tracking-wider">
               Facility Upgrades:
             </span>
@@ -82,7 +82,7 @@ export default function ModulesWorkspace() {
             </span>
           </div>
           {overclockedCount > 0 && (
-            <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-400/40 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-400/40 px-2 py-0.5 rounded whitespace-nowrap">
               ⚡ {overclockedCount} Overclocked Chassis
             </span>
           )}

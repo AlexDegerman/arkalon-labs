@@ -527,7 +527,7 @@ function applyChallengePermanentReward(
     useGameStore.setState((s) => {
       if (s.relicSlots.length < 6) {
         return {
-          relicSlots: [...s.relicSlots, { relicId: null, cooldownRemaining: 0 }]
+          relicSlots: [...s.relicSlots, { relicId: null }]
         }
       }
       return s

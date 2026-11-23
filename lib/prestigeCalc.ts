@@ -307,8 +307,7 @@ export function buildTier2ResetState(
 
     // Reset relic slots but keep unlocked relics and levels
     relicSlots: Array.from({ length: slotCount }, () => ({
-      relicId: null as number | null,
-      cooldownRemaining: 0
+      relicId: null as number | null
     }))
   }
 }

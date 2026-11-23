@@ -3,7 +3,13 @@
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import { enterChallenge } from '@/app/stores/actions/challengeActions'
-import { formatDuration, formatPoints, getAmountColor } from '@/lib/format'
+import {
+  formatDuration,
+  formatPoints,
+  formatPointsShort,
+  getAmountColor
+} from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import { playSound } from '@/hooks/useSound'
 
 const CATEGORY_BADGES: Record<string, { label: string; cls: string }> = {
@@ -26,6 +32,8 @@ const CATEGORY_BADGES: Record<string, { label: string; cls: string }> = {
 }
 
 export default function ChallengeCompleteModal() {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const isOpen = useUIStore((s) => s.challengeCompleteModalOpen)
   const payload = useUIStore((s) => s.challengeCompletePayload)
   const setOpen = useUIStore((s) => s.setChallengeCompleteModalOpen)
@@ -147,7 +155,7 @@ export default function ChallengeCompleteModal() {
               <span
                 className={`font-bold ${targetColor || 'text-(--text-primary)'}`}
               >
-                {formatPoints(payload.targetReached)} RP
+                {fmt(payload.targetReached)} RP
               </span>
             </div>
             <div className="p-2.5 rounded-lg bg-(--bg-elevated)/70 border border-(--border-default) flex flex-col gap-0.5 text-right">

@@ -1,7 +1,13 @@
 'use client'
 
 import { useGameStore } from '@/app/stores/gameStore'
-import { formatPoints, formatTimeToAfford, getAmountColor } from '@/lib/format'
+import {
+  formatPoints,
+  formatPointsShort,
+  formatTimeToAfford,
+  getAmountColor
+} from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import {
   getEffectiveTarget,
   isChallengeAccelerantActive
@@ -19,6 +25,8 @@ export default function ChallengeProgress({
   currentTiers,
   maxTiers
 }: Props) {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const lifetimePoints = useGameStore((s) => s.lifetimePoints)
   const hasAccelerant = useGameStore((s) =>
     isChallengeAccelerantActive(challengeId, s)
@@ -55,7 +63,7 @@ export default function ChallengeProgress({
               (isActive ? 'text-(--text-accent)' : 'text-(--text-secondary)')
           ].join(' ')}
         >
-          {formatPoints(target)} RP{' '}
+          {fmt(target)} RP{' '}
           {hasAccelerant && (
             <span className="text-(--status-success)">(-25%)</span>
           )}
@@ -67,7 +75,7 @@ export default function ChallengeProgress({
           <ProgressBar progress={progress} height={4} />
           <div className="flex items-center justify-between text-(--text-secondary)">
             <span>
-              {formatPoints(lifetimePoints)} / {formatPoints(target)}
+              {fmt(lifetimePoints)} / {fmt(target)}
             </span>
             <span className="text-(--text-accent) font-bold">
               {eta && <span className="text-amber-300 mr-2">ETA {eta}</span>}

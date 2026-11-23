@@ -139,12 +139,17 @@ export function checkUnlocks(state: GameState): void {
   const pushAlert = useUIStore.getState().pushAlert
   const now = Date.now()
 
+  const beats = state.tutorial.tutorialBeatsCompleted
+  const newBeats: string[] = []
+
   if (
     !alertedTier2Available &&
+    !beats.includes('tier2_ready') &&
     state.stats.totalPrestigesTier2 === 0 &&
     canPrestigeTier2(state)
   ) {
     alertedTier2Available = true
+    newBeats.push('tier2_ready')
     dispatchPrestigeAvailable(2)
     useUIStore.getState().markTabUnseen('prestige')
     pushAlert({
@@ -159,10 +164,12 @@ export function checkUnlocks(state: GameState): void {
 
   if (
     !alertedTier3Available &&
+    !beats.includes('tier3_ready') &&
     state.stats.totalPrestigesTier3 === 0 &&
     canPrestigeTier3(state)
   ) {
     alertedTier3Available = true
+    newBeats.push('tier3_ready')
     dispatchPrestigeAvailable(3)
     useUIStore.getState().markTabUnseen('prestige')
     pushAlert({
@@ -173,6 +180,17 @@ export function checkUnlocks(state: GameState): void {
         'Omega Sphere and 10^85 RP achieved. Tier III Prestige is now available.',
       autoDismissMs: 8000
     })
+  }
+
+  if (newBeats.length > 0) {
+    useGameStore.setState((s) => ({
+      tutorial: {
+        ...s.tutorial,
+        tutorialBeatsCompleted: [
+          ...new Set([...s.tutorial.tutorialBeatsCompleted, ...newBeats])
+        ]
+      }
+    }))
   }
 
   // Find the first locked feature whose conditions are satisfied
@@ -305,24 +323,45 @@ const announcedEras = new Set<number>()
 // Announces Era threshold transitions
 export function checkEraTransition(state: GameState): void {
   const pushAlert = useUIStore.getState().pushAlert
+  const beats = state.tutorial.tutorialBeatsCompleted
+  const newlyCrossed: typeof ERA_THRESHOLDS = []
 
   for (const era of ERA_THRESHOLDS) {
     if (era.era <= 1) continue
-    if (announcedEras.has(era.era)) continue
+    if (announcedEras.has(era.era) || beats.includes(`era_${era.era}`)) {
+      announcedEras.add(era.era)
+      continue
+    }
     if (state.lifetimePoints < era.threshold) continue
 
     announcedEras.add(era.era)
-
-    dispatchEraTransition(era.era)
-
-    pushAlert({
-      priority: 2,
-      variant: 'unlock',
-      title: `Era ${era.era}: ${era.name}`,
-      message: `Research output has reached a new dimensional threshold.`,
-      autoDismissMs: 6000
-    })
+    newlyCrossed.push(era)
   }
+
+  if (newlyCrossed.length === 0) return
+
+  useGameStore.setState((s) => ({
+    tutorial: {
+      ...s.tutorial,
+      tutorialBeatsCompleted: [
+        ...new Set([
+          ...s.tutorial.tutorialBeatsCompleted,
+          ...newlyCrossed.map((e) => `era_${e.era}`)
+        ])
+      ]
+    }
+  }))
+
+  const highest = newlyCrossed[newlyCrossed.length - 1]
+  dispatchEraTransition(highest.era)
+
+  pushAlert({
+    priority: 2,
+    variant: 'unlock',
+    title: `Era ${highest.era}: ${highest.name}`,
+    message: `Research output has reached a new dimensional threshold.`,
+    autoDismissMs: 6000
+  })
 }
 
 let victoryTriggeredThisSession = false

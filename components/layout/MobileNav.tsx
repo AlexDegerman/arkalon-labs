@@ -34,11 +34,17 @@ const MORE_TABS: WorkspaceTab[] = [
 export default function MobileNav() {
   const mobileTab = useActiveTab((s) => s.mobileTab)
   const setMobileTab = useActiveTab((s) => s.setMobileTab)
+  const workspaceTab = useActiveTab((s) => s.workspaceTab)
   const setWorkspaceTab = useActiveTab((s) => s.setWorkspaceTab)
   const moreDrawerOpen = useActiveTab((s) => s.moreDrawerOpen)
   const setMoreDrawerOpen = useActiveTab((s) => s.setMoreDrawerOpen)
   const unseenUnlockedTabs = useUIStore((s) => s.unseenUnlockedTabs)
   const actionSignals = useActionSignals()
+
+  const isViewingMoreTab =
+    mobileTab === 'research' &&
+    workspaceTab !== 'research' &&
+    workspaceTab !== 'directory'
 
   return (
     <nav
@@ -48,13 +54,11 @@ export default function MobileNav() {
       {NAV_ITEMS.map((item) => {
         const isMore = item.id === 'more'
         const isActive = isMore
-          ? moreDrawerOpen
-          : mobileTab === item.id && !moreDrawerOpen
-        const isWorkspace = item.id === 'research'
-        const displayLabel =
-          isWorkspace && mobileTab === 'research' && !moreDrawerOpen
-            ? 'Workspace'
-            : item.label
+          ? moreDrawerOpen || isViewingMoreTab
+          : item.id === 'research'
+            ? mobileTab === 'research' && !isViewingMoreTab && !moreDrawerOpen
+            : mobileTab === item.id && !moreDrawerOpen
+        const displayLabel = item.label
 
         const hasNew = isMore
           ? MORE_TABS.some((t) => unseenUnlockedTabs.includes(t))
@@ -80,8 +84,9 @@ export default function MobileNav() {
                 setMoreDrawerOpen(!moreDrawerOpen)
                 return
               }
-              if (item.id === 'research' && mobileTab !== 'research')
+              if (item.id === 'research') {
                 setWorkspaceTab('research')
+              }
               setMobileTab(item.id)
             }}
             className={[

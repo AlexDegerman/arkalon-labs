@@ -2,7 +2,13 @@
 
 import { useGameStore } from '@/app/stores/gameStore'
 import { useAnimatedBigInt } from '@/hooks/useAnimatedBigInt'
-import { formatCountdown, formatPoints, formatRate, getAmountColor } from '@/lib/format'
+import {
+  formatCountdown,
+  formatPoints,
+  formatPointsShort,
+  formatRate,
+  getAmountColor
+} from '@/lib/format'
 import { getCurrentEra } from '@/lib/eraThresholds'
 import {
   useProgressionTier,
@@ -56,7 +62,9 @@ function ChallengeTargetHUD({
 
   return (
     <span className="text-[11px] text-(--text-secondary) truncate">
-      Goal: {formatPoints(target)} RP ({pct}%)
+      Goal: <span className="sm:hidden">{formatPointsShort(target)}</span>
+      <span className="hidden sm:inline">{formatPoints(target)}</span> RP ({pct}
+      %)
       {collapseStr && (
         <strong className="text-red-400 ml-1.5">{collapseStr}</strong>
       )}
@@ -64,8 +72,26 @@ function ChallengeTargetHUD({
   )
 }
 
-function AnimatedRPValue({ value }: { value: bigint }) {
-  const displayRef = useAnimatedBigInt(value)
+function useIsCompactViewport(): boolean {
+  const [compact, setCompact] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)')
+    const sync = () => setCompact(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+  return compact
+}
+
+function AnimatedRPValue({
+  value,
+  compact
+}: {
+  value: bigint
+  compact: boolean
+}) {
+  const displayRef = useAnimatedBigInt(value, { compact })
   return (
     <span
       ref={displayRef}
@@ -77,6 +103,7 @@ function AnimatedRPValue({ value }: { value: bigint }) {
 }
 
 export default function RPBanner() {
+  const isCompact = useIsCompactViewport()
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
 
@@ -197,9 +224,9 @@ export default function RPBanner() {
             title="Click or tap to view production breakdown"
             className="flex items-baseline gap-1.5 min-w-0 cursor-pointer group select-none"
           >
-            <span className="text-3xl min-[360px]:text-4xl xl:text-5xl font-black font-mono leading-none tracking-tight group-hover:brightness-125 transition-all">
+            <span className="text-2xl min-[360px]:text-3xl sm:text-4xl xl:text-5xl font-black font-mono leading-none tracking-tight whitespace-nowrap group-hover:brightness-125 transition-all">
               {initialized ? (
-                <AnimatedRPValue value={researchPoints} />
+                <AnimatedRPValue value={researchPoints} compact={isCompact} />
               ) : (
                 <span className="text-(--text-secondary)">...</span>
               )}
@@ -252,7 +279,9 @@ export default function RPBanner() {
                         : 'text-(--text-accent)'
               ].join(' ')}
             >
-              {initialized ? `+${formatRate(pps)}` : '+--/sec'}
+              {initialized
+                ? `+${isCompact ? `${formatPointsShort(pps)}/s` : formatRate(pps)}`
+                : '+--/sec'}
             </span>
             {initialized && activeAnomalyType === 'quantum_surge' && (
               <span className="text-[9px] font-mono font-black text-cyan-300 uppercase">
@@ -326,7 +355,11 @@ export default function RPBanner() {
               <span className="text-[11px] font-mono text-(--text-secondary) ml-auto sm:ml-0">
                 {prestige1Done ? 'Recalibrate:' : 'Prestige:'}{' '}
                 <strong className="text-(--status-success) font-bold">
-                  ~{projectedAR} AR
+                  ~
+                  {isCompact
+                    ? formatPointsShort(BigInt(projectedAR))
+                    : formatPoints(BigInt(projectedAR))}{' '}
+                  AR
                 </strong>
               </span>
             )}

@@ -21,13 +21,12 @@ import { awardRelic } from './relicActions'
 export function retuneCosmicEpoch(cycleNumber: number): void {
   const store = useGameStore.getState()
   if (!store.unlocks.anomalousOperations) return
-  if (store.manualOperationCycle !== null) return
 
   const cycle = getCurrentCycle(cycleNumber)
-  if (
-    getCurrentCycle(store.currentOperationCycle).cycleNumber ===
-    cycle.cycleNumber
-  ) {
+  const effectiveCycle =
+    store.manualOperationCycle ??
+    getCurrentCycle(store.currentOperationCycle).cycleNumber
+  if (effectiveCycle === cycle.cycleNumber) {
     return
   }
   useGameStore.setState({ manualOperationCycle: cycle.cycleNumber })
@@ -37,7 +36,7 @@ export function retuneCosmicEpoch(cycleNumber: number): void {
     priority: 1,
     variant: 'unlock',
     title: 'Observation Epoch Retuned',
-    message: `Facility aligned with ${cycle.name}. Active for the remainder of this prestige run.`,
+    message: `Facility aligned with ${cycle.name}. Future Operation Anomalies will use this phase.`,
     autoDismissMs: 5000
   })
 }

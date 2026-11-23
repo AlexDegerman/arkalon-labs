@@ -68,7 +68,7 @@ export default function CoordinateLauncher() {
               : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
           ].join(' ')}
         >
-          Construct Sub-Space Probe · {formatPoints(PROBE_COST_RP)} RP
+          Construct Probe · {formatPoints(PROBE_COST_RP)} RP
         </button>
       ) : (
         <p className="text-[11px] font-mono text-(--text-secondary)/80 text-center py-1">

@@ -258,11 +258,12 @@ export const CF_UPGRADES: PrestigeUpgradeDef<keyof CFUpgrades>[] = [
   {
     id: 'relic_preservation',
     label: 'Relic Preservation',
-    description: 'Relic swap cooldown removed (instant swaps).',
+    description: '+25% effectiveness to all equipped relics permanently.',
     baseCost: 30,
     maxLevel: 1,
     currency: 'cf',
-    effectAtLevel: (l) => (l > 0 ? 'Instant relic swaps' : 'Not purchased')
+    effectAtLevel: (l) =>
+      l > 0 ? '+25% equipped relic effects' : 'Not purchased'
   },
   {
     id: 'megaproject_efficiency',

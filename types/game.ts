@@ -65,10 +65,10 @@ export interface ProbeState {
   veteranRank?: number // 0-5
   expeditionsCompleted?: number
 }
+
 // Relic slot state
 export interface RelicSlotState {
   relicId: number | null
-  cooldownRemaining: number // seconds
 }
 
 // AR upgrade levels

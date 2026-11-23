@@ -4,8 +4,6 @@ import { RELIC_MAP, RELIC_CLASSES, type RelicClass } from '@/constants/relics'
 import type { GameState, RelicSlotState } from '@/types/game'
 import {
   RELIC_LEVEL_CAP,
-  RELIC_SWAP_COOLDOWN_SECONDS,
-  RELIC_SWAP_COOLDOWN_CF_SECONDS,
   RELIC_SLOT_COUNT_BASE,
   RELIC_SLOT_COUNT_MAX
 } from '@/constants/game'
@@ -82,18 +80,9 @@ export function getRelicSlotCount(state: GameState): number {
   return Math.min(RELIC_SLOT_COUNT_MAX, RELIC_SLOT_COUNT_BASE + sc11Tiers)
 }
 
-// Returns the swap cooldown in seconds (0s with CF Relic Preservation)
-export function getSwapCooldownSeconds(state: GameState): number {
-  if (state.cfUpgrades.relic_preservation > 0) {
-    return RELIC_SWAP_COOLDOWN_CF_SECONDS
-  }
-  return RELIC_SWAP_COOLDOWN_SECONDS
-}
-
 // Returns true if a relic can be equipped in a given slot
-// (slot is empty or cooldown has expired)
 export function canEquipToSlot(slot: RelicSlotState): boolean {
-  return slot.relicId === null && slot.cooldownRemaining <= 0
+  return slot.relicId === null
 }
 
 // Returns true if a relic is currently equipped in any slot

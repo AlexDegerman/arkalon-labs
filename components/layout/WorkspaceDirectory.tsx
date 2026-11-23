@@ -17,7 +17,7 @@ import {
   isChallengeAccelerantActive
 } from '@/lib/challengeDefs'
 import {
-  formatPoints,
+  formatPointsShort,
   formatTimeToAfford,
   getNetSpendablePPS
 } from '@/lib/format'
@@ -132,7 +132,7 @@ function getNextFacilityObjective(state: GameState): NextObjective | null {
         : 0
     return {
       title: `Building ${mega?.name ?? 'Megaproject'}`,
-      detail: `${pct}% absorbed (${formatPoints(state.megaprojectRPAbsorbed)} / ${formatPoints(cost)} RP)`,
+      detail: `${pct}% absorbed (${formatPointsShort(state.megaprojectRPAbsorbed)} / ${formatPointsShort(cost)} RP)`,
       tab: 'megaprojects'
     }
   }
@@ -165,7 +165,7 @@ function getNextFacilityObjective(state: GameState): NextObjective | null {
           : `ETA ${formatTimeToAfford(cost, state.researchPoints, netPPS)}`
       return {
         title: `Next Tech: ${nextNode.id} (${nextNode.label})`,
-        detail: `${formatPoints(cost)} RP · ${eta}`,
+        detail: `${formatPointsShort(cost)} RP · ${eta}`,
         tab: 'research'
       }
     }
@@ -187,7 +187,7 @@ function getNextFacilityObjective(state: GameState): NextObjective | null {
       if (nextMega.requiresLifetimeRP) {
         return {
           title: `Next Megaproject: ${nextMega.name}`,
-          detail: `Requires ${formatPoints(nextMega.requiresLifetimeRP)} lifetime RP (Current: ${formatPoints(state.lifetimePoints)})`,
+          detail: `Requires ${formatPointsShort(nextMega.requiresLifetimeRP)} lifetime RP (Current: ${formatPointsShort(state.lifetimePoints)})`,
           tab: 'megaprojects'
         }
       }
@@ -212,7 +212,7 @@ function getNextFacilityObjective(state: GameState): NextObjective | null {
       )
       return {
         title: `Next Challenge: ${nextChallenge.name} (Tier ${nextTier}/${nextChallenge.maxTiers})`,
-        detail: `Target: ${formatPoints(target)} RP`,
+        detail: `Target: ${formatPointsShort(target)} RP`,
         tab: 'challenges'
       }
     }

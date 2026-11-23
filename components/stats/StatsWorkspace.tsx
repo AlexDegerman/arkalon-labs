@@ -3,10 +3,12 @@
 import { useGameStore } from '@/app/stores/gameStore'
 import {
   formatPoints,
+  formatPointsShort,
   formatDuration,
   formatRate,
   getAmountColor
 } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import { getCurrentEra } from '@/lib/eraThresholds'
 
 interface StatRowProps {
@@ -53,6 +55,10 @@ function StatSection({ title, children }: StatSectionProps) {
 }
 
 export default function StatsWorkspace() {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
+  const fmtRate = (v: bigint) =>
+    isCompact ? `${formatPointsShort(v)}/s` : formatRate(v)
   const stats = useGameStore((s) => s.stats)
   const lifetimePoints = useGameStore((s) => s.lifetimePoints)
   const researchPoints = useGameStore((s) => s.researchPoints)
@@ -84,7 +90,7 @@ export default function StatsWorkspace() {
       : 0
 
   // Best run stats
-  const bestPPSFormatted = formatRate(stats.peakRPPerSec)
+  const bestPPSFormatted = fmtRate(stats.peakRPPerSec)
 
   return (
     <div className="flex flex-col gap-2 p-2 sm:p-3 h-full overflow-y-auto scrollbar-dark">
@@ -96,19 +102,19 @@ export default function StatsWorkspace() {
       <StatSection title="Production">
         <StatRow
           label="Current RP"
-          value={formatPoints(researchPoints)}
+          value={fmt(researchPoints)}
           valueClass={getAmountColor(researchPoints) || 'text-(--text-accent)'}
         />
         <StatRow
           label="Lifetime RP"
-          value={formatPoints(lifetimePoints)}
+          value={fmt(lifetimePoints)}
           valueClass={getAmountColor(lifetimePoints) || 'text-(--text-accent)'}
         />
         {stats.peakLifetimePoints !== undefined &&
           stats.peakLifetimePoints > lifetimePoints && (
             <StatRow
               label="Peak Lifetime RP"
-              value={formatPoints(stats.peakLifetimePoints)}
+              value={fmt(stats.peakLifetimePoints)}
               valueClass={
                 getAmountColor(stats.peakLifetimePoints) ||
                 'text-(--text-accent)'
@@ -117,7 +123,7 @@ export default function StatsWorkspace() {
           )}
         <StatRow
           label="RP/sec"
-          value={formatRate(pps)}
+          value={fmtRate(pps)}
           valueClass={getAmountColor(pps) || 'text-(--text-accent)'}
         />
         <StatRow label="Peak RP/sec" value={bestPPSFormatted} />
@@ -205,21 +211,21 @@ export default function StatsWorkspace() {
         {arkalonResonance > 0 && (
           <StatRow
             label="Arkalon Resonance"
-            value={`${formatPoints(BigInt(Math.floor(arkalonResonance)))} AR`}
+            value={`${fmt(BigInt(Math.floor(arkalonResonance)))} AR`}
             valueClass="g-dd font-black"
           />
         )}
         {chronalFractures > 0 && (
           <StatRow
             label="Chronal Fractures"
-            value={`${formatPoints(BigInt(Math.floor(chronalFractures)))} CF`}
+            value={`${fmt(BigInt(Math.floor(chronalFractures)))} CF`}
             valueClass="g-sp font-black"
           />
         )}
         {omniSpars > 0 && (
           <StatRow
             label="Omni-Spars"
-            value={`${formatPoints(BigInt(Math.floor(omniSpars)))} OS`}
+            value={`${fmt(BigInt(Math.floor(omniSpars)))} OS`}
             valueClass="g-tqgs font-black"
           />
         )}

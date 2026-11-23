@@ -14,7 +14,8 @@ import {
   getPrestigeResetSummary
 } from '@/lib/prestigeCalc'
 import { computeARBonus, getCountedAR } from '@/lib/productionEngine'
-import { formatPoints } from '@/lib/format'
+import { formatPoints, formatPointsShort } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import ARUpgradeShop from '@/components/prestige/ARUpgradeShop'
 import {
   PRESTIGE_TIER1_THRESHOLD,
@@ -64,7 +65,7 @@ function PrestigeConstellationMap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            Earns: Arkalon Resonance ({Math.floor(ar)} AR)
+            Earns: Arkalon Resonance ({formatPoints(BigInt(Math.floor(ar)))} AR)
           </span>
           <p className="text-[9px] text-(--text-secondary)/70 leading-tight">
             At 1.00 Billion RP. Resets RP & generators; keeps modules, AR perks,
@@ -82,7 +83,7 @@ function PrestigeConstellationMap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            Earns: Chronal Fractures ({Math.floor(cf)} CF)
+            Earns: Chronal Fractures ({formatPoints(BigInt(Math.floor(cf)))} CF)
           </span>
           <p className="text-[9px] text-(--text-secondary)/70 leading-tight">
             Requires Chronos Array ({hasT2Req ? '✓' : 'Pending'}) + 100.00
@@ -100,7 +101,7 @@ function PrestigeConstellationMap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            Earns: Omni-Spars ({Math.floor(os)} OS)
+            Earns: Omni-Spars ({formatPoints(BigInt(Math.floor(os)))} OS)
           </span>
           <p className="text-[9px] text-(--text-secondary)/70 leading-tight">
             Requires Omega Sphere ({hasT3Req ? '✓' : 'Pending'}) + 10.00
@@ -118,6 +119,8 @@ interface ConfirmState {
 }
 
 export default function PrestigeWorkspace() {
+  const isCompact = useIsCompactViewport()
+  const fmt = isCompact ? formatPointsShort : formatPoints
   const [subTab, setSubTab] = useState<PrestigeSubTab>('tier1')
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null)
 
@@ -207,7 +210,7 @@ export default function PrestigeWorkspace() {
           <p className="text-xs text-(--text-primary) font-mono">
             You will earn{' '}
             <span className="text-(--text-accent) font-bold text-sm">
-              {confirmState.gain} {currencyLabel}
+              {fmt(BigInt(confirmState.gain))} {currencyLabel}
             </span>
             .
           </p>
@@ -370,7 +373,7 @@ export default function PrestigeWorkspace() {
                   Resonance Memory:
                 </span>
                 <span className="font-bold text-(--status-success)">
-                  {resonanceMemoryAR.toLocaleString()} AR floor
+                  {formatPoints(BigInt(Math.floor(resonanceMemoryAR)))} AR floor
                 </span>
               </div>
             )}
@@ -385,15 +388,26 @@ export default function PrestigeWorkspace() {
             onClick={() => handlePrestige(1)}
             disabled={!canT1}
             className={[
-              'w-full py-3 text-xs sm:text-sm font-black font-mono uppercase tracking-widest rounded-xl border transition-all cursor-pointer select-none',
+              'w-full py-2.5 px-3 font-mono rounded-xl border transition-all select-none flex flex-col items-center justify-center gap-0.5 text-center',
               canT1
-                ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_15px_rgba(0,240,255,0.35)]'
+                ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_15px_rgba(0,240,255,0.35)] cursor-pointer'
                 : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
           >
-            {canT1
-              ? `Recalibrate Reality · Claim +${arGain} AR`
-              : 'Reality Recalibration Locked'}
+            {canT1 ? (
+              <>
+                <span className="text-xs sm:text-sm font-black uppercase tracking-widest leading-tight">
+                  Recalibrate Reality
+                </span>
+                <span className="text-[11px] font-bold tracking-normal leading-tight opacity-90">
+                  Reset for +{fmt(BigInt(arGain))} AR
+                </span>
+              </>
+            ) : (
+              <span className="text-xs sm:text-sm font-black uppercase tracking-widest">
+                Reality Recalibration Locked
+              </span>
+            )}
           </button>
 
           <div className="pt-2 border-t border-(--border-default)/60">
@@ -415,7 +429,7 @@ export default function PrestigeWorkspace() {
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-(--text-secondary)">CF Balance:</span>
               <span className="font-black g-sp">
-                {formatPoints(BigInt(Math.floor(chronalFractures)))} CF
+                {fmt(BigInt(Math.floor(chronalFractures)))} CF
               </span>
             </div>
             <div className="flex items-center justify-between text-xs font-mono">
@@ -439,8 +453,7 @@ export default function PrestigeWorkspace() {
                     : 'text-(--text-secondary)'
                 }
               >
-                {formatPoints(lifetimePoints)} /{' '}
-                {formatPoints(PRESTIGE_TIER2_THRESHOLD)} RP
+                {fmt(lifetimePoints)} / {fmt(PRESTIGE_TIER2_THRESHOLD)} RP
               </span>
             </div>
             <div className="flex items-center justify-between text-xs font-mono pt-1.5 border-t border-(--border-default)/50">
@@ -448,7 +461,7 @@ export default function PrestigeWorkspace() {
               <span
                 className={`font-black ${canT2 ? 'g-sp' : 'text-(--text-secondary)/70'}`}
               >
-                {cfGain > 0 ? `+${formatPoints(BigInt(cfGain))} CF` : 'Locked'}
+                {cfGain > 0 ? `+${fmt(BigInt(cfGain))} CF` : 'Locked'}
               </span>
             </div>
             <p className="text-[10px] font-mono text-(--text-secondary)/80 leading-snug pt-1 border-t border-(--border-default)/40">
@@ -462,15 +475,26 @@ export default function PrestigeWorkspace() {
             onClick={() => handlePrestige(2)}
             disabled={!canT2}
             className={[
-              'w-full py-3 text-xs sm:text-sm font-black font-mono uppercase tracking-widest rounded-xl border transition-all cursor-pointer select-none',
+              'w-full py-2.5 px-3 font-mono rounded-xl border transition-all select-none flex flex-col items-center justify-center gap-0.5 text-center',
               canT2
-                ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_15px_rgba(0,240,255,0.35)]'
+                ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_15px_rgba(0,240,255,0.35)] cursor-pointer'
                 : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
           >
-            {canT2
-              ? `Prestige Tier II · Claim +${cfGain} CF`
-              : 'Tier II Prestige Locked'}
+            {canT2 ? (
+              <>
+                <span className="text-xs sm:text-sm font-black uppercase tracking-widest leading-tight">
+                  Sever Timeline
+                </span>
+                <span className="text-[11px] font-bold tracking-normal leading-tight opacity-90">
+                  Reset for +{fmt(BigInt(cfGain))} CF
+                </span>
+              </>
+            ) : (
+              <span className="text-xs sm:text-sm font-black uppercase tracking-widest">
+                Timeline Severance Locked
+              </span>
+            )}
           </button>
 
           <div className="section-divider" />
@@ -488,7 +512,7 @@ export default function PrestigeWorkspace() {
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-(--text-secondary)">OS Balance:</span>
               <span className="font-black g-tqgs">
-                {formatPoints(BigInt(Math.floor(omniSpars)))} OS
+                {fmt(BigInt(Math.floor(omniSpars)))} OS
               </span>
             </div>
             <div className="flex items-center justify-between text-xs font-mono">
@@ -512,8 +536,7 @@ export default function PrestigeWorkspace() {
                     : 'text-(--text-secondary)'
                 }
               >
-                {formatPoints(lifetimePoints)} /{' '}
-                {formatPoints(PRESTIGE_TIER3_THRESHOLD)} RP
+                {fmt(lifetimePoints)} / {fmt(PRESTIGE_TIER3_THRESHOLD)} RP
               </span>
             </div>
             <div className="flex items-center justify-between text-xs font-mono pt-1.5 border-t border-(--border-default)/50">
@@ -521,7 +544,7 @@ export default function PrestigeWorkspace() {
               <span
                 className={`font-black ${canT3 ? 'g-tqgs' : 'text-(--text-secondary)/70'}`}
               >
-                {osGain > 0 ? `+${formatPoints(BigInt(osGain))} OS` : 'Locked'}
+                {osGain > 0 ? `+${fmt(BigInt(osGain))} OS` : 'Locked'}
               </span>
             </div>
             <p className="text-[10px] font-mono text-(--text-secondary)/80 leading-snug pt-1 border-t border-(--border-default)/40">
@@ -535,15 +558,26 @@ export default function PrestigeWorkspace() {
             onClick={() => handlePrestige(3)}
             disabled={!canT3}
             className={[
-              'w-full py-3 text-xs sm:text-sm font-black font-mono uppercase tracking-widest rounded-xl border transition-all cursor-pointer select-none',
+              'w-full py-2.5 px-3 font-mono rounded-xl border transition-all select-none flex flex-col items-center justify-center gap-0.5 text-center',
               canT3
-                ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_15px_rgba(0,240,255,0.35)]'
+                ? 'border-(--border-accent) bg-(--border-accent) text-[#080c14] hover:brightness-110 shadow-[0_0_15px_rgba(0,240,255,0.35)] cursor-pointer'
                 : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
           >
-            {canT3
-              ? `Prestige Tier III · Claim +${osGain} OS`
-              : 'Tier III Prestige Locked'}
+            {canT3 ? (
+              <>
+                <span className="text-xs sm:text-sm font-black uppercase tracking-widest leading-tight">
+                  Singular Synthesis
+                </span>
+                <span className="text-[11px] font-bold tracking-normal leading-tight opacity-90">
+                  Reset for +{fmt(BigInt(osGain))} OS
+                </span>
+              </>
+            ) : (
+              <span className="text-xs sm:text-sm font-black uppercase tracking-widest">
+                Singular Synthesis Locked
+              </span>
+            )}
           </button>
 
           <div className="section-divider" />

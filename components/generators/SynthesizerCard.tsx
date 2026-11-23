@@ -14,10 +14,12 @@ import {
 import { FEATURE_MAP } from '@/lib/featureRegistry'
 import {
   formatPoints,
+  formatPointsShort,
   formatTimeToAfford,
   getAmountColor,
   getNetSpendablePPS
 } from '@/lib/format'
+import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import BuyButton from '@/components/generators/BuyButton'
 import type { BulkBuyAmount } from '@/constants/game'
 
@@ -110,6 +112,7 @@ function SynthTimeToAfford({
 }
 
 function SynthesizerCard({ synthesizerIndex, bulkAmount }: Props) {
+  const isCompact = useIsCompactViewport()
   const def = SYNTHESIZERS[synthesizerIndex]
   const theme = SYNTH_THEMES[synthesizerIndex] ?? SYNTH_THEMES[0]
 
@@ -233,7 +236,7 @@ function SynthesizerCard({ synthesizerIndex, bulkAmount }: Props) {
               !affordable ? 'opacity-55' : ''
             ].join(' ')}
           >
-            {formatPoints(cost)} RP
+            {(isCompact ? formatPointsShort : formatPoints)(cost)} RP
           </span>
           <SynthTimeToAfford cost={cost} affordable={affordable} />
         </div>
