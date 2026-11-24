@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     siteName: 'Arkalon Laboratories',
     images: [
       {
-        url: 'https://labs.rpsleague.fi/brand/arkalon-labs-app-icon.svg',
+        url: 'https://labs.rpsleague.fi/brand/icon-512.png',
         width: 512,
         height: 512,
         alt: 'Arkalon Laboratories'

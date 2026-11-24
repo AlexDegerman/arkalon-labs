@@ -174,7 +174,7 @@ Unlocks after resolving your first Anomaly or completing Node `O1` (`Synaptic Re
 
 - **20 Unique Relics:** Spanning five rarity tiers (`Common`, `Rare`, `Epic`, `Legendary`, `Mythical`) and four classes (`Computation`, `Energy`, `Reality`, `Arkalon`), discoverable through research milestones, generator milestones, prestige resets, anomalies, and excavation.
 - **Deterministic Pity Protection:** Guarantees **Relic 4** by your 25th completed research node and **Relic 9** by your 8th Unstable/Void probe expedition.
-- **Class Resonance & Presets:** Starts with `3` active sockets (expandable to `6` via `SC11`), a `60s` unequip cooldown (removed by CF *Relic Preservation*), `+1 / +10 / MAX` Dust upgrades up to Lv100 (`Lv20` for Relic 20), **Class Resonance** bonuses for equipping 2 (`+15%` effects) or 3 (`+35%` effects + `+10%` class output) matching relics, and `3` saved Loadout Presets (`Speedrun`, `Deep Idle`, `Surge Hunter`).
+- **Class Resonance & Presets:** Starts with `3` active sockets (expandable to `6` via `SC11`) with instant swapping, `+1 / +10 / MAX` Dust upgrades up to Lv100 (`Lv20` for Relic 20), **Class Resonance** bonuses for equipping 2 (`+15%` effects) or 3 (`+35%` effects + `+10%` class output) matching relics, CF *Relic Preservation* (`+25%` equipped relic effectiveness), and `3` saved Loadout Presets (`Speedrun`, `Deep Idle`, `Surge Hunter`).
 
 > 📋 **[View full Relic system breakdown →](./RELICS.md)**
 
@@ -187,8 +187,8 @@ Unlocks at `25` Server Clusters and `10` Quantum Computers, allowing constructio
 - **3 Sector Tiers:**
   - **Safe Sectors (`1h`):** `100%` success rate, `15–30` base Dust.
   - **Unstable Rifts (`4h`):** `75%` success rate, `80–160` base Dust, `5%` Relic 9 drop chance, `10m` repair cycle on failure.
-  - **Void Depths (`12h`):** `50%` success rate, `450–900` base Dust, `15%` Relic 9 drop chance; failures salvage `75` Dust and destroy unshielded probes.
-- **Modular Subsystems:** Equip each launch with `Standard`, `Aegis Shielding` (prevents Void destruction and halves repair times), `Tachyon Thrusters` (`-35%` scan duration), or `Deep-Core Siphon` (`+50%` Dust and `+5%` relic chance).
+  - **Void Depths (`12h`):** `50%` success rate, `450–900` base Dust, `15%` Relic 9 drop chance; failures salvage `75` Dust and enter a `30m` repair cycle.
+- **Modular Subsystems:** Equip each launch with `Standard`, `Aegis Shielding` (halves repair times to `5m` Unstable / `15m` Void), `Tachyon Thrusters` (`-35%` scan duration), or `Deep-Core Siphon` (`+50%` Dust and `+5%` relic chance).
 - **Veteran Rank Progression:** Surviving probes rank up from **Rookie** to **Apex Drone** (`Lv5` at 15 expeditions), earning up to `+25%` mission success rate and `1.5x` Dust yield.
 
 ---
@@ -331,7 +331,7 @@ graph LR
 At scales up to `10^1000`, standard `Number` operations hit `Infinity` (`>1.79e308`) and break exponential multipliers (`C_INF`, `E_INF`, `Quantum Overdrive`) and bulk `MAX` purchases. Solved by converting arbitrary-size `BigInt` values to base-10 logs via hex slicing (`bigIntLog10`), implementing `multiplyBigIntByFloat` in log-space, splitting `costToBuyN` across discrete `R1` and `M100` breakpoints, and applying binary search over geometric series bounds in `maxAffordable`.
 
 **Stepped Offline Simulation Across Coupled Systems**
-Simply multiplying `offlineSeconds * cachedPPS` fails when research finishes mid-offline, `R3`/`Auto-Research Queue` starts the next node, an active anomaly expires, or a megaproject finishes construction and changes PPS mid-window. Engineered a segmented offline simulator (`calculateOfflineProgress`) that steps forward to the next anomaly/research boundary (up to 48 segments), updates PPS per segment, processes probe expeditions (including `Auto-Launch Probe` loops and `Void` repair/destruction), and handles `EC3` 5-minute recursive collapses.
+Simply multiplying `offlineSeconds * cachedPPS` fails when research finishes mid-offline, `R3`/`Auto-Research Queue` starts the next node, an active anomaly expires, or a megaproject finishes construction and changes PPS mid-window. Engineered a segmented offline simulator (`calculateOfflineProgress`) that steps forward to the next anomaly/research boundary (up to 48 segments), updates PPS per segment, processes probe expeditions (including `Auto-Launch Probe` loops and repair cycles), and handles `EC3` 5-minute recursive collapses.
 
 **Duplicate Browser Tab Desynchronization**
 Running two tabs simultaneously causes race conditions between 5s local saves and 60s cloud syncs. Solved with `BroadcastChannel` (`useTabGuard`) paired with a 3-second heartbeat and 8-second timeout: secondary tabs lock gameplay immediately, and if the primary tab crashes without firing `beforeunload`, the surviving tab automatically takes over and re-hydrates from the latest save.
@@ -364,7 +364,7 @@ Arkalon communicates directly from the **Arkalon Core** center column (or dedica
 
 ## 📱 Mobile, PWA & Customization
 
-- **Responsive Master Layout:** Desktop (`>=1024px`) renders a split `68% / 32%` command view (`Facility Equipment` | `Arkalon Core` | `Workspace Sidebar`), while mobile (`<1024px`) adapts into a persistent RP header with a 5-tab bottom nav (`Lab`, `Arkalon`, `Research/Workspace`, `Relics`, `More` bottom-sheet drawer) featuring live lock progress bars.
+- **Responsive Master Layout:** Desktop (`>=1024px`) renders a split `68% / 32%` command view (`Facility Equipment` | `Arkalon Core` | `Workspace Sidebar`), while mobile (`<1024px`) adapts into a persistent RP header with a 5-tab bottom nav (`Lab`, `Arkalon`, `Research`, `Relics`, and a `More` Facility Directory drawer) featuring live lock progress bars.
 - **5 Interface Themes & Visual Optics:** Switch between **Electric Cyan**, **Matrix Green**, **Vaporwave**, **Solar Amber**, and **Absolute Void**, toggle **Neon Bloom**, **CRT Scanlines**, and **Reduced Motion**, and toggle `Suffix` vs. `Scientific` notation.
 - **Keyboard Command Matrix:** Full desktop hotkey support (`1–0` & `Shift+1–0` for equipment tiers 1–20, `M` Max All, `B` cycle bulk mode, `R` Research, `P` Prestige, `,` Settings, `?` Shortcut Matrix, `Esc` dismiss modals).
 - **Standalone PWA Ready:** Configured with `manifest.json`, dark theme viewport metadata, and custom vector brand marks.
@@ -387,10 +387,15 @@ Arkalon Laboratories uses GitHub Actions for CI gating and automated zero-downti
 
 | Stage          | Tool                                                 | Purpose                                                                                                     |
 | -------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Validation     | TypeScript, ESLint, Vitest, Next.js Build            | Type checking, linting, unit tests, and standalone build verification                                       |
+| Validation     | TypeScript, Vitest, Next.js Build                    | Type checking, unit/integration tests, and standalone build verification                                    |
 | Deployment     | GitHub Actions → Hetzner VPS                         | Source sync, Docker image build (`DEPLOY_SHA`), container recreation, and `/api/health` check               |
 | Infrastructure | Docker (`output: 'standalone'`), Caddy, PostgreSQL 17 | Automatic HTTPS reverse proxy (`proxy-net`) and private DB network (`db-net`)                              |
 | Backups        | Daily `pg_dump` + `rclone`                           | Automated `03:00 UTC` database backups synced to Backblaze B2                                               |
+
+### Key Workflows
+
+- **`.github/workflows/ci.yml`** — Runs `npx tsc --noEmit`, `npm run test:run`, and `npm run build` on all pushes and pull requests.
+- **`.github/workflows/deploy.yml`** — Syncs source to `/opt/arkalon/arkalon-labs/`, builds the `arkalon-labs` Docker image, recreates the container, verifies `/api/health`, and prunes dangling images on `main`.                                           |
 
 ---
 
