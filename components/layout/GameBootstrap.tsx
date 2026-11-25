@@ -11,6 +11,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useBGM } from '@/hooks/useBGM'
 import { useSound } from '@/hooks/useSound'
 import { primeArkalonVoices } from '@/lib/arkalonTTS'
+import { useMusicStore } from '@/app/stores/musicStore'
 
 // Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
@@ -27,6 +28,18 @@ export default function GameBootstrap() {
 
   // Start game loop once initialized and not a duplicate tab
   useGameLoop(initialized && !isDuplicate)
+
+  // Keep BGM context in sync when resets or offline catch-up clear an anomaly
+  useEffect(() => {
+    let prev = useGameStore.getState().activeAnomalyType
+    useMusicStore.getState().setContext(prev ? 'anomaly' : 'idle')
+    return useGameStore.subscribe((s) => {
+      if (s.activeAnomalyType === prev) return
+      prev = s.activeAnomalyType
+      useMusicStore.getState().setContext(prev ? 'anomaly' : 'idle')
+    })
+  }, [])
+
   useInactiveTabDetection()
   useKeyboardShortcuts(!isDuplicate)
   useBGM()

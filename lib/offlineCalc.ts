@@ -20,7 +20,13 @@ import {
   getEffectiveStudyTime
 } from './researchNodes'
 import { getSynthesizerRates } from './synthesizerDefs'
-import { getAnomalyBuffScale } from './anomalyDefs'
+import {
+  getAnomalyBuffScale,
+  selectNextAnomaly,
+  getEffectiveDuration,
+  getNextSpawnInterval,
+  getRawAnomalyDuration
+} from './anomalyDefs'
 import {
   getScanDuration,
   getVeteranRank,
@@ -398,7 +404,6 @@ export function calculateOfflineProgress(
   const researchTimersFrozen =
     state.activeChallengeRestrictions?.noResearchTimerTick ?? false
   const techDisabled = state.activeChallengeRestrictions?.techMatrixDisabled
-  const buffScale = getAnomalyBuffScale(state)
   const autoQueueUnlocked =
     state.automation.autoResearchQueue &&
     state.arUpgrades.auto_research_queue > 0 &&
@@ -409,6 +414,7 @@ export function calculateOfflineProgress(
   let anomalyTimeRemaining = activeAnomalyType
     ? Math.max(0, state.anomalyTimeRemaining)
     : 0
+  let anomalySpawnRawDuration = state.anomalySpawnRawDuration
   let timeToNextAnomalyCheck = state.timeToNextAnomalyCheck
 
   const currentCompleted = [...state.completedResearchNodes]
@@ -446,14 +452,46 @@ export function calculateOfflineProgress(
     dysonSwarmLevel
   }
 
-  for (let step = 0; step < 48 && remainingElapsed > 1e-6; step++) {
+  const anomaliesEnabled =
+    state.unlocks.anomalies &&
+    !state.activeChallengeRestrictions?.anomaliesDisabled
+
+  for (let step = 0; step < 4096 && remainingElapsed > 1e-6; step++) {
+    const isFinalStep = step === 4095
+    if (
+      !activeAnomalyType &&
+      anomaliesEnabled &&
+      !isFinalStep &&
+      timeToNextAnomalyCheck <= 0
+    ) {
+      const def = selectNextAnomaly(simState)
+      activeAnomalyType = def.type
+      anomalyTimeRemaining = getEffectiveDuration(def, simState)
+      anomalySpawnRawDuration = getRawAnomalyDuration(def, simState)
+      timeToNextAnomalyCheck = getNextSpawnInterval(simState)
+    }
+    // Coalesced tail runs at baseline so a frozen anomaly cannot boost hours of RP
+    if (isFinalStep && activeAnomalyType) {
+      activeAnomalyType = null
+      anomalyTimeRemaining = 0
+      anomalySpawnRawDuration = 0
+      anomaliesResolvedCount++
+    }
+
+    const buffScale = getAnomalyBuffScale({
+      ...simState,
+      activeAnomalyType,
+      anomalyTimeRemaining,
+      anomalySpawnRawDuration
+    })
     const anomalyResearchSpeed =
       activeAnomalyType === 'temporal_distortion' ||
       activeAnomalyType === 'fused_chronal_breach'
-        ? 10 * buffScale
+        ? 5 * buffScale
         : activeAnomalyType === 'operation_chrono_freeze'
-          ? 5 * buffScale
+          ? 3 * buffScale
           : 1
+
     const r4Boost =
       !techDisabled && currentCompleted.includes('R4') && activeAnomalyType
         ? 2
@@ -465,17 +503,24 @@ export function calculateOfflineProgress(
       : anomalyResearchSpeed * r4Boost
 
     let dt = remainingElapsed
+
     if (step < 16) {
       dt = Math.min(dt, Math.max(600, remainingElapsed / (16 - step)))
     }
-    if (activeAnomalyType && anomalyTimeRemaining > 0) {
-      dt = Math.min(dt, anomalyTimeRemaining)
-    }
-    if (researchSpeedMult > 0) {
-      for (let i = 0; i < Math.min(slotCount, slots.length); i++) {
-        const s = slots[i]
-        if (s.nodeId && s.timerRemaining > 0) {
-          dt = Math.min(dt, s.timerRemaining / researchSpeedMult)
+
+    if (step < 4095) {
+      if (activeAnomalyType && anomalyTimeRemaining > 0) {
+        dt = Math.min(dt, anomalyTimeRemaining)
+      } else if (anomaliesEnabled && timeToNextAnomalyCheck > 0) {
+        dt = Math.min(dt, timeToNextAnomalyCheck)
+      }
+
+      if (researchSpeedMult > 0) {
+        for (let i = 0; i < Math.min(slotCount, slots.length); i++) {
+          const s = slots[i]
+          if (s.nodeId && s.timerRemaining > 0) {
+            dt = Math.min(dt, s.timerRemaining / researchSpeedMult)
+          }
         }
       }
     }
@@ -484,6 +529,7 @@ export function calculateOfflineProgress(
     simState.lifetimePoints = simLifetime
     simState.activeAnomalyType = activeAnomalyType
     simState.anomalyTimeRemaining = anomalyTimeRemaining
+    simState.anomalySpawnRawDuration = anomalySpawnRawDuration
     simState.activeMegaprojectId = activeMegaprojectId
     simState.megaprojectRPAbsorbed = megaprojectRPAbsorbed
     simState.dysonSwarmLevel = dysonSwarmLevel
@@ -549,6 +595,7 @@ export function calculateOfflineProgress(
       if (anomalyTimeRemaining <= 1e-6) {
         activeAnomalyType = null
         anomalyTimeRemaining = 0
+        anomalySpawnRawDuration = 0
         anomaliesResolvedCount++
       }
     } else if (state.unlocks.anomalies) {
@@ -682,6 +729,7 @@ export function calculateOfflineProgress(
     cachedFinalAnomalyState: {
       activeAnomalyType,
       anomalyTimeRemaining,
+      anomalySpawnRawDuration,
       timeToNextAnomalyCheck
     },
     ec3CollapseTriggered,
@@ -746,6 +794,7 @@ export function applyOfflineProgress(
   const finalAnomaly = payload.cachedFinalAnomalyState ?? {
     activeAnomalyType: state.activeAnomalyType,
     anomalyTimeRemaining: state.anomalyTimeRemaining,
+    anomalySpawnRawDuration: state.anomalySpawnRawDuration,
     timeToNextAnomalyCheck: state.timeToNextAnomalyCheck
   }
 
@@ -893,6 +942,7 @@ export function applyOfflineProgress(
     dysonSwarmLevel,
     activeAnomalyType: finalAnomaly.activeAnomalyType,
     anomalyTimeRemaining: finalAnomaly.anomalyTimeRemaining,
+    anomalySpawnRawDuration: finalAnomaly.anomalySpawnRawDuration,
     timeToNextAnomalyCheck: finalAnomaly.timeToNextAnomalyCheck,
     ...(state.activeChallengeId
       ? {

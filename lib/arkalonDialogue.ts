@@ -70,9 +70,9 @@ export const DIALOGUE_LIBRARY: Record<string, string> = {
   anomaly_quantum_surge:
     'Quantum surge detected. Core output exceeding containment thresholds. Production overdrive active.',
   anomaly_temporal_distortion:
-    'Temporal distortion field active. Local time dilated. Research matrix accelerating tenfold.',
+    'Temporal distortion field active. Local time dilated. Research matrix accelerating fivefold.',
   anomaly_containment_breach:
-    'Containment breach. Venting protocols engaged. Production doubled and equipment synthesis costs halved.',
+    'Containment breach. Venting protocols engaged. Contained energy redirected into facility output.',
   anomaly_arkalon_resonance:
     'Synaptic resonance harmonized. Interface throughput operating at peak capacity.',
   anomaly_operation_chrono_freeze:
@@ -80,13 +80,13 @@ export const DIALOGUE_LIBRARY: Record<string, string> = {
   anomaly_operation_solar_flare:
     'Solar Flare Overload active. Stellar radiation directly supercharging power systems.',
   anomaly_operation_gravity_sink:
-    'Gravity Sink Collapse underway. Compression fields doubling production and discounting structural costs.',
+    'Gravity Sink Collapse underway. Compression fields channeling collapsed mass into facility output.',
   anomaly_operation_matrix_inversion:
     'Matrix Inversion confirmed. Inverse polarity amplifying Arkalon Resonance yield.',
   anomaly_fused_singularity_surge:
-    'Fused singularity surge detected. Collapsed horizon doubling output and halving construction costs.',
+    'Fused singularity surge detected. Collapsed horizon amplifying facility output.',
   anomaly_fused_chronal_breach:
-    'Chronal resonance breach confirmed. Study acceleration and synaptic discount fields overlapping.',
+    'Chronal resonance breach confirmed. Study acceleration and synaptic output fields overlapping.',
 
   // O3 anomaly prediction
   anomaly_incoming:

@@ -380,7 +380,7 @@ describe('server actions', () => {
     expect(mockClient.release).toHaveBeenCalledTimes(1)
   })
 
-  it('returns the local player record when cookies already exist', async () => {
+  it('syncs the Hub nickname over the local record when cookies already exist', async () => {
     const coreId = freshUuid()
     login(coreId)
     vi.mocked(fetch).mockResolvedValueOnce({
@@ -392,11 +392,15 @@ describe('server actions', () => {
     })
 
     const result = await getOrCreateLabsPlayer()
-    expect(result).toEqual({ coreId, displayName: 'LocalNick' })
-    expect(mockClient.query).toHaveBeenCalledTimes(1)
+    expect(result).toEqual({ coreId, displayName: 'HubNick' })
+    expect(mockClient.query).toHaveBeenCalledTimes(2)
     expect(String(mockClient.query.mock.calls[0][0])).toContain(
       'SELECT id, display_name FROM players'
     )
+    expect(String(mockClient.query.mock.calls[1][0])).toContain(
+      'UPDATE players SET display_name'
+    )
+    expect(mockClient.query.mock.calls[1][1]).toEqual(['HubNick', coreId])
     expect(mockClient.release).toHaveBeenCalledTimes(1)
   })
 

@@ -399,7 +399,8 @@ describe('productionEngine', () => {
       ...withEc4,
       activeAnomalyType: 'operation_matrix_inversion'
     })
-    expect(computeARBonus(inverted)).toBeCloseTo(313.5, 6)
+    // Matrix Inversion doubles only the AR-derived portion: (1 + 51.25 * 2) * 2
+    expect(computeARBonus(inverted)).toBeCloseTo(207, 6)
 
     const suspended = stateWith({
       ...inverted,

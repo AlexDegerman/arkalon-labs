@@ -225,7 +225,7 @@ describe('offlineCalc', () => {
       { 0: { quantity: 1n } }
     )
     const payload = run(state, 120, 1)
-    expect(payload.rpEarned).toBe(300n)
+    expect(payload.rpEarned).toBe(240n)
     expect(payload.anomaliesResolvedCount).toBe(1)
     expect(payload.cachedFinalAnomalyState?.activeAnomalyType).toBeNull()
     expect(payload.cachedFinalAnomalyState?.anomalyTimeRemaining).toBe(0)
@@ -233,7 +233,7 @@ describe('offlineCalc', () => {
     const patch = applyOfflineProgress(state, payload)
     expect(patch.stats?.totalAnomaliesResolved).toBe(1)
     expect(patch.activeAnomalyType).toBeNull()
-    expect(patch.researchPoints).toBe(35n + 300n)
+    expect(patch.researchPoints).toBe(35n + 240n)
 
     const noAnomaly = run(
       withGens(stateWith(), { 0: { quantity: 1n } }),

@@ -70,6 +70,7 @@ export interface SerializedSave {
   completedMegaprojects: MegaprojectId[]
   activeAnomalyType: AnomalyType | null
   anomalyTimeRemaining: number
+  anomalySpawnRawDuration: number
   timeToNextAnomalyCheck: number
   currentOperationPoints: number
   operationArtifactsUnlocked: OperationArtifactId[]
@@ -173,6 +174,7 @@ export function serialiseState(state: GameState): SerializedSave {
     dysonSwarmLevel: state.dysonSwarmLevel ?? 0,
     activeAnomalyType: state.activeAnomalyType,
     anomalyTimeRemaining: state.anomalyTimeRemaining,
+    anomalySpawnRawDuration: state.anomalySpawnRawDuration,
     timeToNextAnomalyCheck: state.timeToNextAnomalyCheck,
     currentOperationPoints: state.currentOperationPoints,
     operationArtifactsUnlocked: state.operationArtifactsUnlocked,
@@ -695,6 +697,7 @@ export function deserialiseState(raw: unknown): GameState {
       typeof s.dysonSwarmLevel === 'number' ? s.dysonSwarmLevel : 0,
     activeAnomalyType: (s.activeAnomalyType as AnomalyType | null) ?? null,
     anomalyTimeRemaining: parseNum(s.anomalyTimeRemaining, 0),
+    anomalySpawnRawDuration: parseNum(s.anomalySpawnRawDuration, 0),
     timeToNextAnomalyCheck: parseNum(s.timeToNextAnomalyCheck, 180),
     currentOperationPoints: parseNum(s.currentOperationPoints, 0),
     operationArtifactsUnlocked: Array.isArray(s.operationArtifactsUnlocked)

@@ -147,14 +147,6 @@ export function getNodeCost(nodeId: string, state: GameState): bigint {
     cost = (cost * 90n) / 100n
   }
 
-  // Arkalon Resonance anomaly booster: 25% tech cost reduction
-  if (
-    state.activeAnomalyType === 'arkalon_resonance' ||
-    state.activeAnomalyType === 'fused_chronal_breach'
-  ) {
-    cost = (cost * 75n) / 100n
-  }
-
   return cost
 }
 

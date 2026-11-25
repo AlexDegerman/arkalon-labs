@@ -39,7 +39,7 @@ Every relic belongs to one of four classes (`Computation`, `Energy`, `Reality`, 
 | ID | Name | Class | Discovery Source | Base Dust | Max Lv | Effect per Level |
 | :---: | :--- | :--- | :--- | :---: | :---: | :--- |
 | `01` | **Arkalon's Left Eye** | Arkalon | Auto-awarded on Relic tab unlock | `10` | `100` | `+2%` Arkalon Branch research speed |
-| `02` | **Fractured Chrono-Hourglass** | Reality | Complete `10` standard research nodes | `15` | `100` | `+1.5s` anomaly duration |
+| `02` | **Fractured Chrono-Hourglass** | Reality | Complete `10` standard research nodes | `15` | `100` | `+0.5s` anomaly duration (capped at `+50s`) |
 | `03` | **Zero-Point Dynamo** | Energy | Complete a Tier III Singular Synthesis reset | `25` | `100` | `+5%` Energy-class generator output |
 | `04` | **Infinite Ledger** | Computation | Research completion (`1%` drop; guaranteed at `25th` node) | `30` | `100` | `-0.001` cost growth factor on Generators 1–5 |
 
@@ -48,7 +48,7 @@ Every relic belongs to one of four classes (`Computation`, `Energy`, `Reality`, 
 | ID | Name | Class | Discovery Source | Base Dust | Max Lv | Effect per Level |
 | :---: | :--- | :--- | :--- | :---: | :---: | :--- |
 | `05` | **Entropic Anchor** | Reality | Accumulate `50` total offline hours | `40` | `100` | `+1%` offline RP efficiency (total efficiency capped at `100%`) |
-| `06` | **Quantum Die** | Computation | Resolve `10` spatial anomalies | `50` | `100` | `-3s` minimum anomaly spawn interval (floor `60s`) |
+| `06` | **Quantum Die** | Computation | Resolve `10` spatial anomalies | `50` | `100` | `-1s` minimum anomaly spawn interval (floor `120s`) |
 | `07` | **Sierpinski Gasket Node** | Computation | Spend `50` total Arkalon Resonance (AR) | `75` | `100` | `+10%` Computation-class generator output |
 | `08` | **Tachyon Prism** | Reality | Complete your first Tier II Timeline Severance | `100` | `100` | `+0.02` global production exponent |
 

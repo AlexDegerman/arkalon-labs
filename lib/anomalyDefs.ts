@@ -25,25 +25,25 @@ export const ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
       'Spatial energy surge overclocking all facility research engines.',
     probability: 0.35,
     baseDurationSeconds: 60,
-    rewardDescription: '4x Global RP Production'
+    rewardDescription: '3x Global RP Production'
   },
   {
     type: 'temporal_distortion',
     label: 'Temporal Distortion',
     description:
-      'Localized chronal distortion accelerating study speeds tenfold.',
+      'Localized chronal distortion accelerating study speeds fivefold.',
     probability: 0.25,
     baseDurationSeconds: 45,
-    rewardDescription: '10x Research Speed'
+    rewardDescription: '5x Research Speed'
   },
   {
     type: 'containment_breach',
     label: 'Containment Breach',
     description:
-      'Sub-atomic vacuum collapse doubling output and halving equipment construction costs.',
+      'Sub-atomic vacuum collapse venting contained energy into facility output.',
     probability: 0.2,
     baseDurationSeconds: 45,
-    rewardDescription: '2x RP Production & 50% Generator Cost Reduction'
+    rewardDescription: '2.5x Global RP Production'
   },
   {
     type: 'arkalon_resonance',
@@ -52,7 +52,7 @@ export const ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
       'Harmonic convergence synchronizing the Arkalon Core and accelerating yield.',
     probability: 0.2,
     baseDurationSeconds: 60,
-    rewardDescription: '3x Production & 25% Tech Cost Reduction'
+    rewardDescription: '2x Global RP Production'
   }
 ]
 
@@ -64,8 +64,8 @@ export const OPERATION_ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
     description:
       'Temporal crystal flux boosting generation and research throughput.',
     probability: 0.25,
-    baseDurationSeconds: 75,
-    rewardDescription: '3x RP Production & 5x Research Speed'
+    baseDurationSeconds: 60,
+    rewardDescription: '2x RP Production & 3x Research Speed'
   },
   {
     type: 'operation_solar_flare',
@@ -74,16 +74,16 @@ export const OPERATION_ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
       'Stellar flare radiation directly energizing power generators.',
     probability: 0.25,
     baseDurationSeconds: 60,
-    rewardDescription: '5x Output to Energy Generators'
+    rewardDescription: '3x Output to Energy Generators'
   },
   {
     type: 'operation_gravity_sink',
     label: 'Gravity Sink Collapse',
     description:
-      'Gravitational compression boosting output and reducing structural expansion costs.',
+      'Gravitational compression channeling collapsed mass into facility output.',
     probability: 0.25,
     baseDurationSeconds: 60,
-    rewardDescription: '2x RP Production & 50% Generator Cost Reduction'
+    rewardDescription: '2.5x Global RP Production'
   },
   {
     type: 'operation_matrix_inversion',
@@ -92,7 +92,7 @@ export const OPERATION_ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
       'Matrix polarity shift multiplying Arkalon Resonance efficiency.',
     probability: 0.25,
     baseDurationSeconds: 60,
-    rewardDescription: '3x Arkalon Resonance Multiplier'
+    rewardDescription: '2x Arkalon Resonance Output'
   }
 ]
 
@@ -104,7 +104,7 @@ export const FUSED_ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
       'Collapsing spatial horizon combining Quantum Surge and Containment Breach.',
     probability: 0.5,
     baseDurationSeconds: 60,
-    rewardDescription: '4x RP Production & 50% Generator Cost Discount'
+    rewardDescription: '4x Global RP Production'
   },
   {
     type: 'fused_chronal_breach',
@@ -113,9 +113,19 @@ export const FUSED_ANOMALY_DEFINITIONS: AnomalyDefinition[] = [
       'Harmonic space-time disruption fusing Temporal Distortion and Arkalon Resonance.',
     probability: 0.5,
     baseDurationSeconds: 60,
-    rewardDescription: '10x Research Speed & 3x RP & 25% Tech Discount'
+    rewardDescription: '5x Research Speed & 2x RP'
   }
 ]
+
+// Returns the display label for an anomaly type
+export function getAnomalyLabel(type: AnomalyType): string {
+  const def = [
+    ...ANOMALY_DEFINITIONS,
+    ...OPERATION_ANOMALY_DEFINITIONS,
+    ...FUSED_ANOMALY_DEFINITIONS
+  ].find((d) => d.type === type)
+  return def?.label ?? type
+}
 
 // Weighted random selection from a list of definitions
 function weightedRandom(defs: AnomalyDefinition[]): AnomalyDefinition {
@@ -148,39 +158,55 @@ export function selectNextAnomaly(state: GameState): AnomalyDefinition {
     return weightedRandom(FUSED_ANOMALY_DEFINITIONS)
   }
 
-  return weightedRandom(ANOMALY_DEFINITIONS)
+  const picked = weightedRandom(ANOMALY_DEFINITIONS)
+
+  // Temporal Distortion is a no-op without research; reroll to Quantum Surge
+  if (
+    picked.type === 'temporal_distortion' &&
+    (state.activeChallengeRestrictions?.techMatrixDisabled ||
+      state.completedResearchNodes.filter((id) => !id.includes('_INF'))
+        .length >= 40)
+  ) {
+    return ANOMALY_DEFINITIONS.find((d) => d.type === 'quantum_surge') ?? picked
+  }
+  return picked
+
 }
 
-// Returns the effective anomaly duration in seconds,
-// applying E7, Anomaly Extender AR upgrade, Fractured Chrono-Hourglass relic,
-// SC5 tiers, Matrix Mirror Phase 3, and challenge restrictions
-export function getEffectiveDuration(
+// Uncapped anomaly duration from all permanent sources
+export function getRawAnomalyDuration(
   def: AnomalyDefinition,
   state: GameState
 ): number {
   let duration = def.baseDurationSeconds
 
-  // E7: anomalies last 2x longer
+  // E7: anomalies last 1.5x longer
   if (state.completedResearchNodes.includes('E7')) {
-    duration *= 2
+    duration *= 1.5
   }
 
-  // Anomaly Extender AR upgrade: +5 seconds per level (amplified by AC2)
-  const extenderLevel = state.arUpgrades.anomaly_extender
+  // Anomaly Extender AR upgrade: +3 seconds per level (amplified by AC2)
+  const extenderLevel = state.activeChallengeRestrictions
+    ?.prestigeUpgradesDisabled
+    ? 0
+    : state.arUpgrades.anomaly_extender
   if (extenderLevel > 0) {
     const ac2Tiers = state.challengeRecords['AC2']?.completedTiers ?? 0
     const arEffectivenessMult = 1 + 0.2 * ac2Tiers
-    duration += 5 * extenderLevel * arEffectivenessMult
+    duration += 3 * extenderLevel * arEffectivenessMult
   }
 
-  // Fractured Chrono-Hourglass relic (ID 2): +1.5s per level
+  // Fractured Chrono-Hourglass relic (ID 2): +0.5s per level, capped at +50s
   if (
     !state.activeChallengeRestrictions?.relicsDisabled &&
     state.unlockedRelics.includes(2) &&
     state.relicSlots.some((s) => s.relicId === 2)
   ) {
     const relicLevel = state.relicLevels[2] ?? 0
-    duration += 1.5 * relicLevel * getRelicEffectiveMultiplier(2, state)
+    duration += Math.min(
+      50,
+      0.5 * relicLevel * getRelicEffectiveMultiplier(2, state)
+    )
   }
 
   // Temporal Compression Siphon: +1s per level (capped at 30)
@@ -194,24 +220,35 @@ export function getEffectiveDuration(
     duration += 5
   }
 
-  // SC5 reward: +5s anomaly duration per tier
+  // SC5 reward: +3s anomaly duration per tier
   const sc5Tiers = state.challengeRecords['SC5']?.completedTiers ?? 0
   if (sc5Tiers > 0) {
-    duration += 5 * sc5Tiers
+    duration += 3 * sc5Tiers
   }
 
   // Reality Warden achievement capstone: +10s anomaly duration
   if (state.achievements?.includes('anomaly_50')) {
     duration += 10
   }
+  return duration
+}
 
+// Returns the effective anomaly duration in seconds,
+// applying E7, Anomaly Extender AR upgrade, Fractured Chrono-Hourglass relic,
+// SC5 tiers, Matrix Mirror Phase 3, and challenge restrictions
+export function getEffectiveDuration(
+  def: AnomalyDefinition,
+  state: GameState
+): number {
   // AC7 challenge: fixed 10-second duration
   const forcedDuration =
     state.activeChallengeRestrictions?.anomalyDurationOverrideSeconds
   if (forcedDuration !== null && forcedDuration !== undefined) {
     return forcedDuration
   }
-  return Math.max(5, duration)
+
+  // Hard ceiling keeps anomalies a temporary bonus, not a permanent layer
+  return Math.max(5, Math.min(180, getRawAnomalyDuration(def, state)))
 }
 
 // Returns the next spawn check interval in seconds
@@ -220,28 +257,32 @@ export function getNextSpawnInterval(state: GameState): number {
   let minSeconds = ANOMALY_SPAWN_MIN_SECONDS
   let maxSeconds = ANOMALY_SPAWN_MAX_SECONDS
 
-  // Neural Pipeline AR upgrade: +10% spawn frequency per level
-  const pipelineLevel = state.arUpgrades.neural_pipeline
+  // Neural Pipeline AR upgrade: +5% spawn frequency per level
+  const pipelineLevel = state.activeChallengeRestrictions
+    ?.prestigeUpgradesDisabled
+    ? 0
+    : state.arUpgrades.neural_pipeline
   if (pipelineLevel > 0) {
-    const reductionFactor = Math.pow(0.9, pipelineLevel)
+    const reductionFactor = Math.pow(0.95, pipelineLevel)
     minSeconds = Math.round(minSeconds * reductionFactor)
     maxSeconds = Math.round(maxSeconds * reductionFactor)
   }
 
-  // Anomalous Lens operation artifact: +15% frequency
+  // Anomalous Lens operation artifact: +10% frequency
   if (state.operationArtifactsUnlocked.includes('anomalous_lens')) {
-    minSeconds = Math.round(minSeconds * 0.85)
-    maxSeconds = Math.round(maxSeconds * 0.85)
+    minSeconds = Math.round(minSeconds * 0.9)
+    maxSeconds = Math.round(maxSeconds * 0.9)
   }
 
-  // Quantum Die relic (ID 6): -3s min interval per level (floor 60s)
+  // Quantum Die relic (ID 6): -1s spawn interval per level (min floor 120s)
   if (
     !state.activeChallengeRestrictions?.relicsDisabled &&
     state.unlockedRelics.includes(6) &&
     state.relicSlots.some((s) => s.relicId === 6)
   ) {
     const relicLevel = state.relicLevels[6] ?? 0
-    minSeconds = Math.max(60, minSeconds - 3 * relicLevel)
+    minSeconds = Math.max(120, minSeconds - relicLevel)
+    maxSeconds = Math.max(minSeconds + 30, maxSeconds - relicLevel)
   }
 
   // AC7 challenge: fixed 60-second spawn interval
@@ -259,7 +300,8 @@ export function getNextSpawnInterval(state: GameState): number {
   return minSeconds + Math.random() * (maxSeconds - minSeconds)
 }
 
-// Returns cumulative buff strength multiplier from C6, SC5, and AC7
+// Returns cumulative buff strength multiplier from C6, SC5, and AC7,
+// plus duration overflow past the 180s ceiling (+2% buff per excess second)
 export function getAnomalyBuffScale(state: GameState): number {
   let scale = 1
 
@@ -271,10 +313,25 @@ export function getAnomalyBuffScale(state: GameState): number {
   }
 
   const sc5Tiers = state.challengeRecords['SC5']?.completedTiers ?? 0
-  if (sc5Tiers > 0) scale += 0.25 * sc5Tiers
+
+  if (sc5Tiers > 0) scale += 0.1 * sc5Tiers
 
   const ac7Tiers = state.challengeRecords['AC7']?.completedTiers ?? 0
-  if (ac7Tiers > 0) scale += 0.5 * ac7Tiers
+  if (ac7Tiers > 0) scale += 0.15 * ac7Tiers
 
-  return scale
+  const capped = Math.min(2, scale)
+
+  const forcedDuration =
+    state.activeChallengeRestrictions?.anomalyDurationOverrideSeconds
+
+  if (
+    !state.activeAnomalyType ||
+    (forcedDuration !== null && forcedDuration !== undefined)
+  ) {
+    return capped
+  }
+
+  const overflow = Math.max(0, state.anomalySpawnRawDuration - 180)
+  
+  return capped + 0.02 * overflow
 }

@@ -248,6 +248,7 @@ export async function saveState(payload: SavePayload): Promise<{
         JSON.stringify({
           activeType: save.activeAnomalyType ?? null,
           timeRemaining: save.anomalyTimeRemaining ?? 0,
+          spawnRawDuration: save.anomalySpawnRawDuration ?? 0,
           timeToNextCheck: save.timeToNextAnomalyCheck ?? 180
         }),
         JSON.stringify(save.unlocks ?? {}),

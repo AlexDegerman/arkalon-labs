@@ -209,7 +209,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     label: 'Chronal Disruption Fuses',
     cost: 71n * 10n ** 107n,
     studyTimeSeconds: 57600,
-    effectDescription: 'All spatial anomalies last 2x longer.',
+    effectDescription: 'All spatial anomalies last 1.5x longer.',
     prerequisiteId: 'E6',
     isInfinite: false
   },

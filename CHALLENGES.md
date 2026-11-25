@@ -25,7 +25,7 @@ Complete reference for all 24 multi-tier Facility Challenges (`SC1–SC12`, `AC1
 | `SC2` | **Blind Research** | `3` | `5.00 Million` (`5×10⁶`) | Research disabled. | Tier-1 research nodes complete instantly (`0s`) & `+10%` global RP per tier. |
 | `SC3` | **Silence Protocol** | `3` | `10.00 Million` (`10⁷`) | Arkalon Branch research locked. | `+15%` Arkalon Branch research speed per tier. |
 | `SC4` | **Isolation Chamber** | `3` | `20.00 Million` (`2×10⁷`) | No generator modules allowed. | Module upgrade costs reduced by `10%` per tier. |
-| `SC5` | **Stable Reality** | `3` | `50.00 Million` (`5×10⁷`) | No anomalies spawn. | `+25%` anomaly buff power & `+5s` anomaly duration per tier. |
+| `SC5` | **Stable Reality** | `3` | `50.00 Million` (`5×10⁷`) | No anomalies spawn. | `+10%` anomaly buff power & `+3s` anomaly duration per tier. |
 | `SC6` | **Asset Cap** | `3` | `50.00 Million` (`5×10⁷`) | Maximum `30` units of any generator owned. | Cost growth factors reduced by `0.01` per tier; Tier 3 unlocks **Auto-Buy (Optimal)**. |
 | `SC7` | **Branch Specialization** | `3` | `100.00 Million` (`10⁸`) | Only one research branch permitted for the run. | `-15%` research study time per tier (multiplicative). |
 | `SC8` | **Unstable Constants** | `3` | `200.00 Million` (`2×10⁸`) | Milestone multipliers & Century Mutations disabled. | Milestones trigger `2` units earlier per tier (floor `10`). |
@@ -48,7 +48,7 @@ Complete reference for all 24 multi-tier Facility Challenges (`SC1–SC12`, `AC1
 | `AC4` | **Depth Restriction** | `3` | `1.00 Quintillion` (`10¹⁸`) | Only generators 1–5 available. | Generators 1–5 base output tripled (`3x` compounding) per tier. |
 | `AC5` | **Module Overload** | `3` | `100.00 Quintillion` (`10²⁰`) | Installed module levels doubled (cap `10` during run), but generator costs `10x`. | Permanent module cap increased by `+1` per tier (max Level `8`). |
 | `AC6` | **Relic Dependency** | `3` | `10.00 Quadrillion` (`10¹⁶`) | Base generator output replaced by `2%` per equipped relic level (`0` output without relics). | `+1` free relic level to all unlocked relics per completion & unlocks **Auto-Equip Relic**. |
-| `AC7` | **Anomaly Storm** | `3` | `100.00 Trillion` (`10¹⁴`) | Anomalies spawn every `60s` and last only `10s`. | Anomaly buff power `+50%` permanently per tier. |
+| `AC7` | **Anomaly Storm** | `3` | `100.00 Trillion` (`10¹⁴`) | Anomalies spawn every `60s` and last only `10s`. | Anomaly buff power `+15%` permanently per tier. |
 | `AC8` | **Combined Entropy** | `1` | `10.00 Sextillion` (`10²²`) | `AC1` + `AC3` combined. | `+1` research queue slot & `+0.1` global production exponent. |
 
 ---

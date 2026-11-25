@@ -14,7 +14,8 @@ import {
   getPrestigeResetSummary
 } from '@/lib/prestigeCalc'
 import { computeARBonus, getCountedAR } from '@/lib/productionEngine'
-import { formatPoints, formatPointsShort } from '@/lib/format'
+import { formatCountdown, formatPoints, formatPointsShort } from '@/lib/format'
+import { getAnomalyLabel } from '@/lib/anomalyDefs'
 import { useIsCompactViewport } from '@/hooks/useIsCompactViewport'
 import ARUpgradeShop from '@/components/prestige/ARUpgradeShop'
 import {
@@ -131,6 +132,8 @@ export default function PrestigeWorkspace() {
   const totalPrestigesTier2 = useGameStore((s) => s.stats.totalPrestigesTier2)
   const totalPrestigesTier3 = useGameStore((s) => s.stats.totalPrestigesTier3)
   const activeMegaproject = useGameStore((s) => s.activeMegaprojectId)
+  const activeAnomalyType = useGameStore((s) => s.activeAnomalyType)
+  const anomalyTimeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
   const completedMegaprojects = useGameStore((s) => s.completedMegaprojects)
 
   const hasChronosArray = completedMegaprojects.includes('chronos_array')
@@ -247,6 +250,12 @@ export default function PrestigeWorkspace() {
           {activeMegaproject && (
             <p className="text-xs text-amber-400 font-mono bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg">
               Warning: Active megaproject progress will be lost.
+            </p>
+          )}
+          
+          {activeAnomalyType && (
+            <p className="text-xs text-amber-400 font-mono bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg">
+              {`Warning: ${getAnomalyLabel(activeAnomalyType)} buff (${formatCountdown(anomalyTimeRemaining)} remaining) will be lost.`}
             </p>
           )}
 

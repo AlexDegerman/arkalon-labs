@@ -193,6 +193,7 @@ export interface PreChallengeSnapshot {
   megaprojectRPAbsorbed: string
   activeAnomalyType: AnomalyType | null
   anomalyTimeRemaining: number
+  anomalySpawnRawDuration?: number
   timeToNextAnomalyCheck: number
   manualOperationCycle: number | null
   lastPrestigeTime: number
@@ -272,6 +273,7 @@ export interface GameState {
   // Anomalies
   activeAnomalyType: AnomalyType | null
   anomalyTimeRemaining: number // seconds
+  anomalySpawnRawDuration: number // uncapped duration locked at spawn for overflow buff
   timeToNextAnomalyCheck: number // seconds
 
   // Operations

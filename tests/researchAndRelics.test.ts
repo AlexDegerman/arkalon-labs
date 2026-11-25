@@ -257,14 +257,17 @@ describe('researchNodes and relics', () => {
       )
     ).toBe(90n)
     expect(
-      getNodeCost('C1', stateWith({ activeAnomalyType: 'arkalon_resonance' }))
-    ).toBe(75n)
+      getNodeCost(
+        'C1',
+        stateWith({ activeAnomalyType: 'arkalon_resonance' })
+      )
+    ).toBe(100n)
     expect(
       getNodeCost(
         'C1',
         stateWith({ activeAnomalyType: 'fused_chronal_breach' })
       )
-    ).toBe(75n)
+    ).toBe(100n)
     expect(
       getNodeCost('C1', stateWith({ activeAnomalyType: 'quantum_surge' }))
     ).toBe(100n)
@@ -276,7 +279,7 @@ describe('researchNodes and relics', () => {
           activeAnomalyType: 'arkalon_resonance'
         })
       )
-    ).toBe(67n)
+    ).toBe(90n)
   })
 
   it('stacks study time reductions multiplicatively with the R_INF cap and 1s floor', () => {

@@ -60,7 +60,7 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     restrictionSummary: 'No anomalies spawn.',
     tier1TargetDescription: '5 x 10^7 lifetime RP',
     rewardDescription:
-      '+25% anomaly buff power & +5s anomaly duration per tier',
+      '+10% anomaly buff power & +3s anomaly duration per tier',
     maxTiers: 3
   },
   {
@@ -194,7 +194,7 @@ export const CHALLENGE_DISPLAY: ChallengeDisplayDefinition[] = [
     name: 'Anomaly Storm',
     restrictionSummary: 'Anomalies every 60s but last only 10s.',
     tier1TargetDescription: '1 x 10^14 lifetime RP',
-    rewardDescription: 'Anomaly buff power +50% permanently per tier',
+    rewardDescription: 'Anomaly buff power +15% permanently per tier',
     maxTiers: 3
   },
   {

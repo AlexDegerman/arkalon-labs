@@ -55,7 +55,7 @@ export default function SynthesizerList({ bulkAmount }: Props) {
             <span className="text-(--text-secondary)">Ops:</span>
             <span className="font-bold text-cyan-300">
               +{formatRateMin(rates.opPerMin)}
-              {opAnomalyActive && ' (3x)'}
+              {opAnomalyActive && ' (3x arrays)'}
             </span>
           </div>
         )}

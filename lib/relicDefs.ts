@@ -104,7 +104,7 @@ export function getRelicEffectAtLevel(relicId: number, level: number): string {
     case 1:
       return `+${(2 * level).toFixed(0)}% Arkalon Branch research speed`
     case 2:
-      return `+${(1.5 * level).toFixed(1)}s anomaly duration`
+      return `+${Math.min(50, 0.5 * level).toFixed(1)}s anomaly duration`
     case 3:
       return `+${(5 * level).toFixed(0)}% energy-class output`
     case 4:
@@ -112,7 +112,7 @@ export function getRelicEffectAtLevel(relicId: number, level: number): string {
     case 5:
       return `+${Math.min(100, level)}% offline RP efficiency`
     case 6:
-      return `-${3 * level}s min spawn interval`
+      return `-${level}s spawn interval (min floor 120s)`
     case 7:
       return `+${(10 * level).toFixed(0)}% computation-class output`
     case 8:

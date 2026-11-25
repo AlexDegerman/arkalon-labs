@@ -304,9 +304,30 @@ describe('prestigeCalc', () => {
     expect(patch.megaprojectRPAbsorbed).toBe(0n)
     expect(patch.activeAnomalyType).toBeNull()
     expect(patch.anomalyTimeRemaining).toBe(0)
-    expect(patch.timeToNextAnomalyCheck).toBe(120)
+    expect(patch.timeToNextAnomalyCheck).toBe(100)
     expect(patch.manualOperationCycle).toBeNull()
     expect(patch.arkalonResonance).toBe(47)
+  })
+
+  it('carries the anomaly spawn countdown across prestiges with a 30s floor and fresh challenge timers', () => {
+    const carried = stateWith({ timeToNextAnomalyCheck: 200 })
+    expect(buildTier1ResetState(carried, 0).timeToNextAnomalyCheck).toBe(200)
+
+    const nearlyDue = stateWith({ timeToNextAnomalyCheck: 5 })
+    expect(buildTier1ResetState(nearlyDue, 0).timeToNextAnomalyCheck).toBe(30)
+
+    const drained = stateWith({ timeToNextAnomalyCheck: 0 })
+    expect(buildTier1ResetState(drained, 0).timeToNextAnomalyCheck).toBe(30)
+
+    const challenge = stateWith({ timeToNextAnomalyCheck: 200 })
+    expect(
+      buildTier1ResetState(challenge, 0, true).timeToNextAnomalyCheck
+    ).toBe(120)
+
+    const collapse = stateWith({ timeToNextAnomalyCheck: 200 })
+    expect(
+      buildTier1ResetState(collapse, 0, true, true).timeToNextAnomalyCheck
+    ).toBe(120)
   })
 
   it('applies Tier I retention and seeding perks and suppresses them for challenges', () => {

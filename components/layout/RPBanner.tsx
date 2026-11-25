@@ -29,6 +29,11 @@ import {
   getEffectiveTarget,
   isChallengeAccelerantActive
 } from '@/lib/challengeDefs'
+import {
+  getAnomalyTheme,
+  getCompactAnomalyReward
+} from '@/components/ui/AnomalyOverlay'
+import { getAnomalyBuffScale } from '@/lib/anomalyDefs'
 function ChallengeTargetHUD({
   challengeId,
   completedTiers,
@@ -126,6 +131,10 @@ export default function RPBanner() {
   const chronalFractures = useGameStore((s) => s.chronalFractures)
   const omniSpars = useGameStore((s) => s.omniSpars)
   const activeAnomalyType = useGameStore((s) => s.activeAnomalyType)
+  const anomalyBuffScale = useGameStore(getAnomalyBuffScale)
+  const anomalyTheme = activeAnomalyType
+    ? getAnomalyTheme(activeAnomalyType)
+    : null
   const activeChallengeId = useGameStore((s) => s.activeChallengeId)
   const challengeRecords = useGameStore((s) => s.challengeRecords)
   const hasAccelerant = useGameStore((s) =>
@@ -244,25 +253,18 @@ export default function RPBanner() {
           <div
             className={[
               'flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 transition-all duration-300',
-              activeAnomalyType === 'quantum_surge'
-                ? 'border-cyan-400 bg-cyan-400/15 shadow-[0_0_12px_rgba(0,240,255,0.45)]'
-                : activeAnomalyType === 'temporal_distortion'
-                  ? 'border-purple-400 bg-purple-400/15 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                  : activeAnomalyType === 'containment_breach'
-                    ? 'border-orange-500 bg-orange-500/15 shadow-[0_0_12px_rgba(249,115,22,0.4)]'
-                    : 'border-(--border-accent)/30 bg-(--border-accent)/10'
+              anomalyTheme
+                ? `${anomalyTheme.borderColor} ${anomalyTheme.accentBg}`
+                : 'border-(--border-accent)/30 bg-(--border-accent)/10'
             ].join(' ')}
+            style={
+              anomalyTheme ? { boxShadow: anomalyTheme.glowColor } : undefined
+            }
           >
             <span
               className={[
                 'w-1.5 h-1.5 rounded-full',
-                activeAnomalyType === 'quantum_surge'
-                  ? 'bg-cyan-300'
-                  : activeAnomalyType === 'temporal_distortion'
-                    ? 'bg-purple-300'
-                    : activeAnomalyType === 'containment_breach'
-                      ? 'bg-orange-400'
-                      : 'bg-(--border-accent)'
+                anomalyTheme ? anomalyTheme.pingColor : 'bg-(--border-accent)'
               ].join(' ')}
             />
             <span
@@ -270,22 +272,20 @@ export default function RPBanner() {
                 'text-xs sm:text-sm font-mono font-bold',
                 !initialized
                   ? 'text-(--text-secondary)'
-                  : activeAnomalyType === 'quantum_surge'
-                    ? 'g-dc'
-                    : activeAnomalyType === 'temporal_distortion'
-                      ? 'g-dd'
-                      : activeAnomalyType === 'containment_breach'
-                        ? 'g-oc'
-                        : 'text-(--text-accent)'
+                  : anomalyTheme
+                    ? anomalyTheme.textClass
+                    : 'text-(--text-accent)'
               ].join(' ')}
             >
               {initialized
                 ? `+${isCompact ? `${formatPointsShort(pps)}/s` : formatRate(pps)}`
                 : '+--/sec'}
             </span>
-            {initialized && activeAnomalyType === 'quantum_surge' && (
-              <span className="text-[9px] font-mono font-black text-cyan-300 uppercase">
-                4x
+            {initialized && activeAnomalyType && anomalyTheme && (
+              <span
+                className={`text-[9px] font-mono font-black ${anomalyTheme.textClass}`}
+              >
+                {getCompactAnomalyReward(activeAnomalyType, anomalyBuffScale)}
               </span>
             )}
           </div>

@@ -177,7 +177,7 @@ export default function OperationsWorkspace() {
                   ? opPerMin.toFixed(1)
                   : opPerMin.toFixed(2).replace(/\.00$/, '')}
                 /m
-                {opAnomalyActive && ' (3x)'}
+                {opAnomalyActive && ' (3x arrays)'}
               </span>
             )}
           </div>

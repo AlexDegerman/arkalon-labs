@@ -197,3 +197,8 @@ export function getSynthesizerRates(state: GameState): SynthesizerRates {
     probeSpeedBonus: 1 + 0.05 * (counts[1] ?? 0)
   }
 }
+
+// Particle Collider ignition cost: 10 minutes of current Dust income, floor 25
+export function getColliderCost(state: GameState): number {
+  return Math.max(25, Math.ceil(getSynthesizerRates(state).dustPerSec * 600))
+}

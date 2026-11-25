@@ -128,9 +128,9 @@ function ActiveNodeDisplay({ slotIndex }: Props) {
   const anomalySpeed =
     activeAnomalyType === 'temporal_distortion' ||
     activeAnomalyType === 'fused_chronal_breach'
-      ? 10 * buffScale
+      ? 5 * buffScale
       : activeAnomalyType === 'operation_chrono_freeze'
-        ? 5 * buffScale
+        ? 3 * buffScale
         : 1
   const r4Boost =
     !techDisabled && completedNodes.includes('R4') && activeAnomalyType ? 2 : 1

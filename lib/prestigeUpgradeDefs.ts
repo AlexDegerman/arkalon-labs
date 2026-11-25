@@ -27,11 +27,11 @@ export const AR_UPGRADES: PrestigeUpgradeDef<keyof ARUpgrades>[] = [
   {
     id: 'neural_pipeline',
     label: 'Neural Pipeline',
-    description: '+10% anomaly spawn frequency per level.',
+    description: '+5% anomaly spawn frequency per level.',
     baseCost: 6,
     maxLevel: 5,
     currency: 'ar',
-    effectAtLevel: (l) => `+${l * 10}% anomaly frequency`
+    effectAtLevel: (l) => `+${l * 5}% anomaly frequency`
   },
   {
     id: 'chronal_anchor',
@@ -69,11 +69,11 @@ export const AR_UPGRADES: PrestigeUpgradeDef<keyof ARUpgrades>[] = [
   {
     id: 'anomaly_extender',
     label: 'Anomaly Extender',
-    description: '+5 seconds to all anomaly durations per level.',
+    description: '+3 seconds to all anomaly durations per level.',
     baseCost: 15,
     maxLevel: 5,
     currency: 'ar',
-    effectAtLevel: (l) => `+${l * 5}s anomaly duration`
+    effectAtLevel: (l) => `+${l * 3}s anomaly duration`
   },
   {
     id: 'relic_resonance',

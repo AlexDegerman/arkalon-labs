@@ -37,7 +37,7 @@ export const OPERATION_ARTIFACTS: OperationArtifactDefinition[] = [
     name: 'Anomalous Lens',
     description: 'A reality-warping optic that increases anomaly frequency.',
     cost: 3000,
-    effect: '+15% anomaly spawn frequency'
+    effect: '+10% anomaly spawn frequency'
   },
   {
     id: 'arkalon_core_synapse',

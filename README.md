@@ -201,9 +201,9 @@ Unlocks at `25` Server Clusters and `10` Quantum Computers, starting with `5` pr
 
 Unlocks after completing `2` standard research nodes post-onboarding, introducing periodic reality distortions every `3–6` minutes (predictable via a live countdown once Node `O3` is studied).
 
-- **4 Standard Anomalies:** **Quantum Surge** (`4x` global RP), **Temporal Distortion** (`10x` research speed), **Containment Breach** (`2x` RP + `50%` generator cost reduction), and **Arkalon Resonance** (`3x` RP + `25%` tech cost reduction).
+- **4 Standard Anomalies:** **Quantum Surge** (`3x` global RP), **Temporal Distortion** (`5x` research speed), **Containment Breach** (`2.5x` global RP), and **Arkalon Resonance** (`2x` global RP).
 - **Operation & Fused Anomalies:** Once Anomalous Operations are unlocked, `20%` of spawns convert into the active Operation Cycle's anomaly. Reaching Era 5 (`10^60` RP) unlocks a `20%` chance for **Fused Anomalies** (*Singularity Surge* and *Chronal Resonance*) combining overlapping buffs.
-- **Cascade & Particle Collider:** Resolving any anomaly carries a `10%` chance to trigger an immediate follow-up cascade. Players can also manually ignite an anomaly on demand via the **Particle Collider** using `25` Artifact Dust.
+- **Cascade & Particle Collider:** Resolving any anomaly carries a `10%` chance to trigger an immediate follow-up cascade. Players can also manually ignite an anomaly on demand via the **Particle Collider** using 10 minutes of current Dust income (minimum `25` Artifact Dust).
 
 ---
 

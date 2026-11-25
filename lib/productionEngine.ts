@@ -382,13 +382,13 @@ function computeGeneratorOutput(
     baseOutput = multiplyBigIntByFloat(baseOutput, effMult)
   }
 
-  // Solar flare operation anomaly: 5x (scaled) to energy-class generators
+  // Solar flare operation anomaly: 3x (scaled) to energy-class generators
   if (
     state.activeAnomalyType === 'operation_solar_flare' &&
     GENERATOR_CLASS[index] === 'energy'
   ) {
     const buffScale = getAnomalyBuffScale(state)
-    baseOutput = multiplyBigIntByFloat(baseOutput, 5 * buffScale)
+    baseOutput = multiplyBigIntByFloat(baseOutput, 3 * buffScale)
   }
 
   // Challenge: generator production multiplier (e.g. AC1 = 0.1)
@@ -472,11 +472,11 @@ export function computeARBonus(state: GameState): number {
     (state.challengeRecords['EC4']?.completedTiers ?? 0) > 0 ? 2 : 1
   const matrixInversionMultiplier =
     state.activeAnomalyType === 'operation_matrix_inversion'
-      ? 3 * getAnomalyBuffScale(state)
+      ? 2 * getAnomalyBuffScale(state)
       : 1
 
   const countedAR = getCountedAR(state)
-  if (countedAR === 0) return ec4Doubling * matrixInversionMultiplier
+  if (countedAR === 0) return ec4Doubling
 
   // Base AR efficiency per unit
   let perARBonus = PHI_AR_PRODUCTION
@@ -512,9 +512,12 @@ export function computeARBonus(state: GameState): number {
     arBonus += 0.005 * countedAR
   }
 
-  // EC4 reward: Arkalon global multiplier permanently doubled
-  arBonus *= ec4Doubling * matrixInversionMultiplier
+  // Matrix Inversion doubles only the AR-derived bonus, not the base multiplier
+  arBonus = 1 + (arBonus - 1) * matrixInversionMultiplier
 
+  // EC4 reward: Arkalon global multiplier permanently doubled
+  arBonus *= ec4Doubling
+  
   return arBonus
 }
 
@@ -597,20 +600,19 @@ export function recalculatePPS(state: GameState): bigint {
 
   // Active anomaly production booster
   const anomalyBuffScale = getAnomalyBuffScale(state)
-  if (
-    state.activeAnomalyType === 'quantum_surge' ||
-    state.activeAnomalyType === 'fused_singularity_surge'
-  ) {
+  if (state.activeAnomalyType === 'fused_singularity_surge') {
     globalMult *= 4 * anomalyBuffScale
-  } else if (
-    state.activeAnomalyType === 'arkalon_resonance' ||
-    state.activeAnomalyType === 'operation_chrono_freeze' ||
-    state.activeAnomalyType === 'fused_chronal_breach'
-  ) {
+  } else if (state.activeAnomalyType === 'quantum_surge') {
     globalMult *= 3 * anomalyBuffScale
   } else if (
     state.activeAnomalyType === 'containment_breach' ||
     state.activeAnomalyType === 'operation_gravity_sink'
+  ) {
+    globalMult *= 2.5 * anomalyBuffScale
+  } else if (
+    state.activeAnomalyType === 'arkalon_resonance' ||
+    state.activeAnomalyType === 'operation_chrono_freeze' ||
+    state.activeAnomalyType === 'fused_chronal_breach'
   ) {
     globalMult *= 2 * anomalyBuffScale
   }
@@ -810,19 +812,9 @@ export function generatorEffectiveCost(
   const challengeMult =
     state.activeChallengeRestrictions?.generatorCostMultiplier ?? 1
 
-  // Anomaly cost discount booster
-  const anomalyCostMultiplier =
-    state.activeAnomalyType === 'containment_breach' ||
-    state.activeAnomalyType === 'operation_gravity_sink' ||
-    state.activeAnomalyType === 'fused_singularity_surge'
-      ? 0.5
-      : 1
-
   const q = Number(quantity)
   const log10Base = Math.log10(Number(def.baseCost))
-  const log10Mult = Math.log10(
-    costReductionMultiplier * anomalyCostMultiplier * challengeMult
-  )
+  const log10Mult = Math.log10(costReductionMultiplier * challengeMult)
   const log10Total = log10Base + q * Math.log10(growthFactor) + log10Mult
 
   if (log10Total > 15) {
@@ -837,7 +829,6 @@ export function generatorEffectiveCost(
       Number(def.baseCost) *
         Math.pow(growthFactor, q) *
         costReductionMultiplier *
-        anomalyCostMultiplier *
         challengeMult
     )
   )
@@ -1011,40 +1002,43 @@ export function getProductionBreakdown(state: GameState): ProductionBreakdown {
 
   const buffScale = getAnomalyBuffScale(state)
   let anomalyBooster: { name: string; multiplier: number } | null = null
-  if (state.activeAnomalyType === 'quantum_surge') {
-    anomalyBooster = { name: 'Quantum Surge', multiplier: 4 * buffScale }
-  } else if (state.activeAnomalyType === 'fused_singularity_surge') {
-    anomalyBooster = {
-      name: 'Singularity Surge [Fused]',
-      multiplier: 4 * buffScale
+    if (state.activeAnomalyType === 'quantum_surge') {
+      anomalyBooster = { name: 'Quantum Surge', multiplier: 3 * buffScale }
+    } else if (state.activeAnomalyType === 'fused_singularity_surge') {
+      anomalyBooster = {
+        name: 'Singularity Surge [Fused]',
+        multiplier: 4 * buffScale
+      }
+    } else if (state.activeAnomalyType === 'fused_chronal_breach') {
+      anomalyBooster = {
+        name: 'Chronal Resonance [Fused]',
+        multiplier: 2 * buffScale
+      }
+    } else if (state.activeAnomalyType === 'arkalon_resonance') {
+      anomalyBooster = { name: 'Arkalon Resonance', multiplier: 2 * buffScale }
+    } else if (state.activeAnomalyType === 'operation_chrono_freeze') {
+      anomalyBooster = { name: 'Chrono-Freeze Flux', multiplier: 2 * buffScale }
+    } else if (state.activeAnomalyType === 'containment_breach') {
+      anomalyBooster = {
+        name: 'Containment Breach',
+        multiplier: 2.5 * buffScale
+      }
+    } else if (state.activeAnomalyType === 'operation_gravity_sink') {
+      anomalyBooster = {
+        name: 'Gravity Sink Collapse',
+        multiplier: 2.5 * buffScale
+      }
+    } else if (state.activeAnomalyType === 'operation_solar_flare') {
+      anomalyBooster = {
+        name: 'Solar Flare Overload (Energy)',
+        multiplier: 3 * buffScale
+      }
+    } else if (state.activeAnomalyType === 'operation_matrix_inversion') {
+      anomalyBooster = {
+        name: 'Matrix Inversion (AR)',
+        multiplier: 2 * buffScale
+      }
     }
-  } else if (state.activeAnomalyType === 'fused_chronal_breach') {
-    anomalyBooster = {
-      name: 'Chronal Resonance [Fused]',
-      multiplier: 3 * buffScale
-    }
-  } else if (state.activeAnomalyType === 'arkalon_resonance') {
-    anomalyBooster = { name: 'Arkalon Resonance', multiplier: 3 * buffScale }
-  } else if (state.activeAnomalyType === 'operation_chrono_freeze') {
-    anomalyBooster = { name: 'Chrono-Freeze Flux', multiplier: 3 * buffScale }
-  } else if (state.activeAnomalyType === 'containment_breach') {
-    anomalyBooster = { name: 'Containment Breach', multiplier: 2 * buffScale }
-  } else if (state.activeAnomalyType === 'operation_gravity_sink') {
-    anomalyBooster = {
-      name: 'Gravity Sink Collapse',
-      multiplier: 2 * buffScale
-    }
-  } else if (state.activeAnomalyType === 'operation_solar_flare') {
-    anomalyBooster = {
-      name: 'Solar Flare Overload (Energy)',
-      multiplier: 5 * buffScale
-    }
-  } else if (state.activeAnomalyType === 'operation_matrix_inversion') {
-    anomalyBooster = {
-      name: 'Matrix Inversion (AR)',
-      multiplier: 3 * buffScale
-    }
-  }
 
   const achievements = state.achievements ?? []
   const achievementCount = achievements.length

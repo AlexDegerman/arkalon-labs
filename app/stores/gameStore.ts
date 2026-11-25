@@ -188,6 +188,7 @@ export function makeInitialState(): GameState {
 
     activeAnomalyType: null,
     anomalyTimeRemaining: 0,
+    anomalySpawnRawDuration: 0,
     timeToNextAnomalyCheck: 180, // 3 min initial wait
 
     currentOperationPoints: 0,

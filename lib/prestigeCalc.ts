@@ -241,10 +241,13 @@ export function buildTier1ResetState(
       ? { infiniteResearchLevels: {} }
       : {}),
 
-    // Reset anomaly
+    // Reset anomaly; spawn countdown persists across prestiges
     activeAnomalyType: null,
     anomalyTimeRemaining: 0,
-    timeToNextAnomalyCheck: 120,
+    anomalySpawnRawDuration: 0,
+    timeToNextAnomalyCheck: forChallenge
+      ? 120
+      : Math.max(30, state.timeToNextAnomalyCheck),
 
     // Reset megaproject progress
     activeMegaprojectId: null,
@@ -393,7 +396,8 @@ export function getPrestigeResetSummary(
         'Generator quantities',
         'Completed research nodes (unless protected)',
         'Active research timers',
-        'Megaproject progress'
+        'Megaproject progress',
+        ...(state?.activeAnomalyType ? ['Active anomaly buff'] : [])
       ],
       retains
     }

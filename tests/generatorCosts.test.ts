@@ -215,27 +215,20 @@ describe('generatorCosts', () => {
     expect(generatorEffectiveCost(0, 0n, withR1)).toBe(15n)
   })
 
-  it('halves costs during discount anomalies and scales by challenge cost multiplier', () => {
+  it('ignores anomalies for generator costs and scales by challenge cost multiplier', () => {
     const base = stateWith()
     expect(generatorEffectiveCost(0, 0n, base)).toBe(15n)
 
     for (const anomaly of [
       'containment_breach',
       'operation_gravity_sink',
-      'fused_singularity_surge'
+      'fused_singularity_surge',
+      'quantum_surge'
     ] as const) {
       expect(
         generatorEffectiveCost(0, 0n, stateWith({ activeAnomalyType: anomaly }))
-      ).toBe(8n)
+      ).toBe(15n)
     }
-
-    expect(
-      generatorEffectiveCost(
-        0,
-        0n,
-        stateWith({ activeAnomalyType: 'quantum_surge' })
-      )
-    ).toBe(15n)
 
     const ac5 = stateWith({
       activeChallengeRestrictions: restrictions({ generatorCostMultiplier: 10 })
@@ -246,7 +239,7 @@ describe('generatorCosts', () => {
       activeAnomalyType: 'containment_breach',
       activeChallengeRestrictions: restrictions({ generatorCostMultiplier: 10 })
     })
-    expect(generatorEffectiveCost(0, 0n, combined)).toBe(75n)
+    expect(generatorEffectiveCost(0, 0n, combined)).toBe(150n)
   })
 
   it('segments costToBuyN exactly across R1 and M100 boundaries', () => {

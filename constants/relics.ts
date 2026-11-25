@@ -86,7 +86,7 @@ export const RELICS: RelicDefinition[] = [
     sourceDescription: 'Complete 10 standard research nodes.',
     baseDustCost: 15,
     dustCostScaling: 1.08,
-    effectPerLevel: '+1.5s anomaly duration per level',
+    effectPerLevel: '+0.5s anomaly duration per level (capped at +50s)',
     maxLevel: 100
   },
   {
@@ -135,7 +135,7 @@ export const RELICS: RelicDefinition[] = [
     sourceDescription: 'Experience 10 spatial anomalies.',
     baseDustCost: 50,
     dustCostScaling: 1.08,
-    effectPerLevel: '-3s minimum anomaly spawn interval per level (floor 60s)',
+    effectPerLevel: '-1s anomaly spawn interval per level (min floor 120s)',
     maxLevel: 100
   },
   {

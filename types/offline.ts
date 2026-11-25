@@ -43,6 +43,7 @@ export interface OfflineProgressPayload {
   cachedFinalAnomalyState?: {
     activeAnomalyType: import('@/types/game').AnomalyType | null
     anomalyTimeRemaining: number
+    anomalySpawnRawDuration: number
     timeToNextAnomalyCheck: number
   }
   ec3CollapseTriggered?: boolean

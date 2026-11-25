@@ -224,7 +224,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
     setTimeout(() => set({ prestigeAnimating: false }), 2000)
   },
 
-  ssetBulkAmount: (bulkAmount) => set({ bulkAmount }),
+  setBulkAmount: (bulkAmount) => set({ bulkAmount }),
 
   setGeneratorSort: (generatorSort) => {
     try {

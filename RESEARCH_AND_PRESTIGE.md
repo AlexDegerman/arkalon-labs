@@ -62,7 +62,7 @@ Unlocks upon owning **10 Research Desks**. Research nodes are timed studies unlo
 | `E4` | Zero-Point Inflation | `90.00 Duodecillion` RP | `2h` | `5x` RP output to all Energy-class generators. |
 | `E5` | Vacuum Polarisers | `180.00 Novemdecillion` RP | `4h` | `+0.5%` global production per AR earned (scales with Harmonic Cap). |
 | `E6` | Plasma Lattice Confinement | `2.20 Septenvigintillion` RP | `8h` | Reduces Energy-class generator cost scaling (growth factor `-0.02`). |
-| `E7` | Chronal Disruption Fuses | `7.10 Quintrigintillion` RP | `16h` | All spatial anomalies last `2x` longer. |
+| `E7` | Chronal Disruption Fuses | `7.10 Quintrigintillion` RP | `16h` | All spatial anomalies last `1.5x` longer. |
 | `E8` | Infinite Entropic Sink | `1.50 Unquadragintillion` RP | `32h` | Energy-class generators scale by `1 + 0.1 * ln(lifetime RP)`. |
 | `E9` | Primordial Inflation Loops | `10.00 Duoquadragintillion` RP | `48h` | `1.5x` RP output for Stellar Harvesters and Galactic Engines. |
 | `E10` | Absolute Entropic Death | `10.00 Septenquadragintillion` RP | `96h` | Energy-class generators receive `10x` point generation. |
@@ -145,11 +145,11 @@ Unlocked per branch upon completing **Tier 8** (`C8`, `E8`, `R8`, `O8`). Infinit
 | Upgrade | Base Cost & Scaling | Max Lv | Effect |
 | :--- | :--- | :--- | :--- |
 | Generator Priming | `2 AR` (`1.6x` exp) | `30` | `1.35x` compounding output to all generators per level. |
-| Neural Pipeline | `6 AR` (linear) | `5` | `+10%` anomaly spawn frequency per level (`0.9^lv` interval). |
+| Neural Pipeline | `6 AR` (linear) | `5` | `+5%` anomaly spawn frequency per level (`0.95^lv` interval). |
 | Chronal Anchor | `10 AR` | `1` | Start post-prestige with `1s` of prior run's peak RP/s as flat RP. |
 | Research Accelerant | `10 AR` (linear) | `10` | `-3%` research study time per level (multiplicative). |
 | Dimensional Blueprinting | `15 AR` | `1` | Start each Tier I prestige with `5` free units of Generators 1–3. |
-| Anomaly Extender | `15 AR` (linear) | `5` | `+5s` to all anomaly durations per level. |
+| Anomaly Extender | `15 AR` (linear) | `5` | `+3s` to all anomaly durations per level. |
 | Relic Resonance | `20 AR` (linear) | `10` | `+5%` to all equipped relic effects per level. |
 | Milestone Sharpener | `25 AR` (linear) | `5` | Quantity milestones trigger `1` unit earlier per level (floor `10`). |
 | Auto-Buy (Basic) | `75 AR` | `1` | Automatically buys `1` unit of the cheapest affordable generator every `5s`. |

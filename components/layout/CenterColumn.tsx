@@ -11,6 +11,7 @@ import type { ArkalonState } from '@/components/arkalon/ArkalonSphere'
 import { useUIStore } from '@/app/stores/uiStore'
 import { pulseArkalonCore } from '@/app/stores/actions/researchActions'
 import { synthesizeAnomaly } from '@/app/stores/actions/anomalyActions'
+import { getColliderCost } from '@/lib/synthesizerDefs'
 import AnomalyOverlay from '../ui/AnomalyOverlay'
 
 function AnomalyStatusPip() {
@@ -59,16 +60,17 @@ export function ParticleColliderButton() {
   const anomaliesDisabled = useGameStore(
     (s) => s.activeChallengeRestrictions?.anomaliesDisabled ?? false
   )
+  const colliderCost = useGameStore(getColliderCost)
 
   if (!anomaliesUnlocked || anomaliesDisabled) return null
 
-  const canSynthesize = !activeAnomaly && dust >= 25
+  const canSynthesize = !activeAnomaly && dust >= colliderCost
 
   return (
     <button
       onClick={() => synthesizeAnomaly()}
       disabled={!canSynthesize}
-      title="Synthesize an immediate anomaly event using 25 Artifact Dust"
+      title={`Synthesize an immediate anomaly event using ${colliderCost.toLocaleString()} Artifact Dust`}
       className={[
         'col-span-2 w-full py-1.5 px-2.5 text-[11px] font-mono font-bold rounded-lg border transition-all uppercase tracking-wider flex items-center justify-center gap-1.5',
         canSynthesize
@@ -79,7 +81,7 @@ export function ParticleColliderButton() {
       <span>
         {activeAnomaly
           ? '⚡ Particle Collider // Surge Active'
-          : '⚡ Particle Collider (25 Dust)'}
+          : `⚡ Particle Collider (${colliderCost.toLocaleString()} Dust)`}
       </span>
     </button>
   )

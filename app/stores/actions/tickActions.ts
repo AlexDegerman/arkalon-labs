@@ -106,9 +106,9 @@ export function tick(): void {
   const anomalyResearchSpeed =
     store.activeAnomalyType === 'temporal_distortion' ||
     store.activeAnomalyType === 'fused_chronal_breach'
-      ? 10 * buffScale
+      ? 5 * buffScale
       : store.activeAnomalyType === 'operation_chrono_freeze'
-        ? 5 * buffScale
+        ? 3 * buffScale
         : 1
   const researchSpeedMult = anomalyResearchSpeed * r4Boost
   const hasRunningSlot = store.activeResearchSlots.some((slot) =>
@@ -135,7 +135,7 @@ export function tick(): void {
 
   // 3. Decrement anomaly timer
   let anomalyCompleted = false
-  if (store.activeAnomalyType && store.anomalyTimeRemaining > 0) {
+  if (store.activeAnomalyType) {
     const nextTimer = Math.max(0, store.anomalyTimeRemaining - 0.1)
     nextState.anomalyTimeRemaining = nextTimer
     if (nextTimer === 0) {

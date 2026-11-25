@@ -20,7 +20,7 @@ interface AnomalyTheme {
   pingColor: string
 }
 
-function getAnomalyTheme(type: string): AnomalyTheme {
+export function getAnomalyTheme(type: string): AnomalyTheme {
   switch (type) {
     case 'quantum_surge':
       return {
@@ -129,25 +129,25 @@ function formatMult(val: number): string {
 function getScaledAnomalyReward(type: string, buffScale: number): string {
   switch (type) {
     case 'quantum_surge':
-      return `${formatMult(4 * buffScale)} Global RP Production`
+      return `${formatMult(3 * buffScale)} Global RP Production`
     case 'temporal_distortion':
-      return `${formatMult(10 * buffScale)} Research Speed`
+      return `${formatMult(5 * buffScale)} Research Speed`
     case 'containment_breach':
-      return `${formatMult(2 * buffScale)} RP Production & 50% Generator Cost Reduction`
+      return `${formatMult(2.5 * buffScale)} Global RP Production`
     case 'arkalon_resonance':
-      return `${formatMult(3 * buffScale)} Production & 25% Tech Cost Reduction`
+      return `${formatMult(2 * buffScale)} Global RP Production`
     case 'operation_chrono_freeze':
-      return `${formatMult(3 * buffScale)} RP Production & ${formatMult(5 * buffScale)} Research Speed`
+      return `${formatMult(2 * buffScale)} RP Production & ${formatMult(3 * buffScale)} Research Speed`
     case 'operation_solar_flare':
-      return `${formatMult(5 * buffScale)} Output to Energy Generators`
+      return `${formatMult(3 * buffScale)} Output to Energy Generators`
     case 'operation_gravity_sink':
-      return `${formatMult(2 * buffScale)} RP Production & 50% Generator Cost Reduction`
+      return `${formatMult(2.5 * buffScale)} Global RP Production`
     case 'operation_matrix_inversion':
-      return `${formatMult(3 * buffScale)} Arkalon Resonance Multiplier`
+      return `${formatMult(2 * buffScale)} Arkalon Resonance Output`
     case 'fused_singularity_surge':
-      return `${formatMult(4 * buffScale)} RP Production & 50% Generator Cost Discount`
+      return `${formatMult(4 * buffScale)} Global RP Production`
     case 'fused_chronal_breach':
-      return `${formatMult(10 * buffScale)} Research Speed & ${formatMult(3 * buffScale)} RP & 25% Tech Discount`
+      return `${formatMult(5 * buffScale)} Research Speed & ${formatMult(2 * buffScale)} RP`
     default: {
       const def = ALL_ANOMALY_DEFINITIONS.find((d) => d.type === type)
       return def?.rewardDescription ?? 'Booster Active'
@@ -155,27 +155,30 @@ function getScaledAnomalyReward(type: string, buffScale: number): string {
   }
 }
 
-function getCompactAnomalyReward(type: string, buffScale: number): string {
+export function getCompactAnomalyReward(
+  type: string,
+  buffScale: number
+): string {
   switch (type) {
     case 'quantum_surge':
-      return `${formatMult(4 * buffScale)} RP`
+      return `${formatMult(3 * buffScale)} RP`
     case 'temporal_distortion':
-      return `${formatMult(10 * buffScale)} Research`
+      return `${formatMult(5 * buffScale)} Research`
     case 'containment_breach':
     case 'operation_gravity_sink':
-      return `${formatMult(2 * buffScale)} RP · -50% Cost`
+      return `${formatMult(2.5 * buffScale)} RP`
     case 'arkalon_resonance':
-      return `${formatMult(3 * buffScale)} RP · -25% Tech`
+      return `${formatMult(2 * buffScale)} RP`
     case 'operation_chrono_freeze':
-      return `${formatMult(3 * buffScale)} RP · ${formatMult(5 * buffScale)} Res`
+      return `${formatMult(2 * buffScale)} RP Â· ${formatMult(3 * buffScale)} Res`
     case 'operation_solar_flare':
-      return `${formatMult(5 * buffScale)} Energy`
+      return `${formatMult(3 * buffScale)} Energy`
     case 'operation_matrix_inversion':
-      return `${formatMult(3 * buffScale)} AR`
+      return `${formatMult(2 * buffScale)} Resonance`
     case 'fused_singularity_surge':
-      return `${formatMult(4 * buffScale)} RP · -50% Cost`
+      return `${formatMult(4 * buffScale)} RP`
     case 'fused_chronal_breach':
-      return `${formatMult(10 * buffScale)} Res · ${formatMult(3 * buffScale)} RP`
+      return `${formatMult(5 * buffScale)} Res Â· ${formatMult(2 * buffScale)} RP`
     default:
       return 'Boost Active'
   }
@@ -193,15 +196,13 @@ function getAnomalyInfo(type: string, buffScale: number) {
 export default function AnomalyOverlay() {
   const activeType = useGameStore((s) => s.activeAnomalyType)
   const timeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
+  const buffScale = useGameStore(getAnomalyBuffScale)
 
-  const { baseDuration, buffScale } = useMemo(() => {
-    if (!activeType) return { baseDuration: 60, buffScale: 1 }
+  const baseDuration = useMemo(() => {
+    if (!activeType) return 60
     const s = useGameStore.getState()
     const def = ALL_ANOMALY_DEFINITIONS.find((d) => d.type === activeType)
-    return {
-      baseDuration: def ? getEffectiveDuration(def, s) : 60,
-      buffScale: getAnomalyBuffScale(s)
-    }
+    return def ? getEffectiveDuration(def, s) : 60
   }, [activeType])
 
   if (!activeType) return null
@@ -258,15 +259,13 @@ export function MobileAnomalyBar() {
   const [expanded, setExpanded] = useState(false)
   const activeType = useGameStore((s) => s.activeAnomalyType)
   const timeRemaining = useGameStore((s) => s.anomalyTimeRemaining)
-
-  const { baseDuration, buffScale } = useMemo(() => {
-    if (!activeType) return { baseDuration: 60, buffScale: 1 }
+  const buffScale = useGameStore(getAnomalyBuffScale)
+  
+  const baseDuration = useMemo(() => {
+    if (!activeType) return 60
     const s = useGameStore.getState()
     const def = ALL_ANOMALY_DEFINITIONS.find((d) => d.type === activeType)
-    return {
-      baseDuration: def ? getEffectiveDuration(def, s) : 60,
-      buffScale: getAnomalyBuffScale(s)
-    }
+    return def ? getEffectiveDuration(def, s) : 60
   }, [activeType])
 
   if (!activeType) return null

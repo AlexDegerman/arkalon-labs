@@ -93,6 +93,7 @@ export async function loadState(): Promise<LoadResult> {
       anomaly_data: {
         activeType?: AnomalyType | null
         timeRemaining?: number
+        spawnRawDuration?: number
         timeToNextCheck?: number
       } | null
       feature_flags: unknown
@@ -199,6 +200,7 @@ export async function loadState(): Promise<LoadResult> {
       dysonSwarmLevel: megaData.dysonSwarmLevel ?? 0,
       activeAnomalyType: anomalyData.activeType ?? null,
       anomalyTimeRemaining: anomalyData.timeRemaining ?? 0,
+      anomalySpawnRawDuration: anomalyData.spawnRawDuration ?? 0,
       timeToNextAnomalyCheck: anomalyData.timeToNextCheck ?? 180,
       unlocks: row.feature_flags,
       tutorial: row.tutorial_data,
