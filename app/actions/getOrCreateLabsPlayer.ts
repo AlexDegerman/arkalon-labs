@@ -28,7 +28,7 @@ export async function getOrCreateLabsPlayer() {
   if (isLocalMock) {
     coreId = '11111111-1111-4111-8111-111111111111'
     sessionToken = 'mock-dev-session-token'
-    nickname = 'AncientGoldTurtle'
+    nickname = 'LocalDevDirector'
 
     cookieStore.set(CORE_ID_COOKIE, coreId, {
       httpOnly: true,
@@ -132,14 +132,20 @@ export async function getOrCreateLabsPlayer() {
         `INSERT INTO players (id, short_id, display_name, created_at, last_seen_at)
           VALUES ($1, $2, $3, now(), now())
           ON CONFLICT (id) DO UPDATE SET
-            short_id = COALESCE(players.short_id, EXCLUDED.short_id)`,
+            short_id = COALESCE(players.short_id, EXCLUDED.short_id),
+            display_name = EXCLUDED.display_name`,
         [coreId, assignedShortId, nickname ?? 'Director']
+      )
+    } else if (nickname && existing.rows[0]?.display_name !== nickname) {
+      await client.query(
+        'UPDATE players SET display_name = $1, last_seen_at = now() WHERE id = $2',
+        [nickname, coreId]
       )
     }
 
     return {
       coreId: coreId!,
-      displayName: existing.rows[0]?.display_name ?? nickname ?? 'Director'
+      displayName: nickname ?? existing.rows[0]?.display_name ?? 'Director'
     }
   } finally {
     client.release()

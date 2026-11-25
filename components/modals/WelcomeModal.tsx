@@ -27,6 +27,7 @@ export default function WelcomeModal() {
           new CustomEvent('arkalon_player_ready', { detail: coreId })
         )
         setDisplayName(displayName)
+        useUIStore.getState().setPlayerName(displayName)
 
         const storedVersion = localStorage.getItem(VERSION_KEY)
         if (!storedVersion) {
@@ -38,12 +39,13 @@ export default function WelcomeModal() {
       .catch(() => {
         // Fallback for offline or dev environment without postgres
         const fallbackId = '11111111-1111-4111-8111-111111111111'
-        const fallbackName = 'AncientGoldTurtle'
+        const fallbackName = 'OfflineDirector'
         localStorage.setItem('arkalon_labs_player_id', fallbackId)
         window.dispatchEvent(
           new CustomEvent('arkalon_player_ready', { detail: fallbackId })
         )
         setDisplayName(fallbackName)
+        useUIStore.getState().setPlayerName(fallbackName)
 
         const storedVersion = localStorage.getItem(VERSION_KEY)
         if (!storedVersion) {
@@ -58,6 +60,7 @@ export default function WelcomeModal() {
       const res = await rerollPlayerName()
       if (res.success && res.nickname) {
         setDisplayName(res.nickname)
+        useUIStore.getState().setPlayerName(res.nickname)
         setJustRerolled(true)
         setTimeout(() => setJustRerolled(false), 800)
       }

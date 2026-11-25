@@ -1,7 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useTransition } from 'react'
+import { Dices } from 'lucide-react'
 import { makeInitialState, useGameStore } from '@/app/stores/gameStore'
+import { getOrCreateLabsPlayer } from '@/app/actions/getOrCreateLabsPlayer'
+import { rerollPlayerName } from '@/app/actions/rerollPlayerName'
 import { useUIStore } from '@/app/stores/uiStore'
 import {
   exportSave,
@@ -14,7 +17,11 @@ import { saveState } from '@/app/actions/saveState'
 import { setNotationMode } from '@/lib/format'
 import VolumeControls from '@/components/ui/VolumeControls'
 import type { NotationMode, UITheme } from '@/types/game'
-import { markUnlocksDirty, markAchievementsDirty, resetDirtyFlags } from '@/lib/dirtyFlags'
+import {
+  markUnlocksDirty,
+  markAchievementsDirty,
+  resetDirtyFlags
+} from '@/lib/dirtyFlags'
 import { resetCloudState } from '@/app/actions/saveState'
 import { resetTickSession } from '@/app/stores/actions/tickActions'
 import { resetUnlockSessionCaches } from '@/lib/unlockWatcher'
@@ -95,9 +102,13 @@ type ConfirmState = 'idle' | 'confirm1' | 'confirm2' | 'typing'
 export default function SettingsPanel() {
   const settingsPanelOpen = useUIStore((s) => s.settingsPanelOpen)
   const setSettingsPanelOpen = useUIStore((s) => s.setSettingsPanelOpen)
+  const playerName = useUIStore((s) => s.playerName)
+  const setPlayerName = useUIStore((s) => s.setPlayerName)
   const settings = useGameStore((s) => s.settings)
   const stats = useGameStore((s) => s.stats)
 
+  const [justRerolled, setJustRerolled] = useState(false)
+  const [isRerolling, startReroll] = useTransition()
   const [exportText, setExportText] = useState('')
   const [importText, setImportText] = useState('')
   const [importOpen, setImportOpen] = useState(false)
@@ -110,7 +121,28 @@ export default function SettingsPanel() {
   const [resetInput, setResetInput] = useState('')
   const resetInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    if (!settingsPanelOpen || playerName) return
+    getOrCreateLabsPlayer()
+      .then(({ displayName }) => setPlayerName(displayName))
+      .catch(() => setPlayerName('OfflineDirector'))
+  }, [settingsPanelOpen, playerName, setPlayerName])
+
+  function handleRerollNickname() {
+    if (isRerolling) return
+    startReroll(async () => {
+      const res = await rerollPlayerName()
+      if (res.success && res.nickname) {
+        setPlayerName(res.nickname)
+        setJustRerolled(true)
+        setTimeout(() => setJustRerolled(false), 800)
+      }
+    })
+  }
+
   if (!settingsPanelOpen) return null
+
+  const displayedNickname = playerName ?? 'Loading...'
 
   function updateSetting<K extends keyof typeof settings>(
     key: K,
@@ -373,25 +405,68 @@ export default function SettingsPanel() {
         <div className="flex-1 overflow-y-auto scrollbar-dark p-4 flex flex-col gap-4">
           {/* Arkalon Core Network Account & Recovery Card */}
           <div className="w-full rounded-xl border border-(--border-default) bg-(--bg-surface) p-3.5">
-            <p className="mb-1 text-xs uppercase tracking-wider text-(--text-secondary) font-bold font-mono">
+            <p className="mb-2 text-xs uppercase tracking-wider text-(--text-secondary) font-bold font-mono">
               Arkalon Core Identity
             </p>
+
+            <div
+              className="w-full rounded-xl border px-3 py-2 flex items-center justify-between gap-2 mb-2.5 transition-all duration-200"
+              style={{
+                backgroundColor: justRerolled
+                  ? 'rgba(0, 240, 255, 0.12)'
+                  : 'var(--bg-elevated)',
+                borderColor: justRerolled
+                  ? 'var(--border-accent)'
+                  : 'var(--border-default)'
+              }}
+            >
+              <span
+                className="flex-1 whitespace-nowrap tracking-tight font-bold font-mono text-left"
+                style={{
+                  fontSize:
+                    displayedNickname.length > 18
+                      ? '11px'
+                      : displayedNickname.length > 13
+                        ? '13px'
+                        : '15px',
+                  color: 'var(--border-accent)'
+                }}
+              >
+                {isRerolling ? '...' : displayedNickname}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleRerollNickname}
+                disabled={isRerolling || !playerName}
+                title="Reroll procedural nickname"
+                aria-label="Reroll procedural nickname"
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:border-(--border-accent) hover:text-(--border-accent) cursor-pointer transition-all disabled:opacity-50"
+              >
+                <Dices
+                  size={12}
+                  className={isRerolling ? 'animate-spin' : ''}
+                />
+                <span>REROLL</span>
+              </button>
+            </div>
+
             <p className="mb-3 text-xs text-(--text-secondary) leading-relaxed font-sans">
-              Your profile is anchored by Arkalon Core. Access your recovery
+              Your profile is anchored by Arkalon Core. Reveal your recovery
               code or switch devices on the Network Hub.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 pt-1 font-mono">
-              <a
-                href={`https://network.rpsleague.fi/settings?returnTo=${encodeURIComponent(returnUrl)}`}
-                className="flex-1 inline-flex items-center justify-center rounded-lg border border-(--border-default) px-3 py-2 text-xs font-semibold text-(--text-primary) hover:border-(--border-accent) hover:text-(--text-accent) transition-colors cursor-pointer"
-              >
-                Reroll Nickname ↗
-              </a>
               <a
                 href={`https://network.rpsleague.fi/settings?tab=identity&returnTo=${encodeURIComponent(returnUrl)}`}
                 className="flex-1 inline-flex items-center justify-center rounded-lg bg-(--border-accent)/10 border border-(--border-accent)/40 px-3 py-2 text-xs font-semibold text-(--text-accent) hover:bg-(--border-accent)/20 transition-colors cursor-pointer"
               >
                 Reveal Recovery Code ↗
+              </a>
+              <a
+                href={`https://network.rpsleague.fi/settings?tab=restore&returnTo=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 inline-flex items-center justify-center rounded-lg border border-(--border-default) px-3 py-2 text-xs font-semibold text-(--text-primary) hover:border-(--border-accent) hover:text-(--text-accent) transition-colors cursor-pointer"
+              >
+                Restore Account ↗
               </a>
             </div>
           </div>
