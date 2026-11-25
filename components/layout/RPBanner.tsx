@@ -293,7 +293,7 @@ export default function RPBanner() {
       </TutorialHighlight>
 
       {/* Era badge and secondary telemetry */}
-      <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs [@media(max-height:600px)]:hidden">
+      <div className="flex items-center gap-x-2 gap-y-1 mt-1 sm:mt-1.5 flex-wrap text-xs [@media(max-height:600px)]:hidden">
         {!initialized ? (
           <span className="inline-flex items-center gap-1.5 bg-(--bg-elevated) border border-(--border-default) px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-(--text-secondary)">
             Synchronizing Telemetry...
@@ -352,10 +352,12 @@ export default function RPBanner() {
 
             {/* Projected prestige gain */}
             {projectedAR > 0 && (
-              <span className="text-[11px] font-mono text-(--text-secondary) ml-auto sm:ml-0">
-                {prestige1Done ? 'Recalibrate:' : 'Prestige:'}{' '}
+              <span className="text-[11px] font-mono text-(--text-secondary) ml-auto sm:ml-0 whitespace-nowrap">
+                <span className="hidden sm:inline">
+                  {prestige1Done ? 'Recalibrate:' : 'Prestige:'}{' '}
+                </span>
                 <strong className="text-(--status-success) font-bold">
-                  ~
+                  {isCompact ? '+' : '~'}
                   {isCompact
                     ? formatPointsShort(BigInt(projectedAR))
                     : formatPoints(BigInt(projectedAR))}{' '}

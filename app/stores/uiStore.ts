@@ -73,6 +73,9 @@ interface UIStore {
   // Selected generator bulk purchase mode
   bulkAmount: BulkBuyAmount
 
+  // Generator list sort order
+  generatorSort: 'tier_asc' | 'tier_desc' | 'yield_desc'
+
   // Auto-prestige live countdown state
   autoPrestigePendingTier: 0 | 1 | 2 | 3
   autoPrestigeCountdown: number
@@ -108,6 +111,8 @@ interface UIStore {
   setVictoryPayload: (payload: VictoryPayload | null) => void
   triggerPrestigeAnimation: () => void
   setBulkAmount: (amount: BulkBuyAmount) => void
+  setGeneratorSort: (sort: 'tier_asc' | 'tier_desc' | 'yield_desc') => void
+  cycleGeneratorSort: () => void
   setAutoPrestigePending: (tier: 0 | 1 | 2 | 3, countdown: number) => void
   markTabUnseen: (tab: WorkspaceTab) => void
   clearTabUnseen: (tab: WorkspaceTab) => void
@@ -137,6 +142,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   victoryPayload: null,
   prestigeAnimating: false,
   bulkAmount: 1,
+  generatorSort: 'tier_asc',
   autoPrestigePendingTier: 0,
   autoPrestigeCountdown: 0,
   unseenUnlockedTabs: [],
@@ -218,7 +224,28 @@ export const useUIStore = create<UIStore>((set, get) => ({
     setTimeout(() => set({ prestigeAnimating: false }), 2000)
   },
 
-  setBulkAmount: (bulkAmount) => set({ bulkAmount }),
+  ssetBulkAmount: (bulkAmount) => set({ bulkAmount }),
+
+  setGeneratorSort: (generatorSort) => {
+    try {
+      localStorage.setItem('arkalon_labs_gen_sort', generatorSort)
+    } catch {}
+    set({ generatorSort })
+  },
+
+  cycleGeneratorSort: () => {
+    const cur = get().generatorSort
+    const next =
+      cur === 'tier_asc'
+        ? 'tier_desc'
+        : cur === 'tier_desc'
+          ? 'yield_desc'
+          : 'tier_asc'
+    try {
+      localStorage.setItem('arkalon_labs_gen_sort', next)
+    } catch {}
+    set({ generatorSort: next })
+  },
 
   setAutoPrestigePending: (autoPrestigePendingTier, autoPrestigeCountdown) =>
     set({ autoPrestigePendingTier, autoPrestigeCountdown }),

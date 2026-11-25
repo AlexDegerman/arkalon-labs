@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import GeneratorCard from '@/components/generators/GeneratorCard'
@@ -22,11 +22,21 @@ const BULK_LABELS: Record<string | number, string> = {
   max: 'MAX'
 }
 
+const SORT_LABELS: Record<'tier_asc' | 'tier_desc' | 'yield_desc', string> = {
+  tier_asc: '↕ 1→20',
+  tier_desc: '↕ 20→1',
+  yield_desc: '↕ Yield%'
+}
+
 export default function GeneratorList() {
   const initialized = useGameStore((s) => s._initialized)
   const bulkAmount = useUIStore((s) => s.bulkAmount)
   const setBulkAmount = useUIStore((s) => s.setBulkAmount)
+  const generatorSort = useUIStore((s) => s.generatorSort)
+  const setGeneratorSort = useUIStore((s) => s.setGeneratorSort)
+  const cycleGeneratorSort = useUIStore((s) => s.cycleGeneratorSort)
   const generators = useGameStore((s) => s.generators)
+  const productionShares = useGameStore((s) => s.cachedProductionShares)
   const relicsUnlocked = useGameStore((s) => s.unlocks.relics)
   const equipmentTab = useActiveTab((s) => s.equipmentTab)
   const setEquipmentTab = useActiveTab((s) => s.setEquipmentTab)
@@ -43,6 +53,19 @@ export default function GeneratorList() {
   )
 
   const activeTab = relicsUnlocked ? equipmentTab : 'generators'
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('arkalon_labs_gen_sort')
+      if (
+        saved === 'tier_asc' ||
+        saved === 'tier_desc' ||
+        saved === 'yield_desc'
+      ) {
+        setGeneratorSort(saved)
+      }
+    } catch {}
+  }, [setGeneratorSort])
 
   useEffect(() => {
     const handleCycle = () => {
@@ -72,6 +95,26 @@ export default function GeneratorList() {
     })
   }
 
+  const visibleIndices = useMemo(() => {
+    const base = GENERATORS.map((_, index) => index).filter((index) =>
+      checkGeneratorVisible(index, {
+        generators,
+        activeChallengeRestrictions:
+          maxGeneratorTier !== null ? { maxGeneratorTier } : null
+      })
+    )
+    if (generatorSort === 'tier_desc') {
+      return [...base].reverse()
+    }
+    if (generatorSort === 'yield_desc') {
+      return [...base].sort((a, b) => {
+        const diff = (productionShares?.[b] ?? 0) - (productionShares?.[a] ?? 0)
+        return diff !== 0 ? diff : b - a
+      })
+    }
+    return base
+  }, [generators, maxGeneratorTier, generatorSort, productionShares])
+
   const nextHidden = GENERATORS.findIndex(
     (_, index) =>
       !isGeneratorVisible(index) &&
@@ -81,52 +124,72 @@ export default function GeneratorList() {
 
   return (
     <div className="flex flex-col h-full bg-(--bg-primary)/40">
-      {/* Equipment category switcher (appears once Relics unlock) */}
+      {/* Equipment category switcher + inline generator sort (appears once Relics unlock) */}
       {relicsUnlocked && (
         <div
-          className="grid grid-cols-2 gap-1 px-2 py-1 border-b border-(--border-default) bg-(--bg-surface) shrink-0"
+          className="flex items-center gap-1 px-2 py-0.5 sm:py-1 border-b border-(--border-default) bg-(--bg-surface) shrink-0"
           role="tablist"
           aria-label="Equipment categories"
         >
-          {(
-            [
-              { id: 'generators' as const, label: 'Generators' },
-              { id: 'synthesizers' as const, label: 'Synthesizers' }
-            ] as const
-          ).map((tab) => {
-            const isSelected = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                role="tab"
-                aria-selected={isSelected}
-                onClick={() => {
-                  playSound('click')
-                  setEquipmentTab(tab.id)
-                }}
-                className={[
-                  'py-1 px-2 text-[11px] font-mono font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer select-none truncate flex items-center justify-center gap-1.5',
-                  isSelected
-                    ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent)'
-                    : 'border-transparent text-(--text-secondary) hover:text-(--text-primary)'
-                ].join(' ')}
-              >
-                <span>{tab.label}</span>
-                {tab.id === 'synthesizers' &&
-                  noSynthesizersOwned &&
-                  !isSelected && (
-                    <span className="text-[8px] font-black px-1 py-0.2 rounded bg-(--status-success) text-[#080c14] shrink-0">
-                      NEW
-                    </span>
-                  )}
-              </button>
-            )
-          })}
+          <div className="flex-1 grid grid-cols-2 gap-1 min-w-0">
+            {(
+              [
+                { id: 'generators' as const, label: 'Generators' },
+                { id: 'synthesizers' as const, label: 'Synthesizers' }
+              ] as const
+            ).map((tab) => {
+              const isSelected = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    playSound('click')
+                    setEquipmentTab(tab.id)
+                  }}
+                  className={[
+                    'py-1 px-1.5 text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer select-none truncate flex items-center justify-center gap-1',
+                    isSelected
+                      ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent)'
+                      : 'border-transparent text-(--text-secondary) hover:text-(--text-primary)'
+                  ].join(' ')}
+                >
+                  <span>{tab.label}</span>
+                  {tab.id === 'synthesizers' &&
+                    noSynthesizersOwned &&
+                    !isSelected && (
+                      <span className="text-[8px] font-black px-1 py-0.2 rounded bg-(--status-success) text-[#080c14] shrink-0">
+                        NEW
+                      </span>
+                    )}
+                </button>
+              )
+            })}
+          </div>
+          {activeTab === 'generators' && (
+            <button
+              type="button"
+              onClick={() => {
+                playSound('click')
+                cycleGeneratorSort()
+              }}
+              title="Cycle generator list order (Tier 1→20, Newest 20→1, Yield %)"
+              className={[
+                'shrink-0 px-2 py-1 text-[10px] font-mono font-bold rounded-lg border transition-colors cursor-pointer whitespace-nowrap',
+                generatorSort !== 'tier_asc'
+                  ? 'border-(--border-accent)/60 bg-(--border-accent)/10 text-(--text-accent)'
+                  : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary)'
+              ].join(' ')}
+            >
+              {SORT_LABELS[generatorSort]}
+            </button>
+          )}
         </div>
       )}
 
       {/* Bulk buy selector bar */}
-      <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 sm:py-2 border-b border-(--border-default) bg-(--bg-surface)/95 shrink-0 gap-2">
+      <div className="flex items-center justify-between px-2 sm:px-3 py-1 sm:py-1.5 border-b border-(--border-default) bg-(--bg-surface)/95 shrink-0 gap-1.5">
         <div className="flex items-center gap-1.5 min-w-0">
           {canMaxAll && activeTab === 'generators' ? (
             <button
@@ -138,6 +201,20 @@ export default function GeneratorList() {
               <kbd className="hidden sm:inline text-[9px] px-1 py-0.2 rounded bg-black/40 border border-(--border-accent)/40 font-mono">
                 M
               </kbd>
+            </button>
+          ) : !relicsUnlocked &&
+            activeTab === 'generators' &&
+            visibleIndices.length > 4 ? (
+            <button
+              type="button"
+              onClick={() => {
+                playSound('click')
+                cycleGeneratorSort()
+              }}
+              title="Cycle generator list order"
+              className="px-2 py-1 text-[10px] font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) cursor-pointer whitespace-nowrap"
+            >
+              {SORT_LABELS[generatorSort]}
             </button>
           ) : (
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-(--text-secondary)/70 truncate">
@@ -161,7 +238,7 @@ export default function GeneratorList() {
                     setBulkAmount(opt)
                   }}
                   className={[
-                    'px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-mono font-bold rounded transition-all cursor-pointer select-none',
+                    'px-1.5 sm:px-2.5 py-1 text-[11px] sm:text-xs font-mono font-bold rounded transition-all cursor-pointer select-none',
                     bulkAmount === opt
                       ? 'bg-(--border-accent) text-[#080c14] shadow-[0_0_10px_rgba(0,240,255,0.4)]'
                       : 'text-(--text-secondary) hover:text-(--text-primary)'
@@ -187,17 +264,14 @@ export default function GeneratorList() {
       ) : (
         <>
           {/* Scrollable generator list - sizes to content, never stretches */}
-          <div className="@container flex-[0_1_auto] min-h-0 overflow-y-auto scrollbar-dark p-1.5 sm:p-2.5 flex flex-col gap-1.5 sm:gap-2">
-            {GENERATORS.map((def, index) => {
-              if (!isGeneratorVisible(index)) return null
-              return (
-                <GeneratorCard
-                  key={def.index}
-                  generatorIndex={index}
-                  bulkAmount={bulkAmount}
-                />
-              )
-            })}
+          <div className="@container flex-[0_1_auto] min-h-0 overflow-y-auto scrollbar-dark p-1 sm:p-2.5 flex flex-col gap-1 sm:gap-2">
+            {visibleIndices.map((index) => (
+              <GeneratorCard
+                key={index}
+                generatorIndex={index}
+                bulkAmount={bulkAmount}
+              />
+            ))}
           </div>
           {/* Expansion bay absorbs leftover height on tall/wide devices */}
           <ExpansionBay nextHiddenIndex={nextHiddenIndex} />

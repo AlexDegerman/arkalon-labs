@@ -243,7 +243,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
   return (
     <div
       className={[
-        'card grid grid-cols-[auto_1fr_auto] items-center gap-x-2.5 gap-y-1.5 @[460px]:gap-x-3 @[460px]:gap-y-0.5 p-2 @[460px]:p-3 rounded-xl transition-all duration-150 relative border',
+        'card grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-1 @[460px]:gap-x-3 @[460px]:gap-y-0.5 px-2 py-1.5 @[460px]:p-3 rounded-xl transition-all duration-150 relative border',
         affordable
           ? `${CLASS_THEME.border} ${CLASS_THEME.bg} ${CLASS_THEME.glow}`
           : 'border-(--border-default) bg-(--bg-surface)',
