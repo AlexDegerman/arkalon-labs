@@ -169,7 +169,7 @@ export const AR_UPGRADES: PrestigeUpgradeDef<keyof ARUpgrades>[] = [
     id: 'bulk_procurement',
     label: 'Bulk Procurement',
     description:
-      'Unlocks MAX ALL (M) equipment sweep and bulk module upgrade buttons.',
+      'Unlocks MAX ALL (M) equipment sweep and Upgrade All modules button.',
     baseCost: 500_000,
     maxLevel: 1,
     currency: 'ar',

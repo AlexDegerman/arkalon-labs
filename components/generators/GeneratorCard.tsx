@@ -237,12 +237,13 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
     buyGenerator(generatorIndex, bulkAmount)
   }
 
-  const desktopRowSpan = quantity > 0n ? 'sm:row-span-3' : 'sm:row-span-2'
+  const desktopRowSpan =
+    quantity > 0n ? '@[460px]:row-span-3' : '@[460px]:row-span-2'
 
   return (
     <div
       className={[
-        'card grid grid-cols-[auto_1fr_auto] items-center gap-x-2.5 gap-y-1.5 sm:gap-x-3 sm:gap-y-0.5 p-2 sm:p-3 rounded-xl transition-all duration-150 relative border',
+        'card grid grid-cols-[auto_1fr_auto] items-center gap-x-2.5 gap-y-1.5 @[460px]:gap-x-3 @[460px]:gap-y-0.5 p-2 @[460px]:p-3 rounded-xl transition-all duration-150 relative border',
         affordable
           ? `${CLASS_THEME.border} ${CLASS_THEME.bg} ${CLASS_THEME.glow}`
           : 'border-(--border-default) bg-(--bg-surface)',
@@ -251,7 +252,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
     >
       {/* Left: Framed Icon Badge with Class Glow (Daily Style) */}
       <div
-        className={`col-start-1 row-start-1 ${desktopRowSpan} self-center shrink-0 rounded-xl p-1 sm:p-1.5 flex items-center justify-center border transition-all ${CLASS_THEME.border} bg-[#0c1322] ${CLASS_THEME.glow}`}
+        className={`col-start-1 row-start-1 ${desktopRowSpan} self-center w-fit shrink-0 rounded-xl p-1 @[460px]:p-1.5 flex items-center justify-center border transition-all ${CLASS_THEME.border} bg-[#0c1322] ${CLASS_THEME.glow}`}
       >
         <GeneratorIcon
           generatorIndex={generatorIndex}
@@ -261,15 +262,15 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
       </div>
 
       {/* Header: Name, Class, Qty, Mutation Badges */}
-      <div className="col-start-2 col-span-2 sm:col-span-1 row-start-1 min-w-0 flex items-center gap-x-1.5 gap-y-0.5 flex-wrap">
-        <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
+      <div className="col-start-2 col-span-2 @[460px]:col-span-1 row-start-1 min-w-0 flex items-center gap-x-1.5 gap-y-0.5 flex-wrap">
+        <span className="text-xs @[460px]:text-sm font-bold text-(--text-primary) truncate">
           {def.name}
         </span>
         {quantity > 0n && (
           <div className="flex items-center gap-1 font-mono text-[10px] text-(--text-secondary)">
             <span className={`w-1.5 h-1.5 rounded-full ${CLASS_THEME.dot}`} />
-            <span className="hidden sm:inline">{CLASS_THEME.label}</span>
-            <span className="hidden sm:inline">•</span>
+            <span className="hidden @[460px]:inline">{CLASS_THEME.label}</span>
+            <span className="hidden @[460px]:inline">•</span>
             <span className="font-bold text-(--text-primary)">
               x{quantity.toString()}
             </span>
@@ -309,7 +310,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
       </div>
 
       {/* Cost & Countdown */}
-      <div className="col-start-1 col-span-2 sm:col-start-2 sm:col-span-1 row-start-2 min-w-0 flex items-center gap-2 flex-wrap text-[11px] sm:text-xs font-mono">
+      <div className="col-start-1 col-span-2 @[460px]:col-start-2 @[460px]:col-span-1 row-start-2 min-w-0 flex items-center gap-2 flex-wrap text-[11px] @[460px]:text-xs font-mono">
         <span
           className={[
             'font-bold',
@@ -317,8 +318,10 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
             !affordable ? 'opacity-55' : ''
           ].join(' ')}
         >
-          <span className="sm:hidden">{formatPointsShort(cost)} RP</span>
-          <span className="hidden sm:inline">{formatPoints(cost)} RP</span>
+          <span className="@[460px]:hidden">{formatPointsShort(cost)} RP</span>
+          <span className="hidden @[460px]:inline">
+            {formatPoints(cost)} RP
+          </span>
         </span>
         <TimeToAffordBadge
           generatorIndex={generatorIndex}
@@ -327,16 +330,16 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
         />
       </div>
 
-      {/* Milestone & Yield Footer (full-width on mobile, middle col on desktop) */}
+      {/* Milestone & Yield Footer (full-width when narrow, middle col on wide) */}
       {quantity > 0n && (
-        <div className="col-start-1 col-span-3 sm:col-start-2 sm:col-span-1 row-start-3 min-w-0 flex flex-col gap-0.5">
+        <div className="col-start-1 col-span-3 @[460px]:col-start-2 @[460px]:col-span-1 row-start-3 min-w-0 flex flex-col gap-0.5">
           {activeRestrictions?.milestonesDisabled ? (
             <span className="text-[9px] font-mono text-amber-400/80">
               Milestones Inactive (Challenge)
             </span>
           ) : (
             <div className="flex flex-col gap-0.5">
-              <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] font-mono text-(--text-secondary)/80">
+              <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-[9px] @[460px]:text-[10px] font-mono text-(--text-secondary)/80">
                 <span
                   className="min-w-0"
                   title={
@@ -347,7 +350,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
                 >
                   {milestoneStr}
                   {milestoneInfo.doublings > 8 && (
-                    <span className="hidden sm:inline text-cyan-300/75 ml-1">
+                    <span className="hidden @[460px]:inline text-cyan-300/75 ml-1">
                       (
                       {milestoneInfo.doublings > 100
                         ? 'linear taper'
@@ -409,7 +412,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
 
       {/* Right: Buy action */}
       <div
-        className={`col-start-3 row-start-2 sm:row-start-1 ${desktopRowSpan} self-center shrink-0 flex flex-col items-center`}
+        className={`col-start-3 row-start-2 @[460px]:row-start-1 ${desktopRowSpan} self-center shrink-0 flex flex-col items-center`}
       >
         {generatorIndex === 0 && (
           <TutorialArrow targetId="generator-0-buy" direction="above" />

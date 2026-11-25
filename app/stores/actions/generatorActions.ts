@@ -7,7 +7,8 @@ import { costToBuyN, maxAffordable } from '@/lib/generatorCosts'
 import { getNextMilestone } from '@/lib/generatorUtils'
 import {
   getModuleUpgradeCost as getModuleUpgradeCostFn,
-  getModuleLevelCap as getModuleLevelCapFn
+  getModuleLevelCap as getModuleLevelCapFn,
+  getUpgradeAllModulesPlan
 } from '@/lib/moduleDefs'
 import { markUnlocksDirty, markTutorialDirty, markAchievementsDirty } from '@/lib/dirtyFlags'
 import { dispatchGeneratorUnlock } from '@/lib/dialogueDispatcher'
@@ -82,66 +83,13 @@ export function buyAllModules(filterType?: ModuleType): void {
   ) {
     return
   }
-  if (store.activeChallengeRestrictions?.modulesDisabled) return
 
-  const cap = getModuleLevelCapFn(store)
-  const sc4Tiers = store.challengeRecords['SC4']?.completedTiers ?? 0
-  const types: ModuleType[] = filterType
-    ? [filterType]
-    : ['efficiency', 'cost_reduction', 'synergy']
-
-  let currentRP = store.researchPoints
-  let newGenerators = [...store.generators]
-  let upgradedAny = false
-
-  // Repeatedly purchase affordable upgrades across all owned generators
-  let canContinue = true
-  while (canContinue) {
-    canContinue = false
-
-    for (let i = 0; i < 20; i++) {
-      if (!newGenerators[i] || newGenerators[i].quantity === 0n) continue
-
-      for (const type of types) {
-        const gen = newGenerators[i]
-        const lvl =
-          type === 'efficiency'
-            ? gen.efficiencyLevel
-            : type === 'cost_reduction'
-              ? gen.costReductionLevel
-              : gen.synergyLevel
-
-        if (lvl >= cap) continue
-
-        const cost = getModuleUpgradeCostFn(i, type, lvl, sc4Tiers)
-        if (currentRP >= cost) {
-          currentRP -= cost
-          upgradedAny = true
-          canContinue = true
-
-          newGenerators[i] = {
-            ...gen,
-            efficiencyLevel:
-              type === 'efficiency'
-                ? gen.efficiencyLevel + 1
-                : gen.efficiencyLevel,
-            costReductionLevel:
-              type === 'cost_reduction'
-                ? gen.costReductionLevel + 1
-                : gen.costReductionLevel,
-            synergyLevel:
-              type === 'synergy' ? gen.synergyLevel + 1 : gen.synergyLevel
-          }
-        }
-      }
-    }
-  }
-
-  if (!upgradedAny) return
+  const plan = getUpgradeAllModulesPlan(store, filterType)
+  if (plan.purchaseCount <= 0) return
 
   useGameStore.setState({
-    researchPoints: currentRP,
-    generators: newGenerators
+    researchPoints: store.researchPoints - plan.totalCost,
+    generators: plan.nextGenerators
   })
 
   playSound('purchase')

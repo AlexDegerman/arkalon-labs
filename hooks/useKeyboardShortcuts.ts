@@ -44,7 +44,9 @@ export function useKeyboardShortcuts(enabled = true) {
         e.preventDefault()
         const ui = useUIStore.getState()
         if (ui.hotkeyModalOpen) {
+          const returnToSettings = ui.hotkeyFromSettings
           ui.setHotkeyModalOpen(false)
+          if (returnToSettings) ui.setSettingsPanelOpen(true)
           return
         }
         if (ui.settingsPanelOpen) {

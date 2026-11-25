@@ -46,29 +46,36 @@ const SHORTCUT_GROUPS = [
 
 export default function HotkeyModal() {
   const isOpen = useUIStore((s) => s.hotkeyModalOpen)
+  const fromSettings = useUIStore((s) => s.hotkeyFromSettings)
   const setOpen = useUIStore((s) => s.setHotkeyModalOpen)
+  const setSettingsPanelOpen = useUIStore((s) => s.setSettingsPanelOpen)
 
   if (!isOpen) return null
+
+  function handleBackToSettings() {
+    setOpen(false)
+    setSettingsPanelOpen(true)
+  }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-[fade-in_0.15s_ease-out_both]"
       role="dialog"
       aria-modal="true"
-      aria-label="Keyboard shortcuts matrix"
+      aria-label="Keybinds and controls info"
     >
       <div className="card w-full max-w-md rounded-2xl border border-(--border-default) bg-(--bg-surface)/95 p-4 sm:p-5 flex flex-col gap-3.5 shadow-2xl backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-(--border-default)/60 pb-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-(--border-accent)" />
             <h3 className="text-xs sm:text-sm font-mono font-black uppercase tracking-wider text-(--text-primary)">
-              Command Matrix // Keyboard Shortcuts
+              Keybinds &amp; Controls // Info
             </h3>
           </div>
           <button
             onClick={() => setOpen(false)}
             className="text-(--text-secondary) hover:text-(--text-primary) p-1 cursor-pointer font-mono text-sm"
-            aria-label="Dismiss shortcut matrix"
+            aria-label="Close keybinds info"
           >
             ✕
           </button>
@@ -99,12 +106,23 @@ export default function HotkeyModal() {
           ))}
         </div>
 
-        <button
-          onClick={() => setOpen(false)}
-          className="w-full py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-xl border border-(--border-accent)/40 bg-(--border-accent)/10 text-(--text-accent) hover:bg-(--border-accent) hover:text-[#080c14] transition-all cursor-pointer"
-        >
-          Dismiss HUD
-        </button>
+        <div className="flex gap-2">
+          {fromSettings ? (
+            <button
+              onClick={handleBackToSettings}
+              className="flex-1 py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-xl border border-(--border-accent)/40 bg-(--border-accent)/10 text-(--text-accent) hover:bg-(--border-accent) hover:text-[#080c14] transition-all cursor-pointer"
+            >
+              ← Back to Settings
+            </button>
+          ) : (
+            <button
+              onClick={() => setOpen(false)}
+              className="w-full py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-xl border border-(--border-accent)/40 bg-(--border-accent)/10 text-(--text-accent) hover:bg-(--border-accent) hover:text-[#080c14] transition-all cursor-pointer"
+            >
+              Close
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

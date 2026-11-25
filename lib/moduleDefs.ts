@@ -36,24 +36,24 @@ export interface ModuleDefinition {
 export const MODULE_DEFINITIONS: Record<ModuleType, ModuleDefinition> = {
   efficiency: {
     type: 'efficiency',
-    label: 'Efficiency',
-    description: "Multiplies this generator's output.",
+    label: 'Output Boost',
+    description: "Multiplies this generator's RP output.",
     costMultiplierBase: 10,
-    effectPerLevel: '+25% output per level (1.25^level total)'
+    effectPerLevel: '+25% output per level (compounding)'
   },
   cost_reduction: {
     type: 'cost_reduction',
-    label: 'Cost Curve',
-    description: "Reduces this generator's cost growth factor.",
+    label: 'Cost Discount',
+    description: 'Slows how fast generator buy prices increase.',
     costMultiplierBase: 15,
-    effectPerLevel: '-0.015 growth factor per level'
+    effectPerLevel: 'Slows price scaling (-0.015/lv)'
   },
   synergy: {
     type: 'synergy',
-    label: 'Synergy',
-    description: 'Unlocks and amplifies cross-generator synergy bonuses.',
+    label: 'Cross-Boost',
+    description: 'Lets this generator boost a linked generator.',
     costMultiplierBase: 25,
-    effectPerLevel: 'Enables synergy bonus at level 1; scales with level'
+    effectPerLevel: 'Powers linked generator boost (+bonus/lv)'
   }
 }
 
@@ -102,7 +102,7 @@ export function getModuleLevelCap(state: {
   if (ac5Tiers > 0) {
     return Math.min(MODULE_LEVEL_CAP_AC5, MODULE_LEVEL_CAP + ac5Tiers)
   }
-  
+
   return MODULE_LEVEL_CAP
 }
 
@@ -122,10 +122,119 @@ export function getModuleEffectLabel(
     }
     case 'cost_reduction': {
       const reduction = (0.015 * effectiveLevel).toFixed(3)
-      return `-${reduction} growth factor`
+      return `-${reduction} price scaling`
     }
     case 'synergy': {
-      return `Synergy active (Lv${effectiveLevel})`
+      return `Active (Lv${effectiveLevel})`
     }
+  }
+}
+
+export interface UpgradeAllModulesPlan {
+  purchaseCount: number
+  totalCost: bigint
+  nextCheapestCost: bigint | null
+  remainingToMaxCost: bigint
+  nextGenerators: GeneratorState[]
+}
+
+export function getUpgradeAllModulesPlan(
+  state: Pick<
+    GameState,
+    | 'researchPoints'
+    | 'generators'
+    | 'challengeRecords'
+    | 'activeChallengeRestrictions'
+  >,
+  filterType?: ModuleType
+): UpgradeAllModulesPlan {
+  const nextGenerators = state.generators.map((g) => ({ ...g }))
+  if (state.activeChallengeRestrictions?.modulesDisabled) {
+    return {
+      purchaseCount: 0,
+      totalCost: 0n,
+      nextCheapestCost: null,
+      remainingToMaxCost: 0n,
+      nextGenerators
+    }
+  }
+
+  const cap = getModuleLevelCap(state)
+  const sc4Tiers = state.challengeRecords['SC4']?.completedTiers ?? 0
+  const types: ModuleType[] = filterType
+    ? [filterType]
+    : ['efficiency', 'cost_reduction', 'synergy']
+
+  let remainingToMaxCost = 0n
+  let nextCheapestCost: bigint | null = null
+
+  for (let i = 0; i < 20; i++) {
+    const gen = nextGenerators[i]
+    if (!gen || gen.quantity === 0n) continue
+
+    for (const type of types) {
+      const startLvl =
+        type === 'efficiency'
+          ? gen.efficiencyLevel
+          : type === 'cost_reduction'
+            ? gen.costReductionLevel
+            : gen.synergyLevel
+
+      if (startLvl >= cap) continue
+
+      const nextCost = getModuleUpgradeCost(i, type, startLvl, sc4Tiers)
+      if (nextCheapestCost === null || nextCost < nextCheapestCost) {
+        nextCheapestCost = nextCost
+      }
+
+      for (let lvl = startLvl; lvl < cap; lvl++) {
+        remainingToMaxCost += getModuleUpgradeCost(i, type, lvl, sc4Tiers)
+      }
+    }
+  }
+
+  let currentRP = state.researchPoints
+  let totalCost = 0n
+  let purchaseCount = 0
+  let canContinue = true
+
+  while (canContinue) {
+    canContinue = false
+
+    for (let i = 0; i < 20; i++) {
+      const gen = nextGenerators[i]
+      if (!gen || gen.quantity === 0n) continue
+
+      for (const type of types) {
+        const lvl =
+          type === 'efficiency'
+            ? gen.efficiencyLevel
+            : type === 'cost_reduction'
+              ? gen.costReductionLevel
+              : gen.synergyLevel
+
+        if (lvl >= cap) continue
+
+        const cost = getModuleUpgradeCost(i, type, lvl, sc4Tiers)
+        if (currentRP >= cost) {
+          currentRP -= cost
+          totalCost += cost
+          purchaseCount++
+          canContinue = true
+
+          if (type === 'efficiency') gen.efficiencyLevel += 1
+          else if (type === 'cost_reduction') gen.costReductionLevel += 1
+          else gen.synergyLevel += 1
+        }
+      }
+    }
+  }
+
+  return {
+    purchaseCount,
+    totalCost,
+    nextCheapestCost,
+    remainingToMaxCost,
+    nextGenerators
   }
 }

@@ -187,7 +187,7 @@ export default function GeneratorList() {
       ) : (
         <>
           {/* Scrollable generator list - sizes to content, never stretches */}
-          <div className="flex-[0_1_auto] min-h-0 overflow-y-auto scrollbar-dark p-1.5 sm:p-2.5 flex flex-col gap-1.5 sm:gap-2">
+          <div className="@container flex-[0_1_auto] min-h-0 overflow-y-auto scrollbar-dark p-1.5 sm:p-2.5 flex flex-col gap-1.5 sm:gap-2">
             {GENERATORS.map((def, index) => {
               if (!isGeneratorVisible(index)) return null
               return (

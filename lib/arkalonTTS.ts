@@ -3,8 +3,27 @@
 
 let lastSpeakTime = 0
 const COOLDOWN_MS = 500
+let speakSequence = 0
 
 let cachedVoices: SpeechSynthesisVoice[] = []
+let lockedVoiceURI: string | null = null
+
+const PREFERRED_MALE_VOICES = [
+  'Google UK English Male',
+  'Microsoft David Desktop',
+  'Microsoft David - English (United States)',
+  'Microsoft Mark - English (United States)',
+  'Microsoft George - English (United Kingdom)',
+  'Microsoft Ryan Online (Natural) - English (United Kingdom)',
+  'Microsoft Guy Online (Natural) - English (United States)',
+  'Daniel',
+  'Oliver',
+  'Arthur',
+  'Alex'
+]
+
+const FEMALE_VOICE_PATTERN =
+  /\b(female|zira|hazel|susan|samantha|victoria|karen|moira|tessa|fiona|veena|jenny|aria|libby|sonia|natasha|emma|amy|joanna|kendra|kimberly|salli|ivy|nicole|claire|serena|kate|allison|ava)\b/i
 
 function isSpeechSupported(): boolean {
   return (
@@ -30,25 +49,39 @@ function getArkalonVoice(): SpeechSynthesisVoice | null {
   const voices = loadVoices()
   if (!voices.length) return null
 
-  const targetNames = [
-    'Google UK English Male',
-    'Microsoft David Desktop',
-    'Microsoft David - English (United States)',
-    'English (United Kingdom)'
-  ]
-
-  for (const name of targetNames) {
-    const found = voices.find((v) => v.name === name)
-    if (found) return found
+  if (lockedVoiceURI) {
+    const locked = voices.find((v) => v.voiceURI === lockedVoiceURI)
+    if (locked) return locked
   }
 
-  return (
+  let selected: SpeechSynthesisVoice | undefined
+
+  for (const name of PREFERRED_MALE_VOICES) {
+    selected = voices.find(
+      (v) =>
+        (v.name === name || v.name.startsWith(`${name} `)) &&
+        !FEMALE_VOICE_PATTERN.test(v.name)
+    )
+    if (selected) break
+  }
+
+  selected =
+    selected ??
     voices.find(
-      (v) => v.name.toLowerCase().includes('male') && v.lang.startsWith('en')
+      (v) =>
+        v.lang.startsWith('en') &&
+        /\bmale\b/i.test(v.name) &&
+        !FEMALE_VOICE_PATTERN.test(v.name)
     ) ??
+    voices.find(
+      (v) => v.lang.startsWith('en') && !FEMALE_VOICE_PATTERN.test(v.name)
+    ) ??
+    voices.find((v) => !FEMALE_VOICE_PATTERN.test(v.name)) ??
     voices.find((v) => v.lang.startsWith('en')) ??
     voices[0]
-  )
+
+  if (selected) lockedVoiceURI = selected.voiceURI
+  return selected ?? null
 }
 
 function formatArkalonSpeech(text: string): string {
@@ -96,6 +129,7 @@ export function primeArkalonVoices(): void {
 export function cancelArkalonSpeech(): void {
   if (!isSpeechSupported()) return
   try {
+    speakSequence++
     window.speechSynthesis.cancel()
     lastSpeakTime = 0
   } catch {}
@@ -112,6 +146,27 @@ export function speakArkalon(text: string, volume = 0.88, force = false): void {
   const cadenceText = prepareSpeechCadence(text)
   if (!cadenceText) return
 
+  const seq = ++speakSequence
+
+  const dispatchUtterance = () => {
+    if (seq !== speakSequence) return
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume()
+      }
+      const utterance = new SpeechSynthesisUtterance(cadenceText)
+
+      utterance.rate = 0.8
+      utterance.pitch = 0.3
+      utterance.volume = volume
+
+      const voice = getArkalonVoice()
+      if (voice) utterance.voice = voice
+
+      window.speechSynthesis.speak(utterance)
+    } catch {}
+  }
+
   try {
     if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume()
@@ -119,21 +174,20 @@ export function speakArkalon(text: string, volume = 0.88, force = false): void {
     window.speechSynthesis.cancel()
 
     setTimeout(() => {
-      try {
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume()
-        }
-        const utterance = new SpeechSynthesisUtterance(cadenceText)
-
-        utterance.rate = 0.8
-        utterance.pitch = 0.3
-        utterance.volume = volume
-
-        const voice = getArkalonVoice()
-        if (voice) utterance.voice = voice
-
-        window.speechSynthesis.speak(utterance)
-      } catch {}
+      if (seq !== speakSequence) return
+      if (loadVoices().length > 0) {
+        dispatchUtterance()
+        return
+      }
+      let settled = false
+      const finish = () => {
+        if (settled) return
+        settled = true
+        window.speechSynthesis.removeEventListener('voiceschanged', finish)
+        dispatchUtterance()
+      }
+      window.speechSynthesis.addEventListener('voiceschanged', finish)
+      setTimeout(finish, 250)
     }, 50)
   } catch {}
 }

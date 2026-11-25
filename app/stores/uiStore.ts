@@ -45,8 +45,9 @@ interface UIStore {
   // Settings panel visibility
   settingsPanelOpen: boolean
 
-  // Hotkey HUD modal visibility
+  // Keybinds info modal visibility
   hotkeyModalOpen: boolean
+  hotkeyFromSettings: boolean
 
   // Welcome modal
   welcomeModalOpen: boolean
@@ -88,7 +89,7 @@ interface UIStore {
   dismissAlert: () => void
   pushTerminalLine: (text: string) => void
   setSettingsPanelOpen: (open: boolean) => void
-  setHotkeyModalOpen: (open: boolean) => void
+  setHotkeyModalOpen: (open: boolean, fromSettings?: boolean) => void
   setWelcomeModalOpen: (open: boolean) => void
   setUpdateModalOpen: (open: boolean) => void
   setOfflineModalOpen: (open: boolean) => void
@@ -121,6 +122,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   terminalLines: [],
   settingsPanelOpen: false,
   hotkeyModalOpen: false,
+  hotkeyFromSettings: false,
   welcomeModalOpen: false,
   updateModalOpen: false,
   offlineModalOpen: false,
@@ -189,7 +191,11 @@ export const useUIStore = create<UIStore>((set, get) => ({
     }),
 
   setSettingsPanelOpen: (settingsPanelOpen) => set({ settingsPanelOpen }),
-  setHotkeyModalOpen: (hotkeyModalOpen) => set({ hotkeyModalOpen }),
+  setHotkeyModalOpen: (hotkeyModalOpen, fromSettings = false) =>
+    set({
+      hotkeyModalOpen,
+      hotkeyFromSettings: hotkeyModalOpen ? fromSettings : false
+    }),
   setWelcomeModalOpen: (welcomeModalOpen) => set({ welcomeModalOpen }),
   setUpdateModalOpen: (open) => set({ updateModalOpen: open }),
   setOfflineModalOpen: (offlineModalOpen) => set({ offlineModalOpen }),

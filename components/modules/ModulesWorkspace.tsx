@@ -1,15 +1,101 @@
 'use client'
 
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import GeneratorModuleCard from '@/components/modules/GeneratorModuleCard'
 import { buyAllModules } from '@/app/stores/actions/generatorActions'
-import { getModuleLevelCap, getOverclockedChassisCount } from '@/lib/moduleDefs'
+import {
+  getModuleLevelCap,
+  getOverclockedChassisCount,
+  getUpgradeAllModulesPlan
+} from '@/lib/moduleDefs'
 import { MODULE_SYNERGIES, GENERATORS } from '@/constants/generators'
 import { getRelicSynergyBonus } from '@/lib/relicEffects'
+import { formatPoints, formatPointsShort } from '@/lib/format'
+
+const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
+  const rp = useGameStore((s) => s.researchPoints)
+  const generators = useGameStore((s) => s.generators)
+  const challengeRecords = useGameStore((s) => s.challengeRecords)
+  const activeChallengeRestrictions = useGameStore(
+    (s) => s.activeChallengeRestrictions
+  )
+
+  const plan = getUpgradeAllModulesPlan({
+    researchPoints: rp,
+    generators,
+    challengeRecords,
+    activeChallengeRestrictions
+  })
+
+  const allOwnedMaxed = plan.remainingToMaxCost === 0n
+  const canBuyAny = plan.purchaseCount > 0
+  const postPurchaseRemaining = plan.remainingToMaxCost - plan.totalCost
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <button
+        onClick={() => buyAllModules()}
+        disabled={!canBuyAny}
+        className={[
+          'w-full py-2 px-3 text-xs font-mono font-black uppercase tracking-wider rounded-lg border transition-all select-none',
+          allOwnedMaxed
+            ? 'border-(--status-success)/40 bg-(--status-success)/10 text-(--status-success) cursor-default'
+            : canBuyAny
+              ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent) hover:bg-(--border-accent) hover:text-[#080c14] cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.22)]'
+              : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
+        ].join(' ')}
+      >
+        {allOwnedMaxed ? (
+          'All Owned Generators Maxed'
+        ) : canBuyAny ? (
+          <>
+            <span className="@[420px]:hidden">
+              Upgrade All (+{plan.purchaseCount}) ·{' '}
+              {formatPointsShort(plan.totalCost)} RP
+            </span>
+            <span className="hidden @[420px]:inline">
+              Upgrade All (+{plan.purchaseCount}) ·{' '}
+              {formatPoints(plan.totalCost)} RP
+            </span>
+          </>
+        ) : plan.nextCheapestCost !== null ? (
+          <>
+            <span className="@[420px]:hidden">
+              Upgrade All · Need {formatPointsShort(plan.nextCheapestCost)} RP
+            </span>
+            <span className="hidden @[420px]:inline">
+              Upgrade All · Need {formatPoints(plan.nextCheapestCost)} RP
+            </span>
+          </>
+        ) : (
+          'Upgrade All'
+        )}
+      </button>
+
+      {!allOwnedMaxed && (
+        <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-(--text-secondary)/80 px-0.5 flex-wrap">
+          <span>
+            {canBuyAny && postPurchaseRemaining === 0n
+              ? 'Maxes all currently owned generators'
+              : canBuyAny
+                ? `Left after upgrade: ${formatPointsShort(postPurchaseRemaining)} RP to max owned`
+                : `Full max cost: ${formatPointsShort(plan.remainingToMaxCost)} RP`}
+          </span>
+          {!canBuyAny && plan.nextCheapestCost !== null && (
+            <span className="text-amber-300 font-bold">
+              Next: {formatPointsShort(plan.nextCheapestCost)} RP
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+})
 
 export default function ModulesWorkspace() {
-  const [showConstellation, setShowConstellation] = useState(false)
+  const [showSynergyLinks, setShowSynergyLinks] = useState(false)
+  const [filterMode, setFilterMode] = useState<'all' | 'upgradable'>('all')
   const generators = useGameStore((s) => s.generators)
   const cap = useGameStore(getModuleLevelCap)
   const overclockedCount = useGameStore(getOverclockedChassisCount)
@@ -32,6 +118,17 @@ export default function ModulesWorkspace() {
     .map((g, i) => (g.quantity > 0n ? i : -1))
     .filter((i) => i !== -1)
 
+  const upgradableIndices = ownedGeneratorIndices.filter((i) => {
+    const g = generators[i]
+    return (
+      g.efficiencyLevel < cap ||
+      g.costReductionLevel < cap ||
+      g.synergyLevel < cap
+    )
+  })
+  const visibleIndices =
+    filterMode === 'upgradable' ? upgradableIndices : ownedGeneratorIndices
+
   const totalInstalledModules = generators.reduce(
     (sum, g) => sum + g.efficiencyLevel + g.costReductionLevel + g.synergyLevel,
     0
@@ -43,7 +140,7 @@ export default function ModulesWorkspace() {
       <div className="flex items-center justify-center h-48 p-4">
         <div className="card rounded-xl p-6 border border-dashed border-(--border-default) bg-(--bg-surface)/40 text-center max-w-sm">
           <p className="text-xs font-mono text-(--text-secondary) leading-relaxed">
-            Purchase a Server Cluster to unlock module installation.
+            Purchase a Server Cluster to unlock generator upgrades.
           </p>
         </div>
       </div>
@@ -55,18 +152,18 @@ export default function ModulesWorkspace() {
       <div className="flex items-center justify-between px-1 flex-wrap gap-2">
         <div className="flex flex-col gap-0.5">
           <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
-            Generator Modules & Synergy Constellation
+            Generator Upgrades
           </p>
           <p className="text-xs text-(--text-secondary)">
-            Install hardware modules to compound efficiency and link
-            cross-chassis synergies.
+            Upgrade output, price scaling, and cross-generator boosts. Max all 3
+            on a generator for a 2x output bonus.
           </p>
         </div>
         <button
-          onClick={() => setShowConstellation((prev) => !prev)}
+          onClick={() => setShowSynergyLinks((prev) => !prev)}
           className="px-2.5 py-1 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-accent) transition-all cursor-pointer"
         >
-          {showConstellation ? 'Hide Constellation' : 'Synergy Matrix ◈'}
+          {showSynergyLinks ? 'Hide Synergy Links' : 'View Synergy Links ◈'}
         </button>
       </div>
 
@@ -75,7 +172,7 @@ export default function ModulesWorkspace() {
         <div className="flex items-center justify-between flex-wrap gap-1.5 text-xs font-mono">
           <div className="flex items-center gap-1.5 whitespace-nowrap">
             <span className="text-[10px] font-bold text-(--text-secondary) uppercase tracking-wider">
-              Facility Upgrades:
+              Upgrades Installed:
             </span>
             <span className="font-bold text-(--text-primary)">
               {totalInstalledModules} / {maxPossibleModules}
@@ -83,58 +180,59 @@ export default function ModulesWorkspace() {
           </div>
           {overclockedCount > 0 && (
             <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-400/40 px-2 py-0.5 rounded whitespace-nowrap">
-              ⚡ {overclockedCount} Overclocked Chassis
+              ⚡ {overclockedCount} Maxed Sets (2x Output)
             </span>
           )}
         </div>
 
         {canBulkUpgrade ? (
-          <div className="grid grid-cols-2 @[420px]:grid-cols-4 gap-1.5">
-            <button
-              onClick={() => buyAllModules()}
-              title="Upgrade all affordable module tracks across all generators"
-              className="py-1.5 px-2 text-[11px] font-mono font-bold uppercase rounded-lg border border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent) hover:bg-(--border-accent) hover:text-[#080c14] transition-all cursor-pointer shadow-[0_0_8px_rgba(0,240,255,0.2)]"
-            >
-              Upgrade All
-            </button>
-            <button
-              onClick={() => buyAllModules('efficiency')}
-              title="Max affordable Efficiency modules"
-              className="py-1.5 px-2 text-[11px] font-mono font-bold uppercase rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-default)/80 transition-all cursor-pointer"
-            >
-              All Efficiency
-            </button>
-            <button
-              onClick={() => buyAllModules('cost_reduction')}
-              title="Max affordable Cost Curve modules"
-              className="py-1.5 px-2 text-[11px] font-mono font-bold uppercase rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-default)/80 transition-all cursor-pointer"
-            >
-              All Cost Curves
-            </button>
-            <button
-              onClick={() => buyAllModules('synergy')}
-              title="Max affordable Synergy modules"
-              className="py-1.5 px-2 text-[11px] font-mono font-bold uppercase rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-default)/80 transition-all cursor-pointer"
-            >
-              All Synergies
-            </button>
-          </div>
+          <UpgradeAllModulesButton />
         ) : (
           <p className="text-[10px] font-mono text-(--text-secondary)/70">
-            Bulk module sweep unlocks via Bulk Procurement (Prestige AR Shop).
+            Upgrade All unlocks via Bulk Procurement (Prestige AR Shop).
           </p>
         )}
+
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-(--border-default)/50 font-mono text-[10px]">
+          <span className="text-(--text-secondary)">
+            Show Generators ({visibleIndices.length})
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setFilterMode('all')}
+              className={[
+                'px-2 py-0.5 rounded border font-bold uppercase cursor-pointer transition-colors',
+                filterMode === 'all'
+                  ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent)'
+                  : 'border-(--border-default) text-(--text-secondary)'
+              ].join(' ')}
+            >
+              All ({ownedGeneratorIndices.length})
+            </button>
+            <button
+              onClick={() => setFilterMode('upgradable')}
+              className={[
+                'px-2 py-0.5 rounded border font-bold uppercase cursor-pointer transition-colors',
+                filterMode === 'upgradable'
+                  ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent)'
+                  : 'border-(--border-default) text-(--text-secondary)'
+              ].join(' ')}
+            >
+              Upgradable ({upgradableIndices.length})
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Synergy Constellation Matrix View */}
-      {showConstellation && (
+      {/* Cross-Generator Links Overview */}
+      {showSynergyLinks && (
         <div className="card rounded-xl p-2.5 bg-(--bg-surface) border border-cyan-400/40 shadow-[0_0_15px_rgba(0,240,255,0.1)] flex flex-col gap-1.5">
           <div className="flex items-center justify-between border-b border-(--border-default)/50 pb-1.5 gap-2 flex-wrap">
             <span className="text-xs font-mono font-black uppercase text-cyan-300 tracking-wider">
-              ✦ Facility Synergy Constellation Matrix
+              ✦ Cross-Generator Synergy Links
             </span>
             <span className="text-[10px] font-mono text-(--text-secondary)">
-              10 Inter-Chassis Conduits
+              Tiers 1–10 Links (Own both to activate)
             </span>
           </div>
           <div className="grid grid-cols-1 @[400px]:grid-cols-2 gap-1.5 font-mono text-xs">
@@ -194,7 +292,7 @@ export default function ModulesWorkspace() {
                       {isFlowing && bonus !== undefined
                         ? `+${bonus.toFixed(1)}%`
                         : !srcOwned || !tgtOwned
-                          ? 'Gated'
+                          ? 'Need Both'
                           : 'Lv0'}
                     </span>
                   </div>
@@ -216,9 +314,15 @@ export default function ModulesWorkspace() {
 
       {/* Generator Modules List */}
       <div className="flex flex-col gap-2 pt-1 border-t border-(--border-default)/60">
-        {ownedGeneratorIndices.map((index) => (
-          <GeneratorModuleCard key={index} generatorIndex={index} />
-        ))}
+        {visibleIndices.length === 0 ? (
+          <p className="text-center text-xs font-mono text-(--status-success) py-4">
+            All owned generators are maxed!
+          </p>
+        ) : (
+          visibleIndices.map((index) => (
+            <GeneratorModuleCard key={index} generatorIndex={index} />
+          ))
+        )}
       </div>
     </div>
   )

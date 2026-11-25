@@ -26,32 +26,48 @@ export const THEME_CONFIG: Record<
     label: string
     borderAccent: string
     textAccent: string
+    unlockHint?: string
+    isUnlocked: (stats: {
+      totalPrestigesTier1: number
+      totalPrestigesTier2: number
+      totalPrestigesTier3: number
+      totalAnomaliesResolved: number
+    }) => boolean
   }
 > = {
   default: {
     label: 'Electric Cyan',
     borderAccent: '#00f0ff',
     textAccent: '#00f0ff',
+    isUnlocked: () => true
   },
   matrix: {
     label: 'Matrix Green',
     borderAccent: '#22c55e',
     textAccent: '#4ade80',
+    unlockHint: 'Tier I Prestige',
+    isUnlocked: (s) => s.totalPrestigesTier1 >= 1
   },
   vaporwave: {
     label: 'Vaporwave',
     borderAccent: '#f43f5e',
     textAccent: '#fb7185',
+    unlockHint: '10 Anomalies',
+    isUnlocked: (s) => s.totalAnomaliesResolved >= 10
   },
   solar: {
     label: 'Solar Amber',
     borderAccent: '#f59e0b',
     textAccent: '#fbbf24',
+    unlockHint: 'Tier II Prestige',
+    isUnlocked: (s) => s.totalPrestigesTier2 >= 1
   },
   void: {
     label: 'Absolute Void',
     borderAccent: '#cbd5e1',
     textAccent: '#f1f5f9',
+    unlockHint: 'Tier III Prestige',
+    isUnlocked: (s) => s.totalPrestigesTier3 >= 1
   }
 }
 
@@ -80,6 +96,7 @@ export default function SettingsPanel() {
   const settingsPanelOpen = useUIStore((s) => s.settingsPanelOpen)
   const setSettingsPanelOpen = useUIStore((s) => s.setSettingsPanelOpen)
   const settings = useGameStore((s) => s.settings)
+  const stats = useGameStore((s) => s.stats)
 
   const [exportText, setExportText] = useState('')
   const [importText, setImportText] = useState('')
@@ -389,25 +406,46 @@ export default function SettingsPanel() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {(Object.keys(THEME_CONFIG) as UITheme[]).map((thm) => {
                 const cfg = THEME_CONFIG[thm]
+                const unlocked = cfg.isUnlocked(stats)
                 const isSelected =
                   (settings.currentUITheme ?? 'default') === thm
 
                 return (
                   <button
                     key={thm}
-                    onClick={() => updateSetting('currentUITheme', thm)}
+                    disabled={!unlocked}
+                    title={
+                      unlocked
+                        ? cfg.label
+                        : `Locked — Requires ${cfg.unlockHint}`
+                    }
+                    onClick={() =>
+                      unlocked && updateSetting('currentUITheme', thm)
+                    }
                     className={[
-                      'py-1.5 px-2 rounded-lg border text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer',
-                      isSelected
-                        ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent)'
-                        : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary)'
+                      'py-1.5 px-2 rounded-lg border text-[11px] font-bold flex flex-col gap-0.5 text-left transition-all',
+                      !unlocked
+                        ? 'border-(--border-default)/50 bg-(--bg-surface)/40 text-(--text-secondary)/50 cursor-not-allowed'
+                        : isSelected
+                          ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent) cursor-pointer'
+                          : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary) cursor-pointer'
                     ].join(' ')}
                   >
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: cfg.borderAccent }}
-                    />
-                    <span className="truncate">{cfg.label}</span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{
+                          backgroundColor: cfg.borderAccent,
+                          opacity: unlocked ? 1 : 0.4
+                        }}
+                      />
+                      <span className="truncate">{cfg.label}</span>
+                    </div>
+                    {!unlocked && cfg.unlockHint && (
+                      <span className="text-[9px] font-normal text-amber-400/80 truncate">
+                        🔒 {cfg.unlockHint}
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -476,15 +514,15 @@ export default function SettingsPanel() {
             </div>
           </div>
 
-          {/* Hotkey Cheat Sheet Modal Trigger */}
+          {/* Keybinds & Controls Info Modal Trigger */}
           <button
             onClick={() => {
               setSettingsPanelOpen(false)
-              useUIStore.getState().setHotkeyModalOpen(true)
+              useUIStore.getState().setHotkeyModalOpen(true, true)
             }}
             className="w-full py-2 text-xs font-mono font-bold uppercase tracking-wider rounded-lg border border-(--border-default) bg-(--bg-surface) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-accent) transition-all cursor-pointer flex items-center justify-center gap-1.5"
           >
-            <span>Keyboard Shortcuts Matrix</span>
+            <span>Keybinds &amp; Controls</span>
             <kbd className="text-[9px] px-1 py-0.2 rounded bg-black/40 border border-(--border-default) font-mono">
               ?
             </kbd>

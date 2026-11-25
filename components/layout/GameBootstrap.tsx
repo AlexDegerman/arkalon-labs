@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useGameLoop } from '@/hooks/useGameLoop'
 import { useTabGuard } from '@/hooks/useTabGuard'
@@ -9,6 +10,7 @@ import { useInactiveTabDetection } from '@/hooks/useInactiveTabDetection'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useBGM } from '@/hooks/useBGM'
 import { useSound } from '@/hooks/useSound'
+import { primeArkalonVoices } from '@/lib/arkalonTTS'
 
 // Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
@@ -17,6 +19,10 @@ export default function GameBootstrap() {
   const isDuplicate = useTabGuard()
   useSound()
 
+  useEffect(() => {
+    primeArkalonVoices()
+  }, [])
+
   const { lastSaveLabel, saveStatus } = useSaveGame(!isDuplicate)
 
   // Start game loop once initialized and not a duplicate tab
@@ -24,7 +30,7 @@ export default function GameBootstrap() {
   useInactiveTabDetection()
   useKeyboardShortcuts(!isDuplicate)
   useBGM()
-  
+
   if (isDuplicate) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--bg-primary)/95 backdrop-blur-md">
