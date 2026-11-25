@@ -7,7 +7,7 @@ import { costToBuyN, maxAffordable } from '@/lib/generatorCosts'
 import { getNextMilestone } from '@/lib/generatorUtils'
 import {
   getModuleUpgradeCost as getModuleUpgradeCostFn,
-  getModuleLevelCap as getModuleLevelCapFn,
+  getTrackLevelCap as getTrackLevelCapFn,
   getUpgradeAllModulesPlan
 } from '@/lib/moduleDefs'
 import { markUnlocksDirty, markTutorialDirty, markAchievementsDirty } from '@/lib/dirtyFlags'
@@ -37,7 +37,7 @@ export function buyModule(
         ? gen.costReductionLevel
         : gen.synergyLevel
 
-  const cap = getModuleLevelCapFn(store)
+  const cap = getTrackLevelCapFn(generatorIndex, moduleType, store)
   if (actualLevel >= cap) return
   const sc4Tiers = store.challengeRecords['SC4']?.completedTiers ?? 0
   const cost = getModuleUpgradeCostFn(

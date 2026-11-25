@@ -159,7 +159,7 @@ Unlocked per branch upon completing **Tier 8** (`C8`, `E8`, `R8`, `O8`). Infinit
 | Quantum Overdrive | `500 AR` (`2.0x` exp) | `20` | Doubles (`2x`) global RP production per level. |
 | Harmonic Resonance Cap | `1,500 AR` (`3.0x` exp) | `10` | Raises passive AR bonus cap by `+500 AR` per level (up to `5,500 AR`). |
 | Resonance Compression | `25,000 AR` (`5.0x` exp) | `5` | `+0.02` to global production exponent per level. |
-| Bulk Procurement | `500,000 AR` | `1` | Unlocks `MAX ALL (M)` equipment sweep and bulk module upgrade buttons. |
+| Bulk Procurement | `500,000 AR` | `1` | Unlocks `MAX ALL (M)` equipment sweep and `Upgrade All` modules button. |
 
 ### Chronal Fracture Upgrades (10)
 

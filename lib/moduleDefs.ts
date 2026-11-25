@@ -1,7 +1,7 @@
 // Generator module definitions and cost calculations
 // Three module types per generator, each capped at level 5 (AC5: 8)
 
-import { GENERATORS } from '@/constants/generators'
+import { GENERATORS, MODULE_SYNERGIES } from '@/constants/generators'
 import type { GeneratorState, ModuleType, GameState } from '@/types/game'
 import { MODULE_LEVEL_CAP, MODULE_LEVEL_CAP_AC5 } from '@/constants/game'
 
@@ -70,12 +70,20 @@ export function getModuleUpgradeCost(
   const moduleDef = MODULE_DEFINITIONS[moduleType]
   const nextLevel = currentLevel + 1
 
-  // Cost = generatorBaseCost * costMultiplierBase^nextLevel
-  let cost = BigInt(
-    Math.round(
-      Number(def.baseCost) * Math.pow(moduleDef.costMultiplierBase, nextLevel)
-    )
-  )
+  // Pure BigInt scaling: base multiplier up to Lv25, 100x up to Lv100, 1000x above Lv100
+  const baseFactor = BigInt(moduleDef.costMultiplierBase)
+  let cost: bigint
+  if (nextLevel <= 25) {
+    cost = def.baseCost * baseFactor ** BigInt(nextLevel)
+  } else if (nextLevel <= 100) {
+    cost = def.baseCost * baseFactor ** 25n * 100n ** BigInt(nextLevel - 25)
+  } else {
+    cost =
+      def.baseCost *
+      baseFactor ** 25n *
+      100n ** 75n *
+      1000n ** BigInt(nextLevel - 100)
+  }
 
   // SC4 reward: Module upgrade costs reduced by 10% per tier
   if (sc4Tiers > 0) {
@@ -86,7 +94,7 @@ export function getModuleUpgradeCost(
   return cost
 }
 
-// Returns the effective level cap for modules
+// Returns the effective core level cap for modules (used for 2x Maxed Set bonus)
 // AC5 challenge completion raises cap by +1 per tier up to 8
 export function getModuleLevelCap(state: {
   activeChallengeRestrictions: { moduleLevelCapOverride: number | null } | null
@@ -104,6 +112,98 @@ export function getModuleLevelCap(state: {
   }
 
   return MODULE_LEVEL_CAP
+}
+
+// Returns per-track cap: Cost Discount and Tier 11-20 Cross-Boost stay at core cap;
+// Output Boost and Tier 1-10 Cross-Boost expand across Prestige tiers and Eras into deep endgame
+export function getTrackLevelCap(
+  generatorIndex: number,
+  moduleType: ModuleType,
+  state: {
+    activeChallengeRestrictions: {
+      moduleLevelCapOverride: number | null
+    } | null
+    challengeRecords: Record<string, { completedTiers: number }>
+    lifetimePoints?: bigint
+    stats?: {
+      totalPrestigesTier1?: number
+      totalPrestigesTier2?: number
+      totalPrestigesTier3?: number
+      peakLifetimePoints?: bigint
+      o10EverCompleted?: boolean
+    }
+    completedResearchNodes?: string[]
+  }
+): number {
+  const baseCap = getModuleLevelCap(state)
+  const override = state.activeChallengeRestrictions?.moduleLevelCapOverride
+  if (override !== null && override !== undefined) {
+    return baseCap
+  }
+
+  if (moduleType === 'cost_reduction') return baseCap
+  if (
+    moduleType === 'synergy' &&
+    !MODULE_SYNERGIES.some((s) => s.sourceIndex === generatorIndex)
+  ) {
+    return baseCap
+  }
+
+  const peakRP =
+    (state.stats?.peakLifetimePoints ?? 0n) > (state.lifetimePoints ?? 0n)
+      ? (state.stats?.peakLifetimePoints ?? 0n)
+      : (state.lifetimePoints ?? 0n)
+
+  if (
+    state.stats?.o10EverCompleted ||
+    state.completedResearchNodes?.includes('O10') ||
+    peakRP >= 10n ** 140n
+  ) {
+    return Math.max(baseCap, 250)
+  }
+  if ((state.stats?.totalPrestigesTier3 ?? 0) > 0 || peakRP >= 10n ** 85n) {
+    return Math.max(baseCap, 75)
+  }
+  if ((state.stats?.totalPrestigesTier2 ?? 0) > 0 || peakRP >= 10n ** 35n) {
+    return Math.max(baseCap, 30)
+  }
+  if ((state.stats?.totalPrestigesTier1 ?? 0) > 0 || peakRP >= 10n ** 18n) {
+    return Math.max(baseCap, 15)
+  }
+
+  return baseCap
+}
+
+export function getNextModuleCapHint(state: {
+  activeChallengeRestrictions: { moduleLevelCapOverride: number | null } | null
+  challengeRecords: Record<string, { completedTiers: number }>
+  lifetimePoints?: bigint
+  stats?: {
+    totalPrestigesTier1?: number
+    totalPrestigesTier2?: number
+    totalPrestigesTier3?: number
+    peakLifetimePoints?: bigint
+    o10EverCompleted?: boolean
+  }
+  completedResearchNodes?: string[]
+}): { currentCap: number; nextHint: string | null } {
+  const currentCap = getTrackLevelCap(0, 'efficiency', state)
+  if (state.activeChallengeRestrictions?.moduleLevelCapOverride != null) {
+    return { currentCap, nextHint: null }
+  }
+  if (currentCap >= 250) {
+    return { currentCap, nextHint: null }
+  }
+  if (currentCap >= 75) {
+    return { currentCap, nextHint: 'Next cap: Lv250 at Node O10 or 10^140 RP' }
+  }
+  if (currentCap >= 30) {
+    return { currentCap, nextHint: 'Next cap: Lv75 at Tier III or 10^85 RP' }
+  }
+  if (currentCap >= 15) {
+    return { currentCap, nextHint: 'Next cap: Lv30 at Tier II or 10^35 RP' }
+  }
+  return { currentCap, nextHint: 'Next cap: Lv15 at Tier I or 10^18 RP' }
 }
 
 // Returns the effect description for a module at a given level
@@ -142,9 +242,12 @@ export function getUpgradeAllModulesPlan(
   state: Pick<
     GameState,
     | 'researchPoints'
+    | 'lifetimePoints'
     | 'generators'
     | 'challengeRecords'
     | 'activeChallengeRestrictions'
+    | 'stats'
+    | 'completedResearchNodes'
   >,
   filterType?: ModuleType
 ): UpgradeAllModulesPlan {
@@ -159,7 +262,6 @@ export function getUpgradeAllModulesPlan(
     }
   }
 
-  const cap = getModuleLevelCap(state)
   const sc4Tiers = state.challengeRecords['SC4']?.completedTiers ?? 0
   const types: ModuleType[] = filterType
     ? [filterType]
@@ -173,6 +275,7 @@ export function getUpgradeAllModulesPlan(
     if (!gen || gen.quantity === 0n) continue
 
     for (const type of types) {
+      const cap = getTrackLevelCap(i, type, state)
       const startLvl =
         type === 'efficiency'
           ? gen.efficiencyLevel
@@ -206,6 +309,7 @@ export function getUpgradeAllModulesPlan(
       if (!gen || gen.quantity === 0n) continue
 
       for (const type of types) {
+        const cap = getTrackLevelCap(i, type, state)
         const lvl =
           type === 'efficiency'
             ? gen.efficiencyLevel

@@ -13,6 +13,7 @@ export const UPDATES: UpdateEntry[] = [
     date: '23.11.2026',
     changes: [
       '20-tier generator scaling from Research Desk to Absolute Void Compressor.',
+      'Generator Modules with Output Boost, Cost Discount, Cross-Boost links, 2x Maxed Set bonuses, and Prestige/Era Overdrive scaling up to Lv250.',
       '40-node research tree across Computation, Energy, Reality, and Arkalon branches.',
       'Three nested prestige loops: Reality Recalibration, Timeline Severance, Singular Synthesis.',
       'Spontaneous anomaly booster surges with four anomaly types.',

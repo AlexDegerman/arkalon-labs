@@ -6,6 +6,8 @@ import GeneratorModuleCard from '@/components/modules/GeneratorModuleCard'
 import { buyAllModules } from '@/app/stores/actions/generatorActions'
 import {
   getModuleLevelCap,
+  getTrackLevelCap,
+  getNextModuleCapHint,
   getOverclockedChassisCount,
   getUpgradeAllModulesPlan
 } from '@/lib/moduleDefs'
@@ -15,17 +17,23 @@ import { formatPoints, formatPointsShort } from '@/lib/format'
 
 const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
   const rp = useGameStore((s) => s.researchPoints)
+  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
   const generators = useGameStore((s) => s.generators)
   const challengeRecords = useGameStore((s) => s.challengeRecords)
   const activeChallengeRestrictions = useGameStore(
     (s) => s.activeChallengeRestrictions
   )
+  const stats = useGameStore((s) => s.stats)
+  const completedResearchNodes = useGameStore((s) => s.completedResearchNodes)
 
   const plan = getUpgradeAllModulesPlan({
     researchPoints: rp,
+    lifetimePoints,
     generators,
     challengeRecords,
-    activeChallengeRestrictions
+    activeChallengeRestrictions,
+    stats,
+    completedResearchNodes
   })
 
   const allOwnedMaxed = plan.remainingToMaxCost === 0n
@@ -97,21 +105,34 @@ export default function ModulesWorkspace() {
   const [showSynergyLinks, setShowSynergyLinks] = useState(false)
   const [filterMode, setFilterMode] = useState<'all' | 'upgradable'>('all')
   const generators = useGameStore((s) => s.generators)
+  const challengeRecords = useGameStore((s) => s.challengeRecords)
+  const activeChallengeRestrictions = useGameStore(
+    (s) => s.activeChallengeRestrictions
+  )
+  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
+  const stats = useGameStore((s) => s.stats)
+  const completedResearchNodes = useGameStore((s) => s.completedResearchNodes)
   const cap = useGameStore(getModuleLevelCap)
   const overclockedCount = useGameStore(getOverclockedChassisCount)
   const relicBonus = useGameStore(getRelicSynergyBonus)
-  const milestonesDisabled = useGameStore(
-    (s) => s.activeChallengeRestrictions?.milestonesDisabled ?? false
-  )
-  const modulesDisabled = useGameStore(
-    (s) => s.activeChallengeRestrictions?.modulesDisabled ?? false
-  )
+  const milestonesDisabled =
+    activeChallengeRestrictions?.milestonesDisabled ?? false
+  const modulesDisabled = activeChallengeRestrictions?.modulesDisabled ?? false
   const isAC5 = useGameStore((s) => s.activeChallengeId === 'AC5')
   const canBulkUpgrade = useGameStore(
     (s) =>
       s.arUpgrades.bulk_procurement > 0 &&
       !s.activeChallengeRestrictions?.prestigeUpgradesDisabled
   )
+
+  const capCtx = {
+    challengeRecords,
+    activeChallengeRestrictions,
+    lifetimePoints,
+    stats,
+    completedResearchNodes
+  }
+  const capInfo = getNextModuleCapHint(capCtx)
 
   // Only show generators the player has purchased at least one of
   const ownedGeneratorIndices = generators
@@ -121,9 +142,9 @@ export default function ModulesWorkspace() {
   const upgradableIndices = ownedGeneratorIndices.filter((i) => {
     const g = generators[i]
     return (
-      g.efficiencyLevel < cap ||
-      g.costReductionLevel < cap ||
-      g.synergyLevel < cap
+      g.efficiencyLevel < getTrackLevelCap(i, 'efficiency', capCtx) ||
+      g.costReductionLevel < getTrackLevelCap(i, 'cost_reduction', capCtx) ||
+      g.synergyLevel < getTrackLevelCap(i, 'synergy', capCtx)
     )
   })
   const visibleIndices =
@@ -133,7 +154,14 @@ export default function ModulesWorkspace() {
     (sum, g) => sum + g.efficiencyLevel + g.costReductionLevel + g.synergyLevel,
     0
   )
-  const maxPossibleModules = ownedGeneratorIndices.length * cap * 3
+  const maxPossibleModules = ownedGeneratorIndices.reduce(
+    (sum, i) =>
+      sum +
+      getTrackLevelCap(i, 'efficiency', capCtx) +
+      getTrackLevelCap(i, 'cost_reduction', capCtx) +
+      getTrackLevelCap(i, 'synergy', capCtx),
+    0
+  )
 
   if (ownedGeneratorIndices.length === 0) {
     return (
@@ -182,6 +210,12 @@ export default function ModulesWorkspace() {
             <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-400/40 px-2 py-0.5 rounded whitespace-nowrap">
               ⚡ {overclockedCount} Maxed Sets (2x Output)
             </span>
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-(--text-secondary)/80 flex-wrap">
+          <span>Output Cap: Lv{capInfo.currentCap}</span>
+          {capInfo.nextHint && (
+            <span className="text-cyan-300/80">{capInfo.nextHint}</span>
           )}
         </div>
 

@@ -24,7 +24,7 @@ import { canAfford, nextCost } from '@/lib/generatorCosts'
 import { marginalPPS } from '@/lib/productionEngine'
 import {
   getModuleUpgradeCost as getModuleUpgradeCostFn,
-  getModuleLevelCap as getModuleLevelCapFn
+  getTrackLevelCap as getTrackLevelCapFn
 } from '@/lib/moduleDefs'
 import {
   AUTO_AUTOMATION_INTERVAL_TICKS,
@@ -311,7 +311,6 @@ function runAutoModuleBuy(
   if (store.activeChallengeRestrictions?.modulesDisabled) return
   if (!store.unlocks.modules) return
 
-  const cap = getModuleLevelCapFn(store)
   const types = ['efficiency', 'cost_reduction', 'synergy'] as const
 
   let cheapestCost = store.researchPoints + 1n
@@ -324,14 +323,12 @@ function runAutoModuleBuy(
     for (const type of types) {
       if (type === 'synergy') {
         const syn = MODULE_SYNERGIES.find((s) => s.sourceIndex === i)
-        if (
-          !syn ||
-          (store.generators[syn.targetIndex]?.quantity ?? 0n) === 0n
-        ) {
+        if (syn && (store.generators[syn.targetIndex]?.quantity ?? 0n) === 0n) {
           continue
         }
       }
 
+      const cap = getTrackLevelCapFn(i, type, store)
       const currentLevel =
         type === 'efficiency'
           ? gen.efficiencyLevel

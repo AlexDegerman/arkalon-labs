@@ -5,6 +5,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import {
   getModuleUpgradeCost,
   getModuleLevelCap,
+  getTrackLevelCap,
   getModuleEffectLabel,
   isGeneratorChassisOverclocked,
   MODULE_DEFINITIONS
@@ -110,22 +111,40 @@ interface Props {
 function GeneratorModuleCard({ generatorIndex }: Props) {
   const gen = useGameStore((s) => s.generators[generatorIndex])
   const rp = useGameStore((s) => s.researchPoints)
-  const levelCap = useGameStore(getModuleLevelCap)
-  const sc4Tiers = useGameStore(
-    (s) => s.challengeRecords['SC4']?.completedTiers ?? 0
+  const challengeRecords = useGameStore((s) => s.challengeRecords)
+  const activeChallengeRestrictions = useGameStore(
+    (s) => s.activeChallengeRestrictions
   )
+  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
+  const stats = useGameStore((s) => s.stats)
+  const completedResearchNodes = useGameStore((s) => s.completedResearchNodes)
+  const levelCap = useGameStore(getModuleLevelCap)
+  const sc4Tiers = challengeRecords['SC4']?.completedTiers ?? 0
   const relicBonus = useGameStore(getRelicSynergyBonus)
   const targetGenerators = useGameStore((s) => s.generators)
   const ac5Active = useGameStore((s) => s.activeChallengeId === 'AC5')
-  const milestonesDisabled = useGameStore(
-    (s) => s.activeChallengeRestrictions?.milestonesDisabled ?? false
-  )
-  const modulesDisabled = useGameStore(
-    (s) => s.activeChallengeRestrictions?.modulesDisabled ?? false
-  )
+  const milestonesDisabled =
+    activeChallengeRestrictions?.milestonesDisabled ?? false
+  const modulesDisabled = activeChallengeRestrictions?.modulesDisabled ?? false
+
+  const capCtx = {
+    challengeRecords,
+    activeChallengeRestrictions,
+    lifetimePoints,
+    stats,
+    completedResearchNodes
+  }
+  const effCap = getTrackLevelCap(generatorIndex, 'efficiency', capCtx)
+  const costCap = getTrackLevelCap(generatorIndex, 'cost_reduction', capCtx)
+  const synCap = getTrackLevelCap(generatorIndex, 'synergy', capCtx)
 
   const isOverclocked = isGeneratorChassisOverclocked(gen, levelCap)
-  const [expanded, setExpanded] = useState(!isOverclocked)
+  const isFullyMaxed =
+    Boolean(gen) &&
+    gen.efficiencyLevel >= effCap &&
+    gen.costReductionLevel >= costCap &&
+    gen.synergyLevel >= synCap
+  const [expanded, setExpanded] = useState(!isFullyMaxed)
 
   const def = GENERATORS[generatorIndex]
   if (!def) return null
@@ -144,7 +163,7 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
 
   const MODULE_TYPES: ModuleType[] = ['efficiency', 'cost_reduction', 'synergy']
 
-  if (isOverclocked && !expanded) {
+  if (isFullyMaxed && !expanded) {
     return (
       <div
         id={`module-card-${generatorIndex}`}
@@ -196,7 +215,7 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-(--bg-elevated) border border-(--border-default) text-(--text-secondary)">
             x{gen.quantity.toString()} Owned
           </span>
-          {isOverclocked && (
+          {isFullyMaxed && (
             <button
               onClick={() => setExpanded(false)}
               className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) cursor-pointer"
@@ -288,7 +307,13 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
                   ? gen.costReductionLevel
                   : gen.synergyLevel
             }
-            levelCap={levelCap}
+            levelCap={
+              type === 'efficiency'
+                ? effCap
+                : type === 'cost_reduction'
+                  ? costCap
+                  : synCap
+            }
             rp={rp}
             sc4Tiers={sc4Tiers}
             ac5Active={ac5Active}

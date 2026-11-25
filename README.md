@@ -109,12 +109,13 @@ Operating as an Arkalon Network satellite app, Arkalon Laboratories delegates al
   - **Entropic Crucible:** Generates `+25 Dust/min`, `+10 Operation Points/min`, and boosts all Synthesizers by `+25%` per unit.
 - **Era & Swarm Dust Scaling:** All Synthesizer Dust output scales by `+50%` per current run Era and `+25%` per Dyson Swarm level.
 
-### Generator Modules & Cross-Chassis Synergies
+### Generator Modules & Cross-Generator Synergies
 
-- Unlocks at `10` Server Clusters, exposing three installable hardware tracks per owned generator: **Efficiency** (`1.25^level` output), **Cost Curve** (`-0.015` growth factor per level), and **Synergy** (unlocks conduit routing at Lv1).
-- Base module cap is **Level 5**, expandable up to **Level 8** through Advanced Challenge `AC5`.
-- **10 Inter-Chassis Synergy Conduits:** Dedicated links (such as *Historic Validation*, *Grid Management*, *Superposition Link*, and *Matter Coding*) convert owned units of one generator into percentage multipliers on a paired chassis, viewable in the **Synergy Matrix Constellation**.
-- **Overclocked Chassis Bonus:** Maxing all three module tracks on a generator unlocks an **Overclocked** state granting `2x` output and `+25%` synergy contribution.
+- Unlocks at `10` Server Clusters, exposing three installable upgrade tracks per owned generator: **Output Boost** (`1.25^level` compounding output), **Cost Discount** (`-0.015` price scaling per level, floored at `1.01`), and **Cross-Boost** (powers cross-generator boosts on Tiers `1–10` and completes the set bonus on Tiers `11–20`).
+- **Core Cap & 2x Maxed Set Bonus:** Base core cap is **Level 5** (expandable up to **Level 8** via Advanced Challenge `AC5`). Maxing all three tracks at the core cap permanently unlocks a **2x output** and **`+25%` cross-boost** bonus.
+- **Prestige & Era Overdrive Scaling:** **Output Boost** and Tiers `1–10` **Cross-Boost** expand into deep endgame—**Lv15** (Tier I / `10¹⁸` RP), **Lv30** (Tier II / `10³⁵` RP), **Lv75** (Tier III / `10⁸⁵` RP), and **Lv250** (Node `O10` / `10¹⁴⁰` RP)—using pure `BigInt` cost scaling (`10x`/`25x` → `100x` → `1000x`), while **Cost Discount** and Tiers `11–20` **Cross-Boost** stay at the core cap so RP is never wasted.
+- **10 Cross-Generator Synergy Links:** Dedicated links (such as *Historic Validation*, *Grid Management*, *Superposition Link*, and *Matter Coding*) turn owned units of one generator into percentage multipliers on a paired tier, viewable in the **Synergy Links** panel.
+- **UI & Bulk Upgrades:** Includes `All` / `Upgradable` filters, collapsible maxed cards, and a unified **Upgrade All** button (`Bulk Procurement`) displaying exact upgrade count, RP cost, and remaining cost to max owned generators.
 
 ---
 
