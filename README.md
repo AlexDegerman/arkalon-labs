@@ -183,14 +183,17 @@ Unlocks after resolving your first Anomaly or completing Node `O1` (`Synaptic Re
 
 ## 🔭 Excavation & Sub-Space Probes
 
-Unlocks at `25` Server Clusters and `10` Quantum Computers, allowing construction of up to `5` automated sub-space probes (`1M RP` each).
+Unlocks at `25` Server Clusters and `10` Quantum Computers, starting with `5` probe slots (`1M RP` each) and expanding up to `8` probes across Tier II, Tier III, and `O10`.
 
-- **3 Sector Tiers:**
+- **5 Sector Tiers (Early → Endgame):**
   - **Safe Sectors (`1h`):** `100%` success rate, `15–30` base Dust.
-  - **Unstable Rifts (`4h`):** `75%` success rate, `80–160` base Dust, `5%` Relic 9 drop chance, `10m` repair cycle on failure.
-  - **Void Depths (`12h`):** `50%` success rate, `450–900` base Dust, `15%` Relic 9 drop chance; failures salvage `75` Dust and enter a `30m` repair cycle.
-- **Modular Subsystems:** Equip each launch with `Standard`, `Aegis Shielding` (halves repair times to `5m` Unstable / `15m` Void), `Tachyon Thrusters` (`-35%` scan duration), or `Deep-Core Siphon` (`+50%` Dust and `+5%` relic chance).
-- **Veteran Rank Progression:** Surviving probes rank up from **Rookie** to **Apex Drone** (`Lv5` at 15 expeditions), earning up to `+25%` mission success rate and `1.5x` Dust yield.
+  - **Unstable Rifts (`4h`):** `75%` success rate, `80–160` base Dust, `+5–15` Operation Points, `5%` Relic 9 drop chance (`10m` repair on fail).
+  - **Void Depths (`12h`):** `50%` success rate, `450–900` base Dust, `+25–60` PTS, `-5%` active Research timers, `15%` Relic 9 drop chance (`30m` repair + salvage on fail).
+  - **Singularity Rift (`24h`, Tier II / Era 4):** `40%` base success, `1,800–3,200` base Dust, `+75–150` PTS, `-10%` Research timers (`45m` repair + salvage).
+  - **Omega Horizon (`48h`, Tier III / Era 6):** `35%` base success, `4,500–8,000` base Dust, `+200–400` PTS, `-25%` Research timers, `25%` Anomaly ignition (`60m` repair + salvage).
+- **Speed-Overflow & Era/Swarm Scaling:** Probe Dust scales with Era (`+50%`/Era) and Dyson Swarm (`+25%`/level). Once `Sub-Space Dredgers` push scan times below the `60s` floor, excess speed converts directly into a yield multiplier.
+- **Modular Subsystems & Auto-Launch:** Equip `Standard`, `Aegis Shielding` (`-50%` repair times), `Tachyon Thrusters` (`-35%` scan time), or `Deep-Core Siphon` (`+50%` Dust, `+5%` relic chance). `SC12 Tier 3` unlocks configurable sector Auto-Launch.
+- **Veteran Rank Progression:** Probes rank up from **Rookie** to **Apex Drone** (`Lv5` at 15 expeditions), earning up to `+25%` mission success rate and `1.5x` yield.
 
 ---
 

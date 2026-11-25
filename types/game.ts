@@ -14,7 +14,12 @@ export type AnomalyType =
   | 'fused_chronal_breach'
 
 // Excavation zone identifiers
-export type ExcavationZone = 'safe' | 'unstable' | 'void'
+export type ExcavationZone =
+  | 'safe'
+  | 'unstable'
+  | 'void'
+  | 'singularity'
+  | 'omega'
 
 // Probe status
 export type ProbeStatus = 'idle' | 'scanning' | 'repairing'
@@ -310,6 +315,7 @@ export interface GameState {
   autoBuyOptimalReservePercent: number
   autoRelicTargetLevel: number
   autoRelicDustReserve: number
+  autoLaunchZone: ExcavationZone
 
   // Achievements earned (string IDs)
   achievements: string[]

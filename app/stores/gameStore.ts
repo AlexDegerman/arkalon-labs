@@ -221,6 +221,7 @@ export function makeInitialState(): GameState {
     autoBuyOptimalReservePercent: 25,
     autoRelicTargetLevel: 20,
     autoRelicDustReserve: 25,
+    autoLaunchZone: 'safe',
 
     achievements: [],
 

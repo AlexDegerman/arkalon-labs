@@ -6,7 +6,9 @@ import {
   ZONE_MAP,
   SUBSYSTEM_DEFINITIONS,
   getVeteranRank,
-  getScanDuration
+  getScanDuration,
+  getProbeSpeedOverflowMultiplier,
+  isZoneUnlocked
 } from '@/lib/excavationDefs'
 import { formatCountdown, formatDuration } from '@/lib/format'
 import ProgressBar from '@/components/ui/ProgressBar'
@@ -32,12 +34,18 @@ function ProbeCard({ probe }: Props) {
   const probeSpeedBonus = useGameStore(
     (s) => getSynthesizerRates(s).probeSpeedBonus
   )
-  const era = useGameStore((s) => getCurrentEra(s.lifetimePoints).era)
+  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
+  const stats = useGameStore((s) => s.stats)
+  const dysonSwarmLevel = useGameStore((s) => s.dysonSwarmLevel ?? 0)
+  const opsUnlocked = useGameStore((s) => s.unlocks.anomalousOperations)
+  const era = getCurrentEra(lifetimePoints).era
   const hasRelicMaster = useGameStore(
     (s) => s.achievements?.includes('relic_all') ?? false
   )
   const dustGlobalMult =
-    (1 + 0.25 * Math.max(0, era - 1)) * (hasRelicMaster ? 1.15 : 1)
+    (1 + 0.5 * Math.max(0, era - 1)) *
+    (1 + 0.25 * dysonSwarmLevel) *
+    (hasRelicMaster ? 1.15 : 1)
   const rankInfo = getVeteranRank(probe.expeditionsCompleted ?? 0)
   const zoneDef = probe.zone ? ZONE_MAP[probe.zone] : null
   const activeSubsystem = probe.subsystem ?? 'none'
@@ -68,10 +76,18 @@ function ProbeCard({ probe }: Props) {
     ? Math.max(0, 1 - probe.repairTimerRemaining / totalRepairTime)
     : 0
 
+  const scanOverflow = probe.zone
+    ? getProbeSpeedOverflowMultiplier(
+        probe.zone,
+        activeSubsystem,
+        probeSpeedBonus
+      )
+    : 1
   const scanDustMult =
     rankInfo.dustMultiplier *
     (activeSubsystem === 'siphon' ? 1.5 : 1) *
-    dustGlobalMult
+    dustGlobalMult *
+    scanOverflow
   const scanSuccessRate = zoneDef
     ? Math.min(0.95, zoneDef.successRate + rankInfo.successBonus)
     : 0
@@ -175,8 +191,27 @@ function ProbeCard({ probe }: Props) {
             </span>
             <div className="flex flex-col gap-1.5">
               {ZONE_DEFINITIONS.map((zone) => {
-                const isVoid = zone.zone === 'void'
-                const isUnstable = zone.zone === 'unstable'
+                const unlocked = isZoneUnlocked(zone.zone, {
+                  lifetimePoints,
+                  stats
+                })
+                if (!unlocked) {
+                  return (
+                    <div
+                      key={zone.zone}
+                      className="flex items-center justify-between gap-2 p-2 rounded-lg border border-dashed border-(--border-default)/50 bg-(--bg-elevated)/25 text-[10px] text-(--text-secondary)/60"
+                    >
+                      <span>🔒 {zone.label}</span>
+                      <span>{zone.unlockHint}</span>
+                    </div>
+                  )
+                }
+
+                const overflow = getProbeSpeedOverflowMultiplier(
+                  zone.zone,
+                  selectedSubsystem,
+                  probeSpeedBonus
+                )
                 const duration = getScanDuration(
                   zone.zone,
                   selectedSubsystem,
@@ -190,17 +225,50 @@ function ProbeCard({ probe }: Props) {
                   zone.dustYieldMin *
                     rankInfo.dustMultiplier *
                     (selectedSubsystem === 'siphon' ? 1.5 : 1) *
-                    dustGlobalMult
+                    dustGlobalMult *
+                    overflow
                 )
                 const dustMax = Math.floor(
                   zone.dustYieldMax *
                     rankInfo.dustMultiplier *
                     (selectedSubsystem === 'siphon' ? 1.5 : 1) *
-                    dustGlobalMult
+                    dustGlobalMult *
+                    overflow
                 )
+                const opMin = opsUnlocked
+                  ? Math.floor(
+                      zone.opYieldMin * rankInfo.dustMultiplier * overflow
+                    )
+                  : 0
+                const opMax = opsUnlocked
+                  ? Math.floor(
+                      zone.opYieldMax * rankInfo.dustMultiplier * overflow
+                    )
+                  : 0
+                const repairMins =
+                  zone.repairSeconds > 0
+                    ? Math.round(
+                        (selectedSubsystem === 'shielding'
+                          ? zone.repairSeconds * 0.5
+                          : zone.repairSeconds) / 60
+                      )
+                    : 0
                 const relicRate =
-                  zone.relicDropChance +
-                  (selectedSubsystem === 'siphon' ? 0.05 : 0)
+                  zone.relicDropChance > 0
+                    ? zone.relicDropChance +
+                      (selectedSubsystem === 'siphon' ? 0.05 : 0)
+                    : 0
+
+                const titleColor =
+                  zone.zone === 'omega'
+                    ? 'g-tqgs font-bold'
+                    : zone.zone === 'singularity'
+                      ? 'g-sp font-bold'
+                      : zone.zone === 'void'
+                        ? 'g-str font-bold'
+                        : zone.zone === 'unstable'
+                          ? 'g-oc font-bold'
+                          : 'text-emerald-400 font-bold'
 
                 return (
                   <button
@@ -212,48 +280,42 @@ function ProbeCard({ probe }: Props) {
                         selectedSubsystem
                       )
                     }
-                    className={[
-                      'flex items-center justify-between gap-2 flex-wrap p-2 rounded-lg border text-xs transition-all cursor-pointer select-none',
-                      'border-(--border-default) bg-(--bg-elevated)/60 hover:bg-(--bg-elevated) hover:border-(--border-accent)'
-                    ].join(' ')}
+                    className="flex items-center justify-between gap-2 flex-wrap p-2 rounded-lg border text-xs transition-all cursor-pointer select-none border-(--border-default) bg-(--bg-elevated)/60 hover:bg-(--bg-elevated) hover:border-(--border-accent)"
                   >
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span
-                        className={
-                          isVoid
-                            ? 'g-str font-bold'
-                            : isUnstable
-                              ? 'g-oc font-bold'
-                              : 'text-emerald-400 font-bold'
-                        }
-                      >
-                        {zone.label}
-                      </span>
+                      <span className={titleColor}>{zone.label}</span>
                       <span className="text-[10px] text-(--text-secondary)">
                         {Math.round(effectiveSuccess * 100)}%
                       </span>
-                      {isVoid && (
+                      {repairMins > 0 && (
                         <span className="text-[9px] font-bold text-amber-300">
-                          {selectedSubsystem === 'shielding'
-                            ? '· Fail: 15m Repair'
-                            : '· Fail: 30m Repair'}
+                          · Fail: {repairMins}m Repair
                         </span>
                       )}
-                      {isUnstable && (
-                        <span className="text-[9px] font-bold text-amber-300">
-                          {selectedSubsystem === 'shielding'
-                            ? '· Fail: 5m Repair'
-                            : '· Fail: 10m Repair'}
+                      {overflow > 1.05 && (
+                        <span className="text-[9px] font-bold text-cyan-300">
+                          · {overflow.toFixed(1)}x Speed Yield
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] ml-auto">
+                    <div className="flex items-center gap-2 text-[10px] ml-auto flex-wrap">
                       <span className="text-(--text-secondary)">
                         {formatDuration(duration)}
                       </span>
                       <span className="text-amber-400 font-bold">
-                        {dustMin}-{dustMax} Dust
+                        {dustMin.toLocaleString()}-{dustMax.toLocaleString()}{' '}
+                        Dust
                       </span>
+                      {opMax > 0 && (
+                        <span className="text-cyan-300 font-bold">
+                          +{opMin}-{opMax} PTS
+                        </span>
+                      )}
+                      {zone.researchCutFraction > 0 && (
+                        <span className="text-purple-300 font-bold">
+                          -{Math.round(zone.researchCutFraction * 100)}% Res
+                        </span>
+                      )}
                       {relicRate > 0 && (
                         <span className="text-(--text-accent) font-bold">
                           {Math.round(relicRate * 100)}% Relic

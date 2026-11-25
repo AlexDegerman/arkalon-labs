@@ -10,7 +10,8 @@ import {
   PROBE_GATE_SERVER_CLUSTERS,
   PROBE_GATE_QUANTUM_COMPUTERS,
   MAX_PROBES,
-  PROBE_COST_RP
+  PROBE_COST_RP,
+  UNSTABLE_RIFT_REPAIR_SECONDS
 } from '@/constants/game'
 
 export interface SubsystemDefinition {
@@ -117,7 +118,15 @@ export interface ZoneDefinition {
   durationSeconds: number
   dustYieldMin: number
   dustYieldMax: number
+  opYieldMin: number
+  opYieldMax: number
+  researchCutFraction: number
+  anomalyIgniteChance: number
   relicDropChance: number // 0-1
+  repairSeconds: number
+  salvageDust: number
+  duplicateRelicDust: number
+  unlockHint?: string
   failureDescription: string
 }
 
@@ -130,33 +139,96 @@ export const ZONE_DEFINITIONS: ZoneDefinition[] = [
     durationSeconds: 3600, // 1 hour
     dustYieldMin: 15,
     dustYieldMax: 30,
+    opYieldMin: 0,
+    opYieldMax: 0,
+    researchCutFraction: 0,
+    anomalyIgniteChance: 0,
     relicDropChance: 0,
+    repairSeconds: 0,
+    salvageDust: 0,
+    duplicateRelicDust: 0,
     failureDescription: 'N/A'
   },
   {
     zone: 'unstable',
     label: 'Unstable Rifts',
     description:
-      'Volatile sub-space region. Higher yield but risk of probe damage.',
+      'Volatile sub-space region. Higher Dust, Operation Points, and Relic 9 drops.',
     successRate: 0.75,
     durationSeconds: 14400, // 4 hours
     dustYieldMin: 80,
     dustYieldMax: 160,
+    opYieldMin: 5,
+    opYieldMax: 15,
+    researchCutFraction: 0,
+    anomalyIgniteChance: 0,
     relicDropChance: 0.05,
+    repairSeconds: UNSTABLE_RIFT_REPAIR_SECONDS,
+    salvageDust: 0,
+    duplicateRelicDust: 75,
     failureDescription: 'Probe enters 10-minute repair cycle.'
   },
   {
     zone: 'void',
     label: 'Void Depths',
     description:
-      'Extreme Dust yield; 50% risk of heavy structural damage requiring 30m repair.',
+      'High Dust, Operation Points, and -5% active Research timer skips.',
     successRate: 0.5,
     durationSeconds: 43200, // 12 hours
     dustYieldMin: 450,
     dustYieldMax: 900,
+    opYieldMin: 25,
+    opYieldMax: 60,
+    researchCutFraction: 0.05,
+    anomalyIgniteChance: 0,
     relicDropChance: 0.15,
+    repairSeconds: 1800,
+    salvageDust: 75,
+    duplicateRelicDust: 200,
     failureDescription:
       'Probe enters 30-minute structural repair cycle with partial salvage.'
+  },
+  {
+    zone: 'singularity',
+    label: 'Singularity Rift',
+    description:
+      'Deep-space collapse zone yielding heavy Dust, Operation Points, and -10% Research skips.',
+    successRate: 0.4,
+    durationSeconds: 86400, // 24 hours
+    dustYieldMin: 1800,
+    dustYieldMax: 3200,
+    opYieldMin: 75,
+    opYieldMax: 150,
+    researchCutFraction: 0.1,
+    anomalyIgniteChance: 0,
+    relicDropChance: 0.2,
+    repairSeconds: 2700,
+    salvageDust: 250,
+    duplicateRelicDust: 500,
+    unlockHint: 'Requires Tier II Prestige or Era 4 (10^35 RP)',
+    failureDescription:
+      'Probe enters 45-minute repair cycle with 250 salvage Dust.'
+  },
+  {
+    zone: 'omega',
+    label: 'Omega Horizon',
+    description:
+      'Endgame boundary survey: massive Dust/PTS, -25% Research skips, and 25% Anomaly ignition.',
+    successRate: 0.35,
+    durationSeconds: 172800, // 48 hours
+    dustYieldMin: 4500,
+    dustYieldMax: 8000,
+    opYieldMin: 200,
+    opYieldMax: 400,
+    researchCutFraction: 0.25,
+    anomalyIgniteChance: 0.25,
+    relicDropChance: 0.3,
+    repairSeconds: 3600,
+    salvageDust: 800,
+    duplicateRelicDust: 1200,
+    unlockHint: 'Requires Tier III Prestige or Era 6 (10^85 RP)',
+    failureDescription:
+      'Probe enters 60-minute repair cycle with 800 salvage Dust.'
   }
 ]
 
@@ -165,6 +237,58 @@ export const ZONE_MAP: Record<ExcavationZone, ZoneDefinition> =
     ExcavationZone,
     ZoneDefinition
   >
+
+export function isZoneUnlocked(
+  zone: ExcavationZone,
+  state: Pick<GameState, 'lifetimePoints' | 'stats'>
+): boolean {
+  const peakRP =
+    (state.stats?.peakLifetimePoints ?? 0n) > (state.lifetimePoints ?? 0n)
+      ? (state.stats?.peakLifetimePoints ?? 0n)
+      : (state.lifetimePoints ?? 0n)
+
+  if (zone === 'singularity') {
+    return (state.stats?.totalPrestigesTier2 ?? 0) > 0 || peakRP >= 10n ** 35n
+  }
+  if (zone === 'omega') {
+    return (state.stats?.totalPrestigesTier3 ?? 0) > 0 || peakRP >= 10n ** 85n
+  }
+  return true
+}
+
+export function getMaxProbes(
+  state: Partial<
+    Pick<GameState, 'lifetimePoints' | 'stats' | 'completedResearchNodes'>
+  >
+): number {
+  const peakRP =
+    (state.stats?.peakLifetimePoints ?? 0n) > (state.lifetimePoints ?? 0n)
+      ? (state.stats?.peakLifetimePoints ?? 0n)
+      : (state.lifetimePoints ?? 0n)
+
+  let max = MAX_PROBES
+  if ((state.stats?.totalPrestigesTier2 ?? 0) > 0 || peakRP >= 10n ** 35n) {
+    max = 6
+  }
+  if ((state.stats?.totalPrestigesTier3 ?? 0) > 0 || peakRP >= 10n ** 85n) {
+    max = 7
+  }
+  if (
+    state.stats?.o10EverCompleted ||
+    state.completedResearchNodes?.includes('O10') ||
+    peakRP >= 10n ** 140n
+  ) {
+    max = 8
+  }
+  return max
+}
+
+export function getProbeCost(currentProbeCount: number): bigint {
+  if (currentProbeCount < 5) return PROBE_COST_RP
+  if (currentProbeCount === 5) return 10n ** 36n
+  if (currentProbeCount === 6) return 10n ** 86n
+  return 10n ** 142n
+}
 
 // Returns true if the player meets the gate requirements to build a probe
 export function meetsProbeGateRequirements(state: {
@@ -179,12 +303,15 @@ export function meetsProbeGateRequirements(state: {
 }
 
 // Returns true if a new probe can be built
-export function canBuildProbe(state: {
-  probes: ProbeState[]
-  researchPoints: bigint
-}): boolean {
+export function canBuildProbe(
+  state: Pick<GameState, 'probes' | 'researchPoints'> &
+    Partial<
+      Pick<GameState, 'lifetimePoints' | 'stats' | 'completedResearchNodes'>
+    >
+): boolean {
   return (
-    state.probes.length < MAX_PROBES && state.researchPoints >= PROBE_COST_RP
+    state.probes.length < getMaxProbes(state) &&
+    state.researchPoints >= getProbeCost(state.probes.length)
   )
 }
 
@@ -194,10 +321,38 @@ export function nextProbeId(existingProbes: ProbeState[] = []): number {
   return maxId + 1
 }
 
+export function getRawScanDuration(
+  zone: ExcavationZone,
+  subsystem: ProbeSubsystem = 'none',
+  probeSpeedBonus = 1
+): number {
+  const zoneDef = ZONE_MAP[zone]
+  let duration = zoneDef.durationSeconds
+  if (subsystem === 'thrusters') {
+    duration *= 0.65
+  }
+  if (probeSpeedBonus > 1) {
+    duration /= probeSpeedBonus
+  }
+  return Math.max(0.1, duration)
+}
+
+// Converts Dredger/Thruster speed past the 60s timer floor into a multi-scan yield multiplier
+export function getProbeSpeedOverflowMultiplier(
+  zone: ExcavationZone,
+  subsystem: ProbeSubsystem = 'none',
+  probeSpeedBonus = 1
+): number {
+  const raw = getRawScanDuration(zone, subsystem, probeSpeedBonus)
+  return raw < 60 ? 60 / raw : 1
+}
+
 // Rolls the result of a completed probe scan
 export function rollProbeResult(
   probe: ProbeState,
-  state: Pick<GameState, 'unlockedRelics' | 'lifetimePoints' | 'achievements'>
+  state: Pick<GameState, 'unlockedRelics' | 'lifetimePoints' | 'achievements'> &
+    Partial<Pick<GameState, 'dysonSwarmLevel' | 'unlocks'>>,
+  probeSpeedBonus = 1
 ): ProbeResultPayload {
   if (!probe.zone) {
     return {
@@ -205,9 +360,11 @@ export function rollProbeResult(
       zone: 'safe',
       success: false,
       dustEarned: 0,
+      opEarned: 0,
+      researchCutFraction: 0,
+      triggerAnomaly: false,
       relicDropped: 0,
-      needsRepair: false,
-      probeDestroyed: false
+      needsRepair: false
     }
   }
 
@@ -219,19 +376,32 @@ export function rollProbeResult(
   )
 
   const success = Math.random() < effectiveSuccessRate
+  const era = getCurrentEra(state.lifetimePoints).era
+  const swarmMult = 1 + 0.25 * (state.dysonSwarmLevel ?? 0)
+  const overflowMult = getProbeSpeedOverflowMultiplier(
+    probe.zone,
+    probe.subsystem ?? 'none',
+    probeSpeedBonus
+  )
 
   if (!success) {
-    const isVoid = probe.zone === 'void'
-    const salvageDust = isVoid ? 75 : 0
+    const salvageDust = Math.floor(
+      zoneDef.salvageDust *
+        (1 + 0.5 * Math.max(0, era - 1)) *
+        swarmMult *
+        overflowMult
+    )
 
     return {
       probeId: probe.id,
       zone: probe.zone,
       success: false,
       dustEarned: salvageDust,
+      opEarned: 0,
+      researchCutFraction: 0,
+      triggerAnomaly: false,
       relicDropped: 0,
-      needsRepair: true,
-      probeDestroyed: false
+      needsRepair: true
     }
   }
 
@@ -242,17 +412,25 @@ export function rollProbeResult(
       Math.random() * (zoneDef.dustYieldMax - zoneDef.dustYieldMin + 1)
     )
 
-  // Apply veteran rank multiplier
   dustEarned = Math.floor(dustEarned * rankInfo.dustMultiplier)
 
-  // Siphon subsystem: +50% dust; scale with Era and Relic Master capstone
   if (probe.subsystem === 'siphon') {
     dustEarned = Math.floor(dustEarned * 1.5)
   }
-  const era = getCurrentEra(state.lifetimePoints).era
-  dustEarned = Math.floor(dustEarned * (1 + 0.25 * Math.max(0, era - 1)))
+  dustEarned = Math.floor(
+    dustEarned * (1 + 0.5 * Math.max(0, era - 1)) * swarmMult * overflowMult
+  )
   if (state.achievements?.includes('relic_all')) {
     dustEarned = Math.floor(dustEarned * 1.15)
+  }
+
+  // Operation Points earned once Anomalous Operations is unlocked
+  let opEarned = 0
+  if (state.unlocks?.anomalousOperations && zoneDef.opYieldMax > 0) {
+    const baseOp =
+      zoneDef.opYieldMin +
+      Math.floor(Math.random() * (zoneDef.opYieldMax - zoneDef.opYieldMin + 1))
+    opEarned = Math.floor(baseOp * rankInfo.dustMultiplier * overflowMult)
   }
 
   // Roll relic drop (Relic 9 Void Compass is exclusive to excavation)
@@ -262,22 +440,28 @@ export function rollProbeResult(
   }
 
   let relicDropped = 0
-  if (Math.random() < relicChance) {
+  if (zoneDef.relicDropChance > 0 && Math.random() < relicChance) {
     if (!state.unlockedRelics.includes(9)) {
       relicDropped = 9
     } else {
-      dustEarned += probe.zone === 'void' ? 200 : 75
+      dustEarned += Math.floor(zoneDef.duplicateRelicDust * overflowMult)
     }
   }
+
+  const triggerAnomaly =
+    zoneDef.anomalyIgniteChance > 0 &&
+    Math.random() < zoneDef.anomalyIgniteChance
 
   return {
     probeId: probe.id,
     zone: probe.zone,
     success: true,
     dustEarned,
+    opEarned,
+    researchCutFraction: zoneDef.researchCutFraction,
+    triggerAnomaly,
     relicDropped,
-    needsRepair: false,
-    probeDestroyed: false
+    needsRepair: false
   }
 }
 
@@ -287,13 +471,8 @@ export function getScanDuration(
   subsystem: ProbeSubsystem = 'none',
   probeSpeedBonus = 1
 ): number {
-  const zoneDef = ZONE_MAP[zone]
-  let duration = zoneDef.durationSeconds
-  if (subsystem === 'thrusters') {
-    duration = Math.round(duration * 0.65)
-  }
-  if (probeSpeedBonus > 1) {
-    duration = Math.round(duration / probeSpeedBonus)
-  }
-  return Math.max(60, duration)
+  return Math.max(
+    60,
+    Math.round(getRawScanDuration(zone, subsystem, probeSpeedBonus))
+  )
 }

@@ -126,6 +126,7 @@ export interface SerializedSave {
   autoBuyOptimalReservePercent?: number
   autoRelicTargetLevel?: number
   autoRelicDustReserve?: number
+  autoLaunchZone?: import('@/types/game').ExcavationZone
   relicPresets: (number | null)[][]
 }
 
@@ -237,6 +238,7 @@ export function serialiseState(state: GameState): SerializedSave {
     autoBuyOptimalReservePercent: state.autoBuyOptimalReservePercent ?? 25,
     autoRelicTargetLevel: state.autoRelicTargetLevel ?? 20,
     autoRelicDustReserve: state.autoRelicDustReserve ?? 25,
+    autoLaunchZone: state.autoLaunchZone ?? 'safe',
     achievements: state.achievements,
     cachedPointsPerSecond: state.cachedPointsPerSecond.toString(),
     lastSavedTime: now,
@@ -494,7 +496,13 @@ export function deserialiseState(raw: unknown): GameState {
       : initial.activeResearchSlots
 
   const validStatuses = new Set(['idle', 'scanning', 'repairing'])
-  const validZones = new Set(['safe', 'unstable', 'void'])
+  const validZones = new Set([
+    'safe',
+    'unstable',
+    'void',
+    'singularity',
+    'omega'
+  ])
   const validSubsystems = new Set(['none', 'shielding', 'thrusters', 'siphon'])
 
   const probes: ProbeState[] = Array.isArray(s.probes)
@@ -737,6 +745,10 @@ export function deserialiseState(raw: unknown): GameState {
     autoBuyOptimalReservePercent: parseNum(s.autoBuyOptimalReservePercent, 25),
     autoRelicTargetLevel: parseNum(s.autoRelicTargetLevel, 20),
     autoRelicDustReserve: parseNum(s.autoRelicDustReserve, 25),
+    autoLaunchZone:
+      typeof s.autoLaunchZone === 'string' && validZones.has(s.autoLaunchZone)
+        ? s.autoLaunchZone
+        : 'safe',
     achievements: Array.isArray(s.achievements) ? s.achievements : [],
     cachedPointsPerSecond: parseBigInt(s.cachedPointsPerSecond, 0n),
     lastSavedTime: Math.max(0, parseNum(s.lastSavedTime ?? s.savedAt, 0)),

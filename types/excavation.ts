@@ -1,14 +1,17 @@
+import type { ExcavationZone } from '@/types/game'
+
 // Intermediate payload produced by completed probe scans
-// Consumed by dust/relic reward handlers in excavationActions.ts
+// Consumed by reward handlers in excavationActions.ts
 
 export interface ProbeResultPayload {
   probeId: number
-  zone: 'safe' | 'unstable' | 'void'
+  zone: ExcavationZone
   success: boolean
   dustEarned: number
+  opEarned: number
+  researchCutFraction: number
+  triggerAnomaly: boolean
   relicDropped: number // 0 = no drop
-  // For Unstable Rift failure: probe enters repair mode
+  // On failed risk-zone scan: probe enters repair cycle
   needsRepair: boolean
-  // For Void Depth failure: probe is destroyed
-  probeDestroyed: boolean
 }

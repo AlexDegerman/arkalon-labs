@@ -2,20 +2,22 @@
 
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
-import { PROBE_COST_RP, UNSTABLE_RIFT_REPAIR_SECONDS } from '@/constants/game'
 import {
   meetsProbeGateRequirements,
   canBuildProbe,
+  getProbeCost,
+  isZoneUnlocked,
   nextProbeId,
   getScanDuration,
   rollProbeResult,
-  ZONE_MAP
+  ZONE_MAP,
+  getVeteranRank
 } from '@/lib/excavationDefs'
 import { markAchievementsDirty } from '@/lib/dirtyFlags'
 import type { ExcavationZone, ProbeSubsystem } from '@/types/game'
 import { playSound } from '@/hooks/useSound'
-import { getVeteranRank } from '@/lib/excavationDefs'
 import { getSynthesizerRates } from '@/lib/synthesizerDefs'
+import { checkAnomalySpawn } from './anomalyActions'
 
 // Excavation actions
 
@@ -27,10 +29,11 @@ export function buildProbe(): void {
   if (!meetsProbeGateRequirements(store)) return
   if (!canBuildProbe(store)) return
 
+  const cost = getProbeCost(store.probes.length)
   const id = nextProbeId(store.probes)
 
   useGameStore.setState((s) => ({
-    researchPoints: s.researchPoints - PROBE_COST_RP,
+    researchPoints: s.researchPoints - cost,
     probes: [
       ...s.probes,
       {
@@ -57,6 +60,7 @@ export function launchProbe(
 ): void {
   const store = useGameStore.getState()
   if (store.activeChallengeRestrictions?.excavationDisabled) return
+  if (!isZoneUnlocked(zone, store)) return
   const probe = store.probes.find((p) => p.id === probeId)
   if (!probe || probe.status !== 'idle') return
 
@@ -110,22 +114,34 @@ export function processProbeCompletions(): void {
     return
   }
 
+  const speedBonus = getSynthesizerRates(store).probeSpeedBonus
   let totalDust = 0
+  let totalOp = 0
+  let totalResearchCut = 0
+  let shouldIgniteAnomaly = false
   let pityIncrement = 0
   const currentRelic9Pity = store.stats.relic9PityCount ?? 0
   const newRelics: number[] = []
   const updatedProbes = [...store.probes]
 
   for (const probe of completedProbes) {
-    const isRiskZone = probe.zone === 'unstable' || probe.zone === 'void'
+    const isRiskZone = probe.zone !== null && probe.zone !== 'safe'
     if (isRiskZone && !store.unlockedRelics.includes(9)) {
       pityIncrement++
     }
-    const result = rollProbeResult(probe, store)
+    const result = rollProbeResult(probe, store, speedBonus)
     const idx = updatedProbes.findIndex((p) => p.id === probe.id)
     if (idx === -1) continue
 
     totalDust += result.dustEarned
+    totalOp += result.opEarned
+    if (result.researchCutFraction > 0) {
+      totalResearchCut = Math.min(
+        0.75,
+        totalResearchCut + result.researchCutFraction
+      )
+    }
+    if (result.triggerAnomaly) shouldIgniteAnomaly = true
 
     if (
       result.relicDropped > 0 &&
@@ -134,7 +150,7 @@ export function processProbeCompletions(): void {
       newRelics.push(result.relicDropped)
     }
 
-    // Deterministic pity for Void Compass (Relic 9) by 8th Unstable/Void scan regardless of scan outcome
+    // Deterministic pity for Void Compass (Relic 9) by 8th risk-zone scan
     if (
       isRiskZone &&
       !store.unlockedRelics.includes(9) &&
@@ -144,11 +160,8 @@ export function processProbeCompletions(): void {
       newRelics.push(9)
     }
 
-    if (result.probeDestroyed) {
-      updatedProbes.splice(idx, 1)
-    } else if (result.needsRepair) {
-      let repairDuration =
-        probe.zone === 'void' ? 1800 : UNSTABLE_RIFT_REPAIR_SECONDS
+    if (result.needsRepair) {
+      let repairDuration = ZONE_MAP[result.zone].repairSeconds || 600
       if (probe.subsystem === 'shielding') {
         repairDuration = Math.round(repairDuration * 0.5)
       }
@@ -192,33 +205,27 @@ export function processProbeCompletions(): void {
     // Alert per probe
     if (result.success) {
       playSound('success')
+      const extras: string[] = []
+      if (result.opEarned > 0) extras.push(`+${result.opEarned} PTS`)
+      if (result.researchCutFraction > 0) {
+        extras.push(
+          `-${Math.round(result.researchCutFraction * 100)}% Research`
+        )
+      }
       useUIStore.getState().pushAlert({
         priority: 2,
         variant: 'info',
         title: 'Probe Returned',
-        message: `${ZONE_MAP[probe.zone!].label} scan complete. +${result.dustEarned} Artifact Dust.`,
+        message: `${ZONE_MAP[probe.zone!].label} scan complete. +${result.dustEarned.toLocaleString()} Dust${extras.length ? ` · ${extras.join(' · ')}` : ''}.`,
         autoDismissMs: 4000
-      })
-    } else if (result.probeDestroyed) {
-      playSound('fail')
-      useUIStore.getState().pushAlert({
-        priority: 2,
-        variant: 'anomaly',
-        title: 'Probe Destroyed',
-        message: 'Void Depth scan failed. The probe has been lost.',
-        autoDismissMs: 5000
       })
     } else if (result.needsRepair) {
       playSound('fail')
       const zoneLabel = probe.zone ? ZONE_MAP[probe.zone].label : 'Expedition'
-      const repairMins =
-        probe.zone === 'void'
-          ? probe.subsystem === 'shielding'
-            ? 15
-            : 30
-          : probe.subsystem === 'shielding'
-            ? 5
-            : 10
+      const baseSec = ZONE_MAP[result.zone].repairSeconds || 600
+      const repairMins = Math.round(
+        (probe.subsystem === 'shielding' ? baseSec * 0.5 : baseSec) / 60
+      )
       useUIStore.getState().pushAlert({
         priority: 2,
         variant: 'info',
@@ -239,6 +246,22 @@ export function processProbeCompletions(): void {
   useGameStore.setState((s) => ({
     probes: updatedProbes,
     artifactDust: s.artifactDust + totalDust,
+    currentOperationPoints: s.currentOperationPoints + totalOp,
+    ...(totalResearchCut > 0
+      ? {
+          activeResearchSlots: s.activeResearchSlots.map((sl) =>
+            sl.nodeId && sl.timerRemaining > 0
+              ? {
+                  ...sl,
+                  timerRemaining: Math.max(
+                    0,
+                    sl.timerRemaining * (1 - totalResearchCut)
+                  )
+                }
+              : sl
+          )
+        }
+      : {}),
     unlockedRelics:
       newRelics.length > 0
         ? [...new Set([...s.unlockedRelics, ...newRelics])]
@@ -253,6 +276,15 @@ export function processProbeCompletions(): void {
           }
         : s.stats
   }))
+
+  if (
+    shouldIgniteAnomaly &&
+    store.unlocks.anomalies &&
+    !store.activeAnomalyType &&
+    !store.activeChallengeRestrictions?.anomaliesDisabled
+  ) {
+    checkAnomalySpawn(true)
+  }
   if (newRelics.length > 0) {
     const highestRelic = Math.max(...newRelics)
     const rarity =

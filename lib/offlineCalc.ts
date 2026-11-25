@@ -24,9 +24,11 @@ import { getAnomalyBuffScale } from './anomalyDefs'
 import {
   getScanDuration,
   getVeteranRank,
-  rollProbeResult
+  isZoneUnlocked,
+  rollProbeResult,
+  ZONE_MAP
 } from './excavationDefs'
-import { MAX_RP_HARD_CAP, UNSTABLE_RIFT_REPAIR_SECONDS } from '@/constants/game'
+import { MAX_RP_HARD_CAP } from '@/constants/game'
 import { buildTier1ResetState } from './prestigeCalc'
 import {
   getEffectiveTarget,
@@ -73,6 +75,7 @@ function simulateOfflineProbes(
   elapsedSeconds: number
 ): NonNullable<OfflineProgressPayload['cachedProbeResult']> & {
   probesCompletedCount: number
+  opEarned: number
 } {
   if (
     state.activeChallengeRestrictions?.excavationDisabled ||
@@ -82,6 +85,7 @@ function simulateOfflineProbes(
     return {
       probes: state.probes,
       dustEarned: 0,
+      opEarned: 0,
       newRelics: [],
       relic9PityGain: 0,
       probesCompletedCount: 0
@@ -92,10 +96,13 @@ function simulateOfflineProbes(
     state.automation.autoLaunchProbe &&
     (state.challengeRecords['SC12']?.completedTiers ?? 0) >= 3 &&
     state.unlocks.excavation
+  const desiredZone = state.autoLaunchZone ?? 'safe'
+  const autoZone = isZoneUnlocked(desiredZone, state) ? desiredZone : 'safe'
   const speedBonus = getSynthesizerRates(state).probeSpeedBonus
   const unlockedSet = new Set(state.unlockedRelics)
   const newRelics: number[] = []
   let dustEarned = 0
+  let opEarned = 0
   let probesCompletedCount = 0
   let relic9PityGain = 0
   let runningRelic9Pity = state.stats.relic9PityCount ?? 0
@@ -114,17 +121,24 @@ function simulateOfflineProbes(
         } else {
           const remainingAfterScan = elapsedSeconds - probe.timerRemaining
           probe.timerRemaining = 0
-          const isRiskZone = probe.zone === 'unstable' || probe.zone === 'void'
+          const isRiskZone = probe.zone !== null && probe.zone !== 'safe'
           if (isRiskZone && !unlockedSet.has(9)) {
             relic9PityGain++
             runningRelic9Pity++
           }
-          const res = rollProbeResult(probe, {
-            unlockedRelics: Array.from(unlockedSet),
-            lifetimePoints: state.lifetimePoints,
-            achievements: state.achievements
-          })
+          const res = rollProbeResult(
+            probe,
+            {
+              unlockedRelics: Array.from(unlockedSet),
+              lifetimePoints: state.lifetimePoints,
+              achievements: state.achievements,
+              dysonSwarmLevel: state.dysonSwarmLevel,
+              unlocks: state.unlocks
+            },
+            speedBonus
+          )
           dustEarned += res.dustEarned
+          opEarned += res.opEarned
           if (res.relicDropped > 0 && !unlockedSet.has(res.relicDropped)) {
             unlockedSet.add(res.relicDropped)
             newRelics.push(res.relicDropped)
@@ -133,11 +147,8 @@ function simulateOfflineProbes(
             unlockedSet.add(9)
             newRelics.push(9)
           }
-          if (res.probeDestroyed) {
-            continue
-          } else if (res.needsRepair) {
-            let repairDur =
-              probe.zone === 'void' ? 1800 : UNSTABLE_RIFT_REPAIR_SECONDS
+          if (res.needsRepair) {
+            let repairDur = ZONE_MAP[res.zone].repairSeconds || 600
             if (probe.subsystem === 'shielding') {
               repairDur = Math.round(repairDur * 0.5)
             }
@@ -186,6 +197,7 @@ function simulateOfflineProbes(
     return {
       probes,
       dustEarned,
+      opEarned,
       newRelics,
       relic9PityGain,
       probesCompletedCount
@@ -194,9 +206,8 @@ function simulateOfflineProbes(
 
   const updatedProbes: GameState['probes'] = []
   for (const orig of state.probes) {
-    let p = { ...orig }
+    const p = { ...orig }
     let tLeft = elapsedSeconds
-    let destroyed = false
 
     for (let iter = 0; iter < 500 && tLeft > 0; iter++) {
       if (p.status === 'repairing') {
@@ -214,31 +225,60 @@ function simulateOfflineProbes(
 
       if (p.status === 'idle') {
         const sub = p.subsystem ?? 'none'
-        const dur = getScanDuration('safe', sub, speedBonus)
+        const dur = getScanDuration(autoZone, sub, speedBonus)
         if (tLeft < dur) {
           p.status = 'scanning'
-          p.zone = 'safe'
+          p.zone = autoZone
           p.scanDuration = dur
           p.timerRemaining = dur - tLeft
           tLeft = 0
         } else {
           tLeft -= dur
+          const isRiskZone = autoZone !== 'safe'
+          if (isRiskZone && !unlockedSet.has(9)) {
+            relic9PityGain++
+            runningRelic9Pity++
+          }
           const res = rollProbeResult(
-            { ...p, status: 'scanning', zone: 'safe' },
+            { ...p, status: 'scanning', zone: autoZone },
             {
               unlockedRelics: Array.from(unlockedSet),
               lifetimePoints: state.lifetimePoints,
-              achievements: state.achievements
-            }
+              achievements: state.achievements,
+              dysonSwarmLevel: state.dysonSwarmLevel,
+              unlocks: state.unlocks
+            },
+            speedBonus
           )
           dustEarned += res.dustEarned
-          probesCompletedCount++
-          const newExp = (p.expeditionsCompleted ?? 0) + 1
-          p.expeditionsCompleted = newExp
-          p.veteranRank = getVeteranRank(newExp).rank
-          p.status = 'idle'
-          p.zone = null
-          p.timerRemaining = 0
+          opEarned += res.opEarned
+          if (res.relicDropped > 0 && !unlockedSet.has(res.relicDropped)) {
+            unlockedSet.add(res.relicDropped)
+            newRelics.push(res.relicDropped)
+          }
+          if (isRiskZone && !unlockedSet.has(9) && runningRelic9Pity >= 8) {
+            unlockedSet.add(9)
+            newRelics.push(9)
+          }
+          if (res.needsRepair) {
+            let repairDur = ZONE_MAP[res.zone].repairSeconds || 600
+            if (p.subsystem === 'shielding') {
+              repairDur = Math.round(repairDur * 0.5)
+            }
+            p.status = 'repairing'
+            p.zone = null
+            p.scanDuration = undefined
+            p.repairTimerRemaining = repairDur
+            p.repairDuration = repairDur
+          } else {
+            probesCompletedCount++
+            const newExp = (p.expeditionsCompleted ?? 0) + 1
+            p.expeditionsCompleted = newExp
+            p.veteranRank = getVeteranRank(newExp).rank
+            p.status = 'idle'
+            p.zone = null
+            p.timerRemaining = 0
+          }
         }
         continue
       }
@@ -250,17 +290,24 @@ function simulateOfflineProbes(
         } else {
           tLeft -= p.timerRemaining
           p.timerRemaining = 0
-          const isRiskZone = p.zone === 'unstable' || p.zone === 'void'
+          const isRiskZone = p.zone !== null && p.zone !== 'safe'
           if (isRiskZone && !unlockedSet.has(9)) {
             relic9PityGain++
             runningRelic9Pity++
           }
-          const res = rollProbeResult(p, {
-            unlockedRelics: Array.from(unlockedSet),
-            lifetimePoints: state.lifetimePoints,
-            achievements: state.achievements
-          })
+          const res = rollProbeResult(
+            p,
+            {
+              unlockedRelics: Array.from(unlockedSet),
+              lifetimePoints: state.lifetimePoints,
+              achievements: state.achievements,
+              dysonSwarmLevel: state.dysonSwarmLevel,
+              unlocks: state.unlocks
+            },
+            speedBonus
+          )
           dustEarned += res.dustEarned
+          opEarned += res.opEarned
           if (res.relicDropped > 0 && !unlockedSet.has(res.relicDropped)) {
             unlockedSet.add(res.relicDropped)
             newRelics.push(res.relicDropped)
@@ -269,12 +316,8 @@ function simulateOfflineProbes(
             unlockedSet.add(9)
             newRelics.push(9)
           }
-          if (res.probeDestroyed) {
-            destroyed = true
-            break
-          } else if (res.needsRepair) {
-            let repairDur =
-              p.zone === 'void' ? 1800 : UNSTABLE_RIFT_REPAIR_SECONDS
+          if (res.needsRepair) {
+            let repairDur = ZONE_MAP[res.zone].repairSeconds || 600
             if (p.subsystem === 'shielding') {
               repairDur = Math.round(repairDur * 0.5)
             }
@@ -296,12 +339,13 @@ function simulateOfflineProbes(
       }
     }
 
-    if (!destroyed) updatedProbes.push(p)
+    updatedProbes.push(p)
   }
 
   return {
     probes: updatedProbes,
     dustEarned,
+    opEarned,
     newRelics,
     relic9PityGain,
     probesCompletedCount
@@ -567,7 +611,7 @@ export function calculateOfflineProgress(
   )
 
   const dustEarned = Math.floor(synthDustExact) + probeSim.dustEarned
-  const operationPointsEarned = Math.floor(synthOpExact)
+  const operationPointsEarned = Math.floor(synthOpExact) + probeSim.opEarned
 
   if (ec3CollapseTriggered && state.activeChallengeId && forcedInterval) {
     const ec3Tier =

@@ -202,7 +202,7 @@ Unlocked per branch upon completing **Tier 8** (`C8`, `E8`, `R8`, `O8`). Infinit
 | Auto-Module Buyer | `1s` | CF `Auto-Module Buyer` | Buys cheapest affordable module upgrade below cap. |
 | Auto-Equip Relic | `1s` | Complete `AC6` | Equips highest-level unequipped relic into open slots. |
 | Auto-Upgrade Relics | `1s` | CF `Auto-Upgrade Relics` | Upgrades cheapest relic below target cap (`1–100`) respecting Dust reserve. |
-| Auto-Launch Probe | `1s` | `SC12` Tier 3 | Launches idle probes to Safe Sectors while preserving equipped subsystem. |
+| Auto-Launch Probe | `1s` | `SC12` Tier 3 | Launches idle probes to your selected sector while preserving equipped subsystem. |
 | Auto-Dyson Swarm | `1s` | OS `Auto-Dyson Swarm` | Activates Arkalon Dyson Swarm whenever megaproject bay is idle. |
 | Auto-Prestige Tier I | `1s` | OS `The Automated Lab` | Executes calibrated Tier I prestige after 15s minimum run duration. |
 | Auto-Prestige Tier II | `1s` | OS `Automated Timeline Severance` | Executes Tier II prestige when `Target CF` is met (optional hold for Tier III). |

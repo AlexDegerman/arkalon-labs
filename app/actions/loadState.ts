@@ -71,6 +71,7 @@ export async function loadState(): Promise<LoadResult> {
         autoBuyOptimalReservePercent?: number
         autoRelicTargetLevel?: number
         autoRelicDustReserve?: number
+        autoLaunchZone?: string
       } | null
       relic_data: {
         slots?: RelicSlotState[]
@@ -183,6 +184,7 @@ export async function loadState(): Promise<LoadResult> {
         prestigeData.autoBuyOptimalReservePercent ?? 25,
       autoRelicTargetLevel: prestigeData.autoRelicTargetLevel ?? 20,
       autoRelicDustReserve: prestigeData.autoRelicDustReserve ?? 25,
+      autoLaunchZone: prestigeData.autoLaunchZone ?? 'safe',
       relicSlots: relicData.slots ?? [],
       unlockedRelics: relicData.unlocked ?? [],
       relicLevels: relicData.levels ?? {},

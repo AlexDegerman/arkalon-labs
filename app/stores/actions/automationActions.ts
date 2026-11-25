@@ -36,6 +36,7 @@ import { buySynthesizer } from './synthesizerActions'
 import { startResearch } from './researchActions'
 import { equipRelic, upgradeRelic } from './relicActions'
 import { launchProbe } from './excavationActions'
+import { isZoneUnlocked } from '@/lib/excavationDefs'
 import { activateMegaproject } from './megaprojectActions'
 import { markAchievementsDirty } from '@/lib/dirtyFlags'
 import { ProbeState, RelicSlotState } from '@/types/game'
@@ -290,16 +291,18 @@ function runAutoEquipRelic(
   equipRelic(unequipped[0], true)
 }
 
-// Auto-launches idle probes to safe sectors
+// Auto-launches idle probes to the player's selected sector
 function runAutoLaunchProbe(
   store: ReturnType<typeof useGameStore.getState>
 ): void {
   if (store.activeChallengeRestrictions?.excavationDisabled) return
   if (!store.unlocks.excavation) return
 
+  const desired = store.autoLaunchZone ?? 'safe'
+  const zone = isZoneUnlocked(desired, store) ? desired : 'safe'
   const idleProbes = store.probes.filter((p: ProbeState) => p.status === 'idle')
   for (const probe of idleProbes) {
-    launchProbe(probe.id, 'safe', probe.subsystem ?? 'none', true)
+    launchProbe(probe.id, zone, probe.subsystem ?? 'none', true)
   }
 }
 

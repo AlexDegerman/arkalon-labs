@@ -6,24 +6,27 @@ import ProbeCard from '@/components/excavation/ProbeCard'
 
 function SectorStarmap() {
   const probes = useGameStore((s) => s.probes)
-  const safeCount = probes.filter(
-    (p) => p.zone === 'safe' && p.status === 'scanning'
-  ).length
-  const unstableCount = probes.filter(
-    (p) => p.zone === 'unstable' && p.status === 'scanning'
-  ).length
-  const voidCount = probes.filter(
-    (p) => p.zone === 'void' && p.status === 'scanning'
-  ).length
+  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
+  const stats = useGameStore((s) => s.stats)
+
+  const countZone = (z: string) =>
+    probes.filter((p) => p.zone === z && p.status === 'scanning').length
+
+  const singUnlocked =
+    (stats?.totalPrestigesTier2 ?? 0) > 0 ||
+    (stats?.peakLifetimePoints ?? lifetimePoints) >= 10n ** 35n
+  const omegaUnlocked =
+    (stats?.totalPrestigesTier3 ?? 0) > 0 ||
+    (stats?.peakLifetimePoints ?? lifetimePoints) >= 10n ** 85n
 
   return (
     <div className="@container card rounded-xl p-2.5 bg-(--bg-surface) border border-cyan-400/40 shadow-[0_0_15px_rgba(0,240,255,0.08)] flex flex-col gap-2 font-mono">
       <div className="flex items-center justify-between gap-2 flex-wrap border-b border-(--border-default)/50 pb-1.5">
         <span className="text-[10px] font-black uppercase text-cyan-300 tracking-wider">
-          ✦ Tactical Sub-Space Sector Topology
+          ✦ Sub-Space Sector Topology
         </span>
         <span className="text-[9px] text-(--text-secondary)">
-          Telemetry Grid // RA 14h 29m Dec -62°
+          Sub-60s speed converts to yield multiplier
         </span>
       </div>
 
@@ -38,11 +41,11 @@ function SectorStarmap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            Risk Factor: 0% · 1h Duration
+            0% Risk · 1h · Dust
           </span>
           <div className="flex justify-between items-center text-[10px] pt-1 border-t border-emerald-500/20 text-emerald-200">
             <span>Active Probes:</span>
-            <strong className="font-bold">{safeCount}</strong>
+            <strong className="font-bold">{countZone('safe')}</strong>
           </div>
         </div>
 
@@ -56,11 +59,11 @@ function SectorStarmap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            25% Repair Risk · 4h Duration
+            25% Repair · 4h · Dust + PTS
           </span>
           <div className="flex justify-between items-center text-[10px] pt-1 border-t border-orange-500/20 text-orange-200">
             <span>Active Probes:</span>
-            <strong className="font-bold">{unstableCount}</strong>
+            <strong className="font-bold">{countZone('unstable')}</strong>
           </div>
         </div>
 
@@ -74,13 +77,53 @@ function SectorStarmap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            50% Repair Risk · 12h Duration
+            50% Repair · 12h · Dust + PTS + -5% Res
           </span>
           <div className="flex justify-between items-center text-[10px] pt-1 border-t border-purple-500/20 text-purple-200">
             <span>Active Probes:</span>
-            <strong className="font-bold">{voidCount}</strong>
+            <strong className="font-bold">{countZone('void')}</strong>
           </div>
         </div>
+
+        {singUnlocked && (
+          <div className="p-2.5 rounded-lg border border-cyan-500/40 bg-cyan-950/20 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-cyan-300 text-[11px]">
+                Singularity Rift
+              </span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-200">
+                TIER II
+              </span>
+            </div>
+            <span className="text-[10px] text-(--text-secondary)">
+              60% Repair · 24h · Dust + PTS + -10% Res
+            </span>
+            <div className="flex justify-between items-center text-[10px] pt-1 border-t border-cyan-500/20 text-cyan-200">
+              <span>Active Probes:</span>
+              <strong className="font-bold">{countZone('singularity')}</strong>
+            </div>
+          </div>
+        )}
+
+        {omegaUnlocked && (
+          <div className="p-2.5 rounded-lg border border-amber-500/40 bg-amber-950/20 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-amber-300 text-[11px]">
+                Omega Horizon
+              </span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-200">
+                TIER III
+              </span>
+            </div>
+            <span className="text-[10px] text-(--text-secondary)">
+              65% Repair · 48h · -25% Res + Anomaly
+            </span>
+            <div className="flex justify-between items-center text-[10px] pt-1 border-t border-amber-500/20 text-amber-200">
+              <span>Active Probes:</span>
+              <strong className="font-bold">{countZone('omega')}</strong>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

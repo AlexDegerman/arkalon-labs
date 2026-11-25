@@ -222,7 +222,8 @@ export async function saveState(payload: SavePayload): Promise<{
           autoPrestigeHoldForDyson: save.autoPrestigeHoldForDyson ?? true,
           autoBuyOptimalReservePercent: save.autoBuyOptimalReservePercent ?? 25,
           autoRelicTargetLevel: save.autoRelicTargetLevel ?? 20,
-          autoRelicDustReserve: save.autoRelicDustReserve ?? 25
+          autoRelicDustReserve: save.autoRelicDustReserve ?? 25,
+          autoLaunchZone: save.autoLaunchZone ?? 'safe'
         }),
         JSON.stringify({
           slots: save.relicSlots ?? [],
