@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import GeneratorModuleCard from '@/components/modules/GeneratorModuleCard'
 import { buyAllModules } from '@/app/stores/actions/generatorActions'
@@ -15,29 +15,58 @@ import { MODULE_SYNERGIES, GENERATORS } from '@/constants/generators'
 import { getRelicSynergyBonus } from '@/lib/relicEffects'
 import { formatPoints, formatPointsShort } from '@/lib/format'
 
+function getCapTierSnapshot(s: {
+  lifetimePoints: bigint
+  stats: {
+    peakLifetimePoints?: bigint
+    totalPrestigesTier1?: number
+    totalPrestigesTier2?: number
+    totalPrestigesTier3?: number
+    o10EverCompleted?: boolean
+  }
+  completedResearchNodes: string[]
+}): number {
+  const peakRP =
+    (s.stats.peakLifetimePoints ?? 0n) > s.lifetimePoints
+      ? (s.stats.peakLifetimePoints ?? 0n)
+      : s.lifetimePoints
+  if (
+    s.stats.o10EverCompleted ||
+    s.completedResearchNodes.includes('O10') ||
+    peakRP >= 10n ** 140n
+  ) {
+    return 4
+  }
+  if ((s.stats.totalPrestigesTier3 ?? 0) > 0 || peakRP >= 10n ** 85n) return 3
+  if ((s.stats.totalPrestigesTier2 ?? 0) > 0 || peakRP >= 10n ** 35n) return 2
+  if ((s.stats.totalPrestigesTier1 ?? 0) > 0 || peakRP >= 10n ** 18n) return 1
+  return 0
+}
+
 const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
-  const rp = useGameStore((s) => s.researchPoints)
-  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
   const generators = useGameStore((s) => s.generators)
   const challengeRecords = useGameStore((s) => s.challengeRecords)
   const activeChallengeRestrictions = useGameStore(
     (s) => s.activeChallengeRestrictions
   )
-  const stats = useGameStore((s) => s.stats)
-  const completedResearchNodes = useGameStore((s) => s.completedResearchNodes)
+  const capTier = useGameStore(getCapTierSnapshot)
+  const modulesDisabled = activeChallengeRestrictions?.modulesDisabled ?? false
 
-  const plan = getUpgradeAllModulesPlan({
-    researchPoints: rp,
-    lifetimePoints,
-    generators,
-    challengeRecords,
-    activeChallengeRestrictions,
-    stats,
-    completedResearchNodes
-  })
+  const [plan, setPlan] = useState(() =>
+    getUpgradeAllModulesPlan(useGameStore.getState())
+  )
 
-  const allOwnedMaxed = plan.remainingToMaxCost === 0n
-  const canBuyAny = plan.purchaseCount > 0
+  useEffect(() => {
+    const sync = () => {
+      setPlan(getUpgradeAllModulesPlan(useGameStore.getState()))
+    }
+    sync()
+    const timer = setInterval(sync, 500)
+    return () => clearInterval(timer)
+  }, [generators, challengeRecords, activeChallengeRestrictions, capTier])
+
+  const allOwnedMaxed = !modulesDisabled && plan.remainingToMaxCost === 0n
+  const canBuyAny = !modulesDisabled && plan.purchaseCount > 0
   const postPurchaseRemaining = plan.remainingToMaxCost - plan.totalCost
 
   return (
@@ -47,14 +76,18 @@ const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
         disabled={!canBuyAny}
         className={[
           'w-full py-2 px-3 text-xs font-mono font-black uppercase tracking-wider rounded-lg border transition-all select-none',
-          allOwnedMaxed
-            ? 'border-(--status-success)/40 bg-(--status-success)/10 text-(--status-success) cursor-default'
-            : canBuyAny
-              ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent) hover:bg-(--border-accent) hover:text-[#080c14] cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.22)]'
-              : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
+          modulesDisabled
+            ? 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
+            : allOwnedMaxed
+              ? 'border-(--status-success)/40 bg-(--status-success)/10 text-(--status-success) cursor-default'
+              : canBuyAny
+                ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent) hover:bg-(--border-accent) hover:text-[#080c14] cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.22)]'
+                : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
         ].join(' ')}
       >
-        {allOwnedMaxed ? (
+        {modulesDisabled ? (
+          'Modules Restricted'
+        ) : allOwnedMaxed ? (
           'All Owned Generators Maxed'
         ) : canBuyAny ? (
           <>
@@ -81,7 +114,7 @@ const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
         )}
       </button>
 
-      {!allOwnedMaxed && (
+      {!modulesDisabled && !allOwnedMaxed && (
         <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-(--text-secondary)/80 px-0.5 flex-wrap">
           <span>
             {canBuyAny && postPurchaseRemaining === 0n
@@ -109,8 +142,7 @@ export default function ModulesWorkspace() {
   const activeChallengeRestrictions = useGameStore(
     (s) => s.activeChallengeRestrictions
   )
-  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
-  const stats = useGameStore((s) => s.stats)
+  const capTier = useGameStore(getCapTierSnapshot)
   const completedResearchNodes = useGameStore((s) => s.completedResearchNodes)
   const cap = useGameStore(getModuleLevelCap)
   const overclockedCount = useGameStore(getOverclockedChassisCount)
@@ -125,11 +157,18 @@ export default function ModulesWorkspace() {
       !s.activeChallengeRestrictions?.prestigeUpgradesDisabled
   )
 
+  const capTierThresholds = [
+    0n,
+    10n ** 18n,
+    10n ** 35n,
+    10n ** 85n,
+    10n ** 140n
+  ]
   const capCtx = {
     challengeRecords,
     activeChallengeRestrictions,
-    lifetimePoints,
-    stats,
+    lifetimePoints: capTierThresholds[capTier] ?? 0n,
+    stats: useGameStore.getState().stats,
     completedResearchNodes
   }
   const capInfo = getNextModuleCapHint(capCtx)
@@ -177,6 +216,12 @@ export default function ModulesWorkspace() {
 
   return (
     <div className="@container flex flex-col gap-2 p-2 sm:p-3 overflow-y-auto scrollbar-dark h-full bg-(--bg-primary)/40">
+      {modulesDisabled && (
+        <div className="p-2.5 rounded-xl border border-amber-500/50 bg-amber-500/10 font-mono text-xs text-amber-300">
+          ⚠️ Generator Modules Offline. Disabled by active challenge
+          constraints.
+        </div>
+      )}
       <div className="flex items-center justify-between px-1 flex-wrap gap-2">
         <div className="flex flex-col gap-0.5">
           <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">

@@ -22,7 +22,7 @@ interface ModuleTrackProps {
   moduleType: ModuleType
   currentLevel: number
   levelCap: number
-  rp: bigint
+  modulesDisabled: boolean
   sc4Tiers: number
   ac5Active: boolean
   hasSynergyLink: boolean
@@ -33,7 +33,7 @@ const ModuleTrack = memo(function ModuleTrack({
   moduleType,
   currentLevel,
   levelCap,
-  rp,
+  modulesDisabled,
   sc4Tiers,
   ac5Active,
   hasSynergyLink
@@ -43,7 +43,9 @@ const ModuleTrack = memo(function ModuleTrack({
   const cost = atCap
     ? 0n
     : getModuleUpgradeCost(generatorIndex, moduleType, currentLevel, sc4Tiers)
-  const canAfford = !atCap && rp >= cost
+  const canAfford = useGameStore(
+    (s) => !atCap && !modulesDisabled && s.researchPoints >= cost
+  )
   const effectLabel = getModuleEffectLabel(moduleType, currentLevel, ac5Active)
   const hint =
     moduleType === 'synergy' && !hasSynergyLink
@@ -51,7 +53,7 @@ const ModuleTrack = memo(function ModuleTrack({
       : def.effectPerLevel
 
   function handleUpgrade() {
-    if (atCap || !canAfford) return
+    if (atCap || modulesDisabled || !canAfford) return
     buyModule(generatorIndex, moduleType, currentLevel)
   }
 
@@ -79,20 +81,26 @@ const ModuleTrack = memo(function ModuleTrack({
         {!atCap ? (
           <button
             onClick={handleUpgrade}
-            disabled={!canAfford}
+            disabled={modulesDisabled || !canAfford}
             className={[
               'px-2.5 py-1 text-[10px] font-mono font-bold rounded border transition-all cursor-pointer select-none whitespace-nowrap shrink-0',
-              canAfford
+              canAfford && !modulesDisabled
                 ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) hover:bg-(--status-success) hover:text-black'
                 : 'border-(--border-default) bg-(--bg-surface) text-(--text-secondary)/40 cursor-not-allowed opacity-60'
             ].join(' ')}
           >
-            <span className="@[420px]:hidden">
-              {formatPointsShort(cost)} RP
-            </span>
-            <span className="hidden @[420px]:inline">
-              {formatPoints(cost)} RP
-            </span>
+            {modulesDisabled ? (
+              'Restricted'
+            ) : (
+              <>
+                <span className="@[420px]:hidden">
+                  {formatPointsShort(cost)} RP
+                </span>
+                <span className="hidden @[420px]:inline">
+                  {formatPoints(cost)} RP
+                </span>
+              </>
+            )}
           </button>
         ) : (
           <span className="text-[10px] font-mono font-bold text-(--status-success) px-1.5 py-0.2 rounded bg-(--status-success)/10 border border-(--status-success)/30 shrink-0">
@@ -110,13 +118,27 @@ interface Props {
 
 function GeneratorModuleCard({ generatorIndex }: Props) {
   const gen = useGameStore((s) => s.generators[generatorIndex])
-  const rp = useGameStore((s) => s.researchPoints)
   const challengeRecords = useGameStore((s) => s.challengeRecords)
   const activeChallengeRestrictions = useGameStore(
     (s) => s.activeChallengeRestrictions
   )
-  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
-  const stats = useGameStore((s) => s.stats)
+  const capTier = useGameStore((s) => {
+    const peakRP =
+      (s.stats.peakLifetimePoints ?? 0n) > s.lifetimePoints
+        ? (s.stats.peakLifetimePoints ?? 0n)
+        : s.lifetimePoints
+    if (
+      s.stats.o10EverCompleted ||
+      s.completedResearchNodes.includes('O10') ||
+      peakRP >= 10n ** 140n
+    ) {
+      return 4
+    }
+    if (s.stats.totalPrestigesTier3 > 0 || peakRP >= 10n ** 85n) return 3
+    if (s.stats.totalPrestigesTier2 > 0 || peakRP >= 10n ** 35n) return 2
+    if (s.stats.totalPrestigesTier1 > 0 || peakRP >= 10n ** 18n) return 1
+    return 0
+  })
   const completedResearchNodes = useGameStore((s) => s.completedResearchNodes)
   const levelCap = useGameStore(getModuleLevelCap)
   const sc4Tiers = challengeRecords['SC4']?.completedTiers ?? 0
@@ -127,11 +149,18 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
     activeChallengeRestrictions?.milestonesDisabled ?? false
   const modulesDisabled = activeChallengeRestrictions?.modulesDisabled ?? false
 
+  const capTierThresholds = [
+    0n,
+    10n ** 18n,
+    10n ** 35n,
+    10n ** 85n,
+    10n ** 140n
+  ]
   const capCtx = {
     challengeRecords,
     activeChallengeRestrictions,
-    lifetimePoints,
-    stats,
+    lifetimePoints: capTierThresholds[capTier] ?? 0n,
+    stats: useGameStore.getState().stats,
     completedResearchNodes
   }
   const effCap = getTrackLevelCap(generatorIndex, 'efficiency', capCtx)
@@ -314,7 +343,7 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
                   ? costCap
                   : synCap
             }
-            rp={rp}
+            modulesDisabled={modulesDisabled}
             sc4Tiers={sc4Tiers}
             ac5Active={ac5Active}
             hasSynergyLink={synergyTargets.length > 0}

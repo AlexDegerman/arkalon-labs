@@ -57,6 +57,8 @@ export const MODULE_DEFINITIONS: Record<ModuleType, ModuleDefinition> = {
   }
 }
 
+const moduleCostCache = new Map<string, bigint>()
+
 // Returns the cost to upgrade a specific module to the next level
 export function getModuleUpgradeCost(
   generatorIndex: number,
@@ -64,6 +66,10 @@ export function getModuleUpgradeCost(
   currentLevel: number,
   sc4Tiers = 0
 ): bigint {
+  const cacheKey = `${generatorIndex}:${moduleType}:${currentLevel}:${sc4Tiers}`
+  const cached = moduleCostCache.get(cacheKey)
+  if (cached !== undefined) return cached
+
   const def = GENERATORS[generatorIndex]
   if (!def) return 0n
 
@@ -91,6 +97,7 @@ export function getModuleUpgradeCost(
     cost = (cost * discountFactor) / 100n
   }
 
+  moduleCostCache.set(cacheKey, cost)
   return cost
 }
 
@@ -296,42 +303,64 @@ export function getUpgradeAllModulesPlan(
     }
   }
 
+  const activeTracks: Array<{ i: number; type: ModuleType; cap: number }> = []
+  for (let i = 0; i < 20; i++) {
+    const gen = nextGenerators[i]
+    if (!gen || gen.quantity === 0n) continue
+    for (const type of types) {
+      const cap = getTrackLevelCap(i, type, state)
+      const lvl =
+        type === 'efficiency'
+          ? gen.efficiencyLevel
+          : type === 'cost_reduction'
+            ? gen.costReductionLevel
+            : gen.synergyLevel
+      if (lvl < cap) activeTracks.push({ i, type, cap })
+    }
+  }
+
   let currentRP = state.researchPoints
   let totalCost = 0n
   let purchaseCount = 0
-  let canContinue = true
 
-  while (canContinue) {
-    canContinue = false
+  while (activeTracks.length > 0) {
+    let boughtAny = false
 
-    for (let i = 0; i < 20; i++) {
-      const gen = nextGenerators[i]
-      if (!gen || gen.quantity === 0n) continue
+    for (let idx = activeTracks.length - 1; idx >= 0; idx--) {
+      const track = activeTracks[idx]
+      const gen = nextGenerators[track.i]
+      const lvl =
+        track.type === 'efficiency'
+          ? gen.efficiencyLevel
+          : track.type === 'cost_reduction'
+            ? gen.costReductionLevel
+            : gen.synergyLevel
 
-      for (const type of types) {
-        const cap = getTrackLevelCap(i, type, state)
-        const lvl =
-          type === 'efficiency'
-            ? gen.efficiencyLevel
-            : type === 'cost_reduction'
-              ? gen.costReductionLevel
-              : gen.synergyLevel
+      if (lvl >= track.cap) {
+        activeTracks.splice(idx, 1)
+        continue
+      }
 
-        if (lvl >= cap) continue
+      const cost = getModuleUpgradeCost(track.i, track.type, lvl, sc4Tiers)
+      if (currentRP >= cost) {
+        currentRP -= cost
+        totalCost += cost
+        purchaseCount++
+        boughtAny = true
 
-        const cost = getModuleUpgradeCost(i, type, lvl, sc4Tiers)
-        if (currentRP >= cost) {
-          currentRP -= cost
-          totalCost += cost
-          purchaseCount++
-          canContinue = true
+        if (track.type === 'efficiency') gen.efficiencyLevel += 1
+        else if (track.type === 'cost_reduction') gen.costReductionLevel += 1
+        else gen.synergyLevel += 1
 
-          if (type === 'efficiency') gen.efficiencyLevel += 1
-          else if (type === 'cost_reduction') gen.costReductionLevel += 1
-          else gen.synergyLevel += 1
+        if (lvl + 1 >= track.cap) {
+          activeTracks.splice(idx, 1)
         }
+      } else {
+        activeTracks.splice(idx, 1)
       }
     }
+
+    if (!boughtAny) break
   }
 
   return {

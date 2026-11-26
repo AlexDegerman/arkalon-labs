@@ -233,8 +233,7 @@ export const CHALLENGE_BALANCE: ChallengeBalanceDef[] = [
     tierTargets: scaledTargets(10n ** 20n, 3),
     buildRestrictions: () => ({
       ...NO_RESTRICTIONS,
-      generatorCostMultiplier: 10,
-      moduleLevelCapOverride: 10 // doubled from 5
+      generatorCostMultiplier: 10
     })
   },
   {

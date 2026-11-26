@@ -183,6 +183,7 @@ export interface PreChallengeSnapshot {
     synergyLevel?: number
   }>
   synthesizers: number[]
+  probes?: ProbeState[]
   completedResearchNodes: string[]
   activeResearchSlots: ResearchSlotState[]
   researchQueue: string[]

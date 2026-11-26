@@ -82,6 +82,8 @@ function simulateOfflineProbes(
 ): NonNullable<OfflineProgressPayload['cachedProbeResult']> & {
   probesCompletedCount: number
   opEarned: number
+  totalResearchCut: number
+  shouldIgniteAnomaly: boolean
 } {
   if (
     state.activeChallengeRestrictions?.excavationDisabled ||
@@ -94,7 +96,9 @@ function simulateOfflineProbes(
       opEarned: 0,
       newRelics: [],
       relic9PityGain: 0,
-      probesCompletedCount: 0
+      probesCompletedCount: 0,
+      totalResearchCut: 0,
+      shouldIgniteAnomaly: false
     }
   }
 
@@ -109,6 +113,8 @@ function simulateOfflineProbes(
   const newRelics: number[] = []
   let dustEarned = 0
   let opEarned = 0
+  let totalResearchCut = 0
+  let shouldIgniteAnomaly = false
   let probesCompletedCount = 0
   let relic9PityGain = 0
   let runningRelic9Pity = state.stats.relic9PityCount ?? 0
@@ -145,6 +151,13 @@ function simulateOfflineProbes(
           )
           dustEarned += res.dustEarned
           opEarned += res.opEarned
+          if (res.researchCutFraction > 0) {
+            totalResearchCut = Math.min(
+              0.75,
+              totalResearchCut + res.researchCutFraction
+            )
+          }
+          if (res.triggerAnomaly) shouldIgniteAnomaly = true
           if (res.relicDropped > 0 && !unlockedSet.has(res.relicDropped)) {
             unlockedSet.add(res.relicDropped)
             newRelics.push(res.relicDropped)
@@ -206,7 +219,9 @@ function simulateOfflineProbes(
       opEarned,
       newRelics,
       relic9PityGain,
-      probesCompletedCount
+      probesCompletedCount,
+      totalResearchCut,
+      shouldIgniteAnomaly
     }
   }
 
@@ -258,6 +273,13 @@ function simulateOfflineProbes(
           )
           dustEarned += res.dustEarned
           opEarned += res.opEarned
+          if (res.researchCutFraction > 0) {
+            totalResearchCut = Math.min(
+              0.75,
+              totalResearchCut + res.researchCutFraction
+            )
+          }
+          if (res.triggerAnomaly) shouldIgniteAnomaly = true
           if (res.relicDropped > 0 && !unlockedSet.has(res.relicDropped)) {
             unlockedSet.add(res.relicDropped)
             newRelics.push(res.relicDropped)
@@ -314,6 +336,13 @@ function simulateOfflineProbes(
           )
           dustEarned += res.dustEarned
           opEarned += res.opEarned
+          if (res.researchCutFraction > 0) {
+            totalResearchCut = Math.min(
+              0.75,
+              totalResearchCut + res.researchCutFraction
+            )
+          }
+          if (res.triggerAnomaly) shouldIgniteAnomaly = true
           if (res.relicDropped > 0 && !unlockedSet.has(res.relicDropped)) {
             unlockedSet.add(res.relicDropped)
             newRelics.push(res.relicDropped)
@@ -354,7 +383,9 @@ function simulateOfflineProbes(
     opEarned,
     newRelics,
     relic9PityGain,
-    probesCompletedCount
+    probesCompletedCount,
+    totalResearchCut,
+    shouldIgniteAnomaly
   }
 }
 
@@ -656,6 +687,38 @@ export function calculateOfflineProgress(
     { ...state, lifetimePoints: simLifetime },
     cappedElapsed
   )
+
+  if (probeSim.totalResearchCut > 0 && !techDisabled) {
+    for (let i = 0; i < Math.min(slotCount, slots.length); i++) {
+      const s = slots[i]
+      if (!s.nodeId || s.timerRemaining <= 0) continue
+      s.timerRemaining = Math.max(
+        0,
+        s.timerRemaining * (1 - probeSim.totalResearchCut)
+      )
+      if (s.timerRemaining <= 1e-6) {
+        const finishedId = s.nodeId
+        if (
+          finishedId !== '__CALIBRATION__' &&
+          !currentCompleted.includes(finishedId)
+        ) {
+          currentCompleted.push(finishedId)
+          newlyCompletedCount++
+          const def = RESEARCH_NODE_MAP[finishedId]
+          if (def) completedNames.push(def.label)
+        }
+        slots[i] = { nodeId: null, timerRemaining: 0 }
+      }
+    }
+  }
+
+  if (probeSim.shouldIgniteAnomaly && anomaliesEnabled && !activeAnomalyType) {
+    const def = selectNextAnomaly(simState)
+    activeAnomalyType = def.type
+    anomalyTimeRemaining = getEffectiveDuration(def, simState)
+    anomalySpawnRawDuration = getRawAnomalyDuration(def, simState)
+    timeToNextAnomalyCheck = getNextSpawnInterval(simState)
+  }
 
   const dustEarned = Math.floor(synthDustExact) + probeSim.dustEarned
   const operationPointsEarned = Math.floor(synthOpExact) + probeSim.opEarned

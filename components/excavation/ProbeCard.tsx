@@ -13,7 +13,10 @@ import {
 import { formatCountdown, formatDuration } from '@/lib/format'
 import ProgressBar from '@/components/ui/ProgressBar'
 import type { ProbeState, ExcavationZone, ProbeSubsystem } from '@/types/game'
-import { launchProbe } from '@/app/stores/actions/excavationActions'
+import {
+  launchProbe,
+  recallProbe
+} from '@/app/stores/actions/excavationActions'
 import { useGameStore } from '@/app/stores/gameStore'
 import { getSynthesizerRates } from '@/lib/synthesizerDefs'
 import { getCurrentEra } from '@/lib/eraThresholds'
@@ -26,6 +29,10 @@ function ProbeCard({ probe }: Props) {
   const [selectedSubsystem, setSelectedSubsystem] = useState<ProbeSubsystem>(
     probe.subsystem ?? 'none'
   )
+  const [confirmRecall, setConfirmRecall] = useState(false)
+  const excavationDisabled = useGameStore(
+    (s) => s.activeChallengeRestrictions?.excavationDisabled ?? false
+  )
 
   const isIdle = probe.status === 'idle'
   const isScanning = probe.status === 'scanning'
@@ -34,11 +41,11 @@ function ProbeCard({ probe }: Props) {
   const probeSpeedBonus = useGameStore(
     (s) => getSynthesizerRates(s).probeSpeedBonus
   )
-  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
-  const stats = useGameStore((s) => s.stats)
+  const era = useGameStore((s) => getCurrentEra(s.lifetimePoints).era)
+  const singUnlocked = useGameStore((s) => isZoneUnlocked('singularity', s))
+  const omegaUnlocked = useGameStore((s) => isZoneUnlocked('omega', s))
   const dysonSwarmLevel = useGameStore((s) => s.dysonSwarmLevel ?? 0)
   const opsUnlocked = useGameStore((s) => s.unlocks.anomalousOperations)
-  const era = getCurrentEra(lifetimePoints).era
   const hasRelicMaster = useGameStore(
     (s) => s.achievements?.includes('relic_all') ?? false
   )
@@ -191,10 +198,12 @@ function ProbeCard({ probe }: Props) {
             </span>
             <div className="flex flex-col gap-1.5">
               {ZONE_DEFINITIONS.map((zone) => {
-                const unlocked = isZoneUnlocked(zone.zone, {
-                  lifetimePoints,
-                  stats
-                })
+                const unlocked =
+                  zone.zone === 'singularity'
+                    ? singUnlocked
+                    : zone.zone === 'omega'
+                      ? omegaUnlocked
+                      : true
                 if (!unlocked) {
                   return (
                     <div
@@ -273,6 +282,7 @@ function ProbeCard({ probe }: Props) {
                 return (
                   <button
                     key={zone.zone}
+                    disabled={excavationDisabled}
                     onClick={() =>
                       launchProbe(
                         probe.id,
@@ -280,7 +290,12 @@ function ProbeCard({ probe }: Props) {
                         selectedSubsystem
                       )
                     }
-                    className="flex items-center justify-between gap-2 flex-wrap p-2 rounded-lg border text-xs transition-all cursor-pointer select-none border-(--border-default) bg-(--bg-elevated)/60 hover:bg-(--bg-elevated) hover:border-(--border-accent)"
+                    className={[
+                      'flex items-center justify-between gap-2 flex-wrap p-2 rounded-lg border text-xs transition-all select-none',
+                      excavationDisabled
+                        ? 'border-(--border-default) bg-(--bg-elevated)/30 opacity-50 cursor-not-allowed'
+                        : 'cursor-pointer border-(--border-default) bg-(--bg-elevated)/60 hover:bg-(--bg-elevated) hover:border-(--border-accent)'
+                    ].join(' ')}
                   >
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className={titleColor}>{zone.label}</span>
@@ -332,17 +347,49 @@ function ProbeCard({ probe }: Props) {
 
       {/* Telemetry during scan */}
       {isScanning && zoneDef && (
-        <div className="flex items-center justify-between text-[11px] font-mono text-(--text-secondary) pt-1 border-t border-(--border-default)/50">
-          <span>
-            Yield: {Math.floor(zoneDef.dustYieldMin * scanDustMult)}-
-            {Math.floor(zoneDef.dustYieldMax * scanDustMult)} Dust
-          </span>
-          {scanRelicChance > 0 && (
-            <span className="text-(--text-accent)">
-              {Math.round(scanRelicChance * 100)}% Relic Probability
+        <div className="flex flex-col gap-1.5 pt-1 border-t border-(--border-default)/50 font-mono">
+          <div className="flex items-center justify-between text-[11px] text-(--text-secondary) flex-wrap gap-1">
+            <span>
+              Yield: {Math.floor(zoneDef.dustYieldMin * scanDustMult)}-
+              {Math.floor(zoneDef.dustYieldMax * scanDustMult)} Dust
             </span>
+            {scanRelicChance > 0 && (
+              <span className="text-(--text-accent)">
+                {Math.round(scanRelicChance * 100)}% Relic Probability
+              </span>
+            )}
+            <span>Success: {Math.round(scanSuccessRate * 100)}%</span>
+          </div>
+          {!excavationDisabled && (
+            <div className="flex items-center justify-end gap-1.5">
+              {confirmRecall ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setConfirmRecall(false)
+                      recallProbe(probe.id)
+                    }}
+                    className="px-2 py-0.5 text-[10px] font-bold uppercase rounded border border-red-500 bg-red-500 text-black cursor-pointer"
+                  >
+                    Confirm Recall (Forfeit Scan)
+                  </button>
+                  <button
+                    onClick={() => setConfirmRecall(false)}
+                    className="px-2 py-0.5 text-[10px] font-bold rounded border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setConfirmRecall(true)}
+                  className="px-2 py-0.5 text-[10px] font-bold uppercase rounded border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 cursor-pointer"
+                >
+                  Recall Probe
+                </button>
+              )}
+            </div>
           )}
-          <span>Success: {Math.round(scanSuccessRate * 100)}%</span>
         </div>
       )}
     </div>

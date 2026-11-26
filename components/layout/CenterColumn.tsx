@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import ArkalonSphere, {
   CORE_STAGE_LABELS,
@@ -54,6 +55,7 @@ function AnomalyStatusPip() {
 }
 
 export function ParticleColliderButton() {
+  const [confirmFire, setConfirmFire] = useState(false)
   const dust = useGameStore((s) => s.artifactDust)
   const anomaliesUnlocked = useGameStore((s) => s.unlocks.anomalies)
   const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
@@ -62,13 +64,46 @@ export function ParticleColliderButton() {
   )
   const colliderCost = useGameStore(getColliderCost)
 
+  const canSynthesize = !activeAnomaly && dust >= colliderCost
+
+  useEffect(() => {
+    if (!confirmFire) return
+    if (!canSynthesize) {
+      setConfirmFire(false)
+      return
+    }
+    const timer = setTimeout(() => setConfirmFire(false), 4000)
+    return () => clearTimeout(timer)
+  }, [confirmFire, canSynthesize])
+
   if (!anomaliesUnlocked || anomaliesDisabled) return null
 
-  const canSynthesize = !activeAnomaly && dust >= colliderCost
+  if (confirmFire && canSynthesize) {
+    return (
+      <div className="col-span-2 w-full flex items-center gap-1.5 font-mono">
+        <button
+          onClick={() => {
+            setConfirmFire(false)
+            synthesizeAnomaly()
+          }}
+          className="flex-1 py-1.5 px-2.5 text-[11px] font-bold rounded-lg border border-cyan-400 bg-cyan-400 text-[#080c14] hover:brightness-110 uppercase tracking-wider cursor-pointer"
+        >
+          Confirm Ignition (-{colliderCost.toLocaleString()} Dust)
+        </button>
+        <button
+          onClick={() => setConfirmFire(false)}
+          className="px-2.5 py-1.5 text-[11px] font-bold rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) cursor-pointer"
+          aria-label="Cancel ignition"
+        >
+          ✕
+        </button>
+      </div>
+    )
+  }
 
   return (
     <button
-      onClick={() => synthesizeAnomaly()}
+      onClick={() => setConfirmFire(true)}
       disabled={!canSynthesize}
       title={`Synthesize an immediate anomaly event using ${colliderCost.toLocaleString()} Artifact Dust`}
       className={[
@@ -92,18 +127,15 @@ export default function CenterColumn() {
   const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
   const probeCount = useGameStore((s) => s.probes.length)
   const prestige1Done = useGameStore((s) => s.stats.totalPrestigesTier1 > 0)
-  const peakLifetime = useGameStore(
-    (s) => s.stats.peakLifetimePoints ?? s.lifetimePoints
-  )
-  const totalPrestiges = useGameStore(
-    (s) =>
+  const coreStage = useGameStore((s) =>
+    getArkalonCoreStage(
+      s.stats.peakLifetimePoints ?? s.lifetimePoints,
       s.stats.totalPrestigesTier1 +
-      s.stats.totalPrestigesTier2 +
-      s.stats.totalPrestigesTier3
+        s.stats.totalPrestigesTier2 +
+        s.stats.totalPrestigesTier3
+    )
   )
   const prestigeAnimating = useUIStore((s) => s.prestigeAnimating)
-
-  const coreStage = getArkalonCoreStage(peakLifetime, totalPrestiges)
 
   const lines = useUIStore((s) => s.terminalLines)
 

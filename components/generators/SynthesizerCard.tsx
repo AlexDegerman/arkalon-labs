@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { buySynthesizer } from '@/app/stores/actions/synthesizerActions'
 import {
@@ -130,15 +130,22 @@ function SynthesizerCard({ synthesizerIndex, bulkAmount }: Props) {
     )
   )
 
-  const maxUnits = useGameStore(
-    useCallback(
-      (s) =>
-        bulkAmount === 'max'
-          ? getSynthesizerMaxAffordable(synthesizerIndex, s)
-          : 0,
-      [synthesizerIndex, bulkAmount]
-    )
-  )
+  const [maxUnits, setMaxUnits] = useState(0)
+
+  useEffect(() => {
+    if (bulkAmount !== 'max' || !unlocked) {
+      setMaxUnits(0)
+      return
+    }
+    const update = () => {
+      setMaxUnits(
+        getSynthesizerMaxAffordable(synthesizerIndex, useGameStore.getState())
+      )
+    }
+    update()
+    const timer = setInterval(update, 500)
+    return () => clearInterval(timer)
+  }, [synthesizerIndex, bulkAmount, unlocked, quantity])
 
   const buyCount =
     bulkAmount === 'max'
@@ -147,19 +154,19 @@ function SynthesizerCard({ synthesizerIndex, bulkAmount }: Props) {
         ? 1
         : bulkAmount
 
-  const cost = useGameStore(
-    useCallback(
-      (s) => {
-        const qty = s.synthesizers?.[synthesizerIndex] ?? 0
-        return bulkAmount === 1
-          ? getSynthesizerCost(synthesizerIndex, qty)
-          : getSynthesizerCostToBuyN(synthesizerIndex, buyCount, qty)
-      },
-      [synthesizerIndex, bulkAmount, buyCount]
-    )
+  const cost = useMemo(
+    () =>
+      bulkAmount === 1
+        ? getSynthesizerCost(synthesizerIndex, quantity)
+        : getSynthesizerCostToBuyN(synthesizerIndex, buyCount, quantity),
+    [synthesizerIndex, bulkAmount, buyCount, quantity]
   )
 
-  const affordable = useGameStore((s) => unlocked && s.researchPoints >= cost)
+  const affordable = useGameStore(
+    (s) =>
+      unlocked &&
+      (bulkAmount === 'max' ? maxUnits > 0 : s.researchPoints >= cost)
+  )
 
   if (!def) return null
 

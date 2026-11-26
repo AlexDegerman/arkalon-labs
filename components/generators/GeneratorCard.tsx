@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useState, useCallback } from 'react'
+import { memo, useEffect, useMemo, useState, useCallback } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useGameStore } from '@/app/stores/gameStore'
 import { buyGenerator } from '@/app/stores/actions/generatorActions'
@@ -111,31 +111,62 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
 
   const toMilestoneCount = Math.max(1, milestoneInfo.next - Number(quantity))
 
+  const buyCount =
+    bulkAmount === 'max'
+      ? Math.max(1, maxUnits)
+      : bulkAmount === 'milestone'
+        ? toMilestoneCount
+        : bulkAmount
+
+  const costReductionLevel = useGameStore(
+    (s) => s.generators[generatorIndex]?.costReductionLevel ?? 0
+  )
+  const aiQuantity = useGameStore((s) => s.generators[6]?.quantity ?? 0n)
+  const completedNodes = useGameStore((s) => s.completedResearchNodes)
+  const challengeRecords = useGameStore((s) => s.challengeRecords)
+  const dimTranscendence = useGameStore(
+    (s) => s.osUpgrades.dimensional_transcendence
+  )
+  const relicSlots = useGameStore((s) => s.relicSlots)
+  const relicLevels = useGameStore((s) => s.relicLevels)
+  const relicResonance = useGameStore((s) => s.arUpgrades.relic_resonance)
+  const relicPreservation = useGameStore((s) => s.cfUpgrades.relic_preservation)
+  const activeChallengeId = useGameStore((s) => s.activeChallengeId)
+
+  const cost = useMemo(() => {
+    const s = useGameStore.getState()
+    return buyCount === 1
+      ? nextCost(generatorIndex, s)
+      : costToBuyN(generatorIndex, buyCount, s)
+  }, [
+    generatorIndex,
+    buyCount,
+    quantity,
+    costReductionLevel,
+    aiQuantity,
+    completedNodes,
+    challengeRecords,
+    dimTranscendence,
+    relicSlots,
+    relicLevels,
+    relicResonance,
+    relicPreservation,
+    activeChallengeId,
+    activeRestrictions
+  ])
+
+  const maxQty = activeRestrictions?.maxGeneratorQuantity
+  const atQtyCap = maxQty !== null && maxQty !== undefined && quantity >= maxQty
+  const exceedsQtyCap =
+    bulkAmount !== 'max' &&
+    maxQty !== null &&
+    maxQty !== undefined &&
+    quantity + BigInt(buyCount) > maxQty
+
   const fixedAffordable = useGameStore(
     useCallback(
-      (s) => {
-        const maxQty = s.activeChallengeRestrictions?.maxGeneratorQuantity
-        const curQty = s.generators[generatorIndex]?.quantity ?? 0n
-        if (maxQty !== null && maxQty !== undefined && curQty >= maxQty) {
-          return false
-        }
-        if (bulkAmount === 'max') return true
-        if (s.researchPoints <= 0n) return false
-        const count = bulkAmount === 'milestone' ? toMilestoneCount : bulkAmount
-        if (
-          maxQty !== null &&
-          maxQty !== undefined &&
-          curQty + BigInt(count) > maxQty
-        ) {
-          return false
-        }
-        const c =
-          count === 1
-            ? nextCost(generatorIndex, s)
-            : costToBuyN(generatorIndex, count, s)
-        return s.researchPoints >= c
-      },
-      [generatorIndex, bulkAmount, toMilestoneCount]
+      (s) => !atQtyCap && !exceedsQtyCap && s.researchPoints >= cost,
+      [atQtyCap, exceedsQtyCap, cost]
     )
   )
 
@@ -158,23 +189,6 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
         return s.researchPoints < threshold
       },
       [generatorIndex]
-    )
-  )
-
-  const buyCount =
-    bulkAmount === 'max'
-      ? Math.max(1, maxUnits)
-      : bulkAmount === 'milestone'
-        ? toMilestoneCount
-        : bulkAmount
-
-  const cost = useGameStore(
-    useCallback(
-      (s) =>
-        buyCount === 1
-          ? nextCost(generatorIndex, s)
-          : costToBuyN(generatorIndex, buyCount, s),
-      [generatorIndex, buyCount]
     )
   )
 

@@ -84,6 +84,59 @@ export function launchProbe(
   if (!silent) playSound('probe')
 }
 
+export function launchAllIdleProbes(
+  zone: ExcavationZone,
+  subsystem: ProbeSubsystem = 'none'
+): void {
+  const store = useGameStore.getState()
+  if (store.activeChallengeRestrictions?.excavationDisabled) return
+  if (!isZoneUnlocked(zone, store)) return
+
+  const hasIdle = store.probes.some((p) => p.status === 'idle')
+  if (!hasIdle) return
+
+  const speedBonus = getSynthesizerRates(store).probeSpeedBonus
+  const duration = getScanDuration(zone, subsystem, speedBonus)
+
+  useGameStore.setState((s) => ({
+    probes: s.probes.map((p) =>
+      p.status === 'idle'
+        ? {
+            ...p,
+            status: 'scanning' as const,
+            zone,
+            subsystem,
+            timerRemaining: duration,
+            scanDuration: duration
+          }
+        : p
+    )
+  }))
+  playSound('probe')
+}
+
+export function recallProbe(probeId: number): void {
+  const store = useGameStore.getState()
+  if (store.activeChallengeRestrictions?.excavationDisabled) return
+  const probe = store.probes.find((p) => p.id === probeId)
+  if (!probe || probe.status !== 'scanning') return
+
+  useGameStore.setState((s) => ({
+    probes: s.probes.map((p) =>
+      p.id === probeId
+        ? {
+            ...p,
+            status: 'idle' as const,
+            zone: null,
+            timerRemaining: 0,
+            scanDuration: undefined
+          }
+        : p
+    )
+  }))
+  playSound('fail')
+}
+
 // Processes probe completions - called from tick when timerRemaining hits 0
 export function processProbeCompletions(): void {
   const store = useGameStore.getState()
@@ -121,15 +174,29 @@ export function processProbeCompletions(): void {
   let shouldIgniteAnomaly = false
   let pityIncrement = 0
   const currentRelic9Pity = store.stats.relic9PityCount ?? 0
+  const unlockedSet = new Set(store.unlockedRelics)
   const newRelics: number[] = []
-  const updatedProbes = [...store.probes]
+  const updatedProbes = store.probes.map((p) =>
+    p.status === 'repairing' && p.repairTimerRemaining <= 0
+      ? {
+          ...p,
+          status: 'idle' as const,
+          zone: null,
+          repairTimerRemaining: 0
+        }
+      : p
+  )
 
   for (const probe of completedProbes) {
     const isRiskZone = probe.zone !== null && probe.zone !== 'safe'
-    if (isRiskZone && !store.unlockedRelics.includes(9)) {
+    if (isRiskZone && !unlockedSet.has(9)) {
       pityIncrement++
     }
-    const result = rollProbeResult(probe, store, speedBonus)
+    const result = rollProbeResult(
+      probe,
+      { ...store, unlockedRelics: Array.from(unlockedSet) },
+      speedBonus
+    )
     const idx = updatedProbes.findIndex((p) => p.id === probe.id)
     if (idx === -1) continue
 
@@ -143,20 +210,19 @@ export function processProbeCompletions(): void {
     }
     if (result.triggerAnomaly) shouldIgniteAnomaly = true
 
-    if (
-      result.relicDropped > 0 &&
-      !store.unlockedRelics.includes(result.relicDropped)
-    ) {
+    if (result.relicDropped > 0 && !unlockedSet.has(result.relicDropped)) {
+      unlockedSet.add(result.relicDropped)
       newRelics.push(result.relicDropped)
     }
 
     // Deterministic pity for Void Compass (Relic 9) by 8th risk-zone scan
     if (
       isRiskZone &&
-      !store.unlockedRelics.includes(9) &&
+      !unlockedSet.has(9) &&
       !newRelics.includes(9) &&
       currentRelic9Pity + pityIncrement >= 8
     ) {
+      unlockedSet.add(9)
       newRelics.push(9)
     }
 

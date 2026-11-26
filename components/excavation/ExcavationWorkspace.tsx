@@ -6,18 +6,19 @@ import ProbeCard from '@/components/excavation/ProbeCard'
 
 function SectorStarmap() {
   const probes = useGameStore((s) => s.probes)
-  const lifetimePoints = useGameStore((s) => s.lifetimePoints)
-  const stats = useGameStore((s) => s.stats)
+  const singUnlocked = useGameStore(
+    (s) =>
+      (s.stats?.totalPrestigesTier2 ?? 0) > 0 ||
+      (s.stats?.peakLifetimePoints ?? s.lifetimePoints) >= 10n ** 35n
+  )
+  const omegaUnlocked = useGameStore(
+    (s) =>
+      (s.stats?.totalPrestigesTier3 ?? 0) > 0 ||
+      (s.stats?.peakLifetimePoints ?? s.lifetimePoints) >= 10n ** 85n
+  )
 
   const countZone = (z: string) =>
     probes.filter((p) => p.zone === z && p.status === 'scanning').length
-
-  const singUnlocked =
-    (stats?.totalPrestigesTier2 ?? 0) > 0 ||
-    (stats?.peakLifetimePoints ?? lifetimePoints) >= 10n ** 35n
-  const omegaUnlocked =
-    (stats?.totalPrestigesTier3 ?? 0) > 0 ||
-    (stats?.peakLifetimePoints ?? lifetimePoints) >= 10n ** 85n
 
   return (
     <div className="@container card rounded-xl p-2.5 bg-(--bg-surface) border border-cyan-400/40 shadow-[0_0_15px_rgba(0,240,255,0.08)] flex flex-col gap-2 font-mono">
@@ -133,9 +134,18 @@ export default function ExcavationWorkspace() {
   const probes = useGameStore((s) => s.probes)
   const hasRelic9 = useGameStore((s) => s.unlockedRelics.includes(9))
   const relic9Pity = useGameStore((s) => s.stats.relic9PityCount ?? 0)
+  const excavationDisabled = useGameStore(
+    (s) => s.activeChallengeRestrictions?.excavationDisabled ?? false
+  )
 
   return (
     <div className="flex flex-col gap-2 p-2 sm:p-3 h-full overflow-y-auto scrollbar-dark bg-(--bg-primary)/40">
+      {excavationDisabled && (
+        <div className="p-2.5 rounded-xl border border-amber-500/50 bg-amber-500/10 font-mono text-xs text-amber-300">
+          ⚠️ Sub-Space Excavation Offline. Disabled by active challenge
+          constraints.
+        </div>
+      )}
       <SectorStarmap />
       {!hasRelic9 && (
         <div className="px-2.5 py-1.5 rounded-xl border border-cyan-400/30 bg-cyan-950/20 font-mono text-[10px] text-cyan-200 flex items-center justify-between gap-2">

@@ -37,19 +37,16 @@ function ArkalonTerminalMobile() {
 
 function MobileArkalonTab() {
   const activeAnomaly = useGameStore((s) => s.activeAnomalyType)
-  const peakLifetime = useGameStore(
-    (s) => s.stats.peakLifetimePoints ?? s.lifetimePoints
-  )
-  const totalPrestiges = useGameStore(
-    (s) =>
+  const coreStage = useGameStore((s) =>
+    getArkalonCoreStage(
+      s.stats.peakLifetimePoints ?? s.lifetimePoints,
       s.stats.totalPrestigesTier1 +
-      s.stats.totalPrestigesTier2 +
-      s.stats.totalPrestigesTier3
+        s.stats.totalPrestigesTier2 +
+        s.stats.totalPrestigesTier3
+    )
   )
   const prestigeAnimating = useUIStore((s) => s.prestigeAnimating)
-
-  const coreStage = getArkalonCoreStage(peakLifetime, totalPrestiges)
-
+  
   const sphereState = prestigeAnimating
     ? ('prestige' as const)
     : activeAnomaly

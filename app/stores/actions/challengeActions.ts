@@ -39,6 +39,7 @@ function buildPreChallengeSnapshot(state: GameState): PreChallengeSnapshot {
       synergyLevel: g.synergyLevel
     })),
     synthesizers: [...(state.synthesizers ?? [0, 0, 0, 0])],
+    probes: state.probes.map((p) => ({ ...p })),
     completedResearchNodes: [...state.completedResearchNodes],
     activeResearchSlots: state.activeResearchSlots.map((s) => ({ ...s })),
     researchQueue: [...state.researchQueue],
@@ -80,6 +81,9 @@ function restoreRunFromSnapshot(
     synthesizers: freshStore.synthesizers.map(
       (_, i) => snapshot.synthesizers?.[i] ?? 0
     ),
+    ...(snapshot.probes
+      ? { probes: snapshot.probes.map((p) => ({ ...p })) }
+      : {}),
     completedResearchNodes: snapshot.completedResearchNodes ?? [],
     activeResearchSlots: snapshot.activeResearchSlots ?? [
       { nodeId: null, timerRemaining: 0 }
@@ -167,6 +171,7 @@ export function enterChallenge(challengeId: string): void {
       ? { researchPoints: bootstrapRP, lifetimePoints: bootstrapRP }
       : {}),
     completedResearchNodes: initialCompletedNodes,
+    probes: [],
     settings: s.settings,
     achievements: s.achievements,
     unlockedRelics: s.unlockedRelics,
@@ -256,6 +261,7 @@ export function enterSandboxChallenge(
       ? { researchPoints: bootstrapRP, lifetimePoints: bootstrapRP }
       : {}),
     completedResearchNodes: initialCompletedNodes,
+    probes: [],
     settings: s.settings,
     achievements: s.achievements,
     unlockedRelics: s.unlockedRelics,
