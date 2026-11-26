@@ -140,7 +140,7 @@ const DEFAULT_SETTINGS: SettingsState = {
   volumeMusic: 0.4,
   volumeSFX: 0.6,
   volumeVoice: 0.8,
-  voiceEnabled: false,
+  voiceEnabled: true,
   currentUITheme: 'default',
   notationMode: 'suffix',
   neonBloom: true,

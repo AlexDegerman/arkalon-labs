@@ -714,6 +714,7 @@ export function deserialiseState(raw: unknown): GameState {
     settings: {
       ...initial.settings,
       ...(s.settings ?? {}),
+      voiceEnabled: s.settings?.voiceEnabled ?? true,
       neonBloom: s.settings?.neonBloom ?? true,
       crtScanlines: s.settings?.crtScanlines ?? false,
       reducedMotion: s.settings?.reducedMotion ?? false
