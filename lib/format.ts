@@ -110,7 +110,7 @@ function formatSuffix(value: bigint): string {
     const [min, label] = STANDARD_NAMED_TIERS[i]
     if (value >= min) {
       const whole = value / min
-      if (whole >= 1_000_000n) return formatScientific(value)
+      if (whole >= 1_000n) return formatScientific(value)
       const remainder = value % min
       const fraction = (remainder * 10n ** BigInt(DECIMAL_PRECISION)) / min
       const fracStr = fraction.toString().padStart(DECIMAL_PRECISION, '0')
@@ -191,7 +191,7 @@ export function formatPointsShort(value: bigint): string {
     const [threshold, symbol] = COMPACT_TIERS[i]
     if (value >= threshold) {
       const whole = value / threshold
-      if (whole >= 1_000_000n) return formatScientific(value)
+      if (whole >= 1_000n) return formatScientific(value)
       const remainder = value % threshold
       const fraction =
         (remainder * 10n ** BigInt(DECIMAL_PRECISION)) / threshold
@@ -215,7 +215,7 @@ export function formatPointsCompact(value: bigint): string {
     if (value >= threshold) {
       const whole = value / threshold
       // No decimal when whole part is 100+ (e.g. "123Qg", "500Vg")
-      if (whole >= 1_000_000n) return formatScientific(value)
+      if (whole >= 1_000n) return formatScientific(value)
       if (whole >= 100n) return `${whole}${symbol}`
       // One decimal place for values under 100x the threshold
       const unit = threshold / 10n

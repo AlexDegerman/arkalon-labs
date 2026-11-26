@@ -34,6 +34,24 @@ import {
   getCompactAnomalyReward
 } from '@/components/ui/AnomalyOverlay'
 import { getAnomalyBuffScale } from '@/lib/anomalyDefs'
+
+// Mono advance is ~0.6em; reserve covers the trailing RP label
+const RP_FIT_TIERS = [
+  { cls: 'text-5xl', px: 48 },
+  { cls: 'text-4xl', px: 36 },
+  { cls: 'text-3xl', px: 30 },
+  { cls: 'text-2xl', px: 24 },
+  { cls: 'text-xl', px: 20 },
+  { cls: 'text-lg', px: 18 },
+  { cls: 'text-base', px: 16 }
+] as const
+
+const RP_LABEL_RESERVE_PX = 26
+
+function rpFitWidth(len: number, px: number): number {
+  return len * px * 0.6 + RP_LABEL_RESERVE_PX
+}
+
 function ChallengeTargetHUD({
   challengeId,
   completedTiers,
@@ -111,6 +129,21 @@ export default function RPBanner() {
   const isCompact = useIsCompactViewport()
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [confirmAbandon, setConfirmAbandon] = useState(false)
+  const [fitEl, setFitEl] = useState<HTMLSpanElement | null>(null)
+  const [fitWidth, setFitWidth] = useState(0)
+
+  useEffect(() => {
+    if (!fitEl) return
+    const sync = () => setFitWidth(fitEl.clientWidth)
+    sync()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', sync)
+      return () => window.removeEventListener('resize', sync)
+    }
+    const ro = new ResizeObserver(sync)
+    ro.observe(fitEl)
+    return () => ro.disconnect()
+  }, [fitEl])
 
   useEffect(() => {
     if (!showBreakdown) return
@@ -215,11 +248,26 @@ export default function RPBanner() {
     return () => clearInterval(timer)
   }, [showBreakdown])
 
+  const fullText = initialized ? formatPoints(researchPoints) : '0'
+  const shortText = initialized ? formatPointsShort(researchPoints) : '0'
+  const fitAvail = fitWidth || (isCompact ? 320 : 900)
+  const fullTier = RP_FIT_TIERS.find(
+    (t) => rpFitWidth(fullText.length, t.px) <= fitAvail
+  )
+  const shortTier = RP_FIT_TIERS.find(
+    (t) => rpFitWidth(shortText.length, t.px) <= fitAvail
+  )
+  const lastTier = RP_FIT_TIERS[RP_FIT_TIERS.length - 1]
+  const valueTier = isCompact
+    ? (shortTier ?? lastTier)
+    : (fullTier ?? shortTier ?? lastTier)
+  const valueCompact = isCompact || !fullTier
+
   return (
     <div className="px-3 sm:px-4 py-1.5 sm:py-2.5 border-b border-(--border-default) bg-(--bg-surface)/95 backdrop-blur-md shrink-0 relative">
       {/* Main RP display */}
       <TutorialHighlight targetId="rp-banner">
-        <div className="flex items-center justify-between sm:justify-start gap-x-3 gap-y-1.5 flex-wrap relative">
+        <div className="flex items-center gap-2 sm:gap-3 flex-nowrap relative">
           <div
             onClick={() => initialized && setShowBreakdown((prev) => !prev)}
             onKeyDown={(e) => {
@@ -231,11 +279,20 @@ export default function RPBanner() {
             role="button"
             tabIndex={0}
             title="Click or tap to view production breakdown"
-            className="flex items-baseline gap-1.5 min-w-0 cursor-pointer group select-none"
+            className="flex items-baseline gap-1.5 flex-1 min-w-0 cursor-pointer group select-none"
           >
-            <span className="text-2xl min-[360px]:text-3xl sm:text-4xl xl:text-5xl font-black font-mono leading-none tracking-tight whitespace-nowrap group-hover:brightness-125 transition-all">
+            <span
+              ref={setFitEl}
+              className={[
+                valueTier.cls,
+                'block flex-1 min-w-0 truncate font-black font-mono leading-none tracking-tight whitespace-nowrap group-hover:brightness-125 transition-all'
+              ].join(' ')}
+            >
               {initialized ? (
-                <AnimatedRPValue value={researchPoints} compact={isCompact} />
+                <AnimatedRPValue
+                  value={researchPoints}
+                  compact={valueCompact}
+                />
               ) : (
                 <span className="text-(--text-secondary)">...</span>
               )}
@@ -244,15 +301,14 @@ export default function RPBanner() {
               </span>
             </span>
             {initialized && (
-              <span className="hidden sm:inline text-[10px] font-mono text-(--text-secondary)/60 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="hidden sm:inline shrink-0 text-[10px] font-mono text-(--text-secondary)/60 opacity-0 group-hover:opacity-100 transition-opacity">
                 [Diagnostic]
               </span>
             )}
           </div>
-
           <div
             className={[
-              'flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 transition-all duration-300',
+              'flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 whitespace-nowrap transition-all duration-300',
               anomalyTheme
                 ? `${anomalyTheme.borderColor} ${anomalyTheme.accentBg}`
                 : 'border-(--border-accent)/30 bg-(--border-accent)/10'
@@ -283,7 +339,7 @@ export default function RPBanner() {
             </span>
             {initialized && activeAnomalyType && anomalyTheme && (
               <span
-                className={`text-[9px] font-mono font-black ${anomalyTheme.textClass}`}
+                className={`hidden min-[400px]:inline text-[9px] font-mono font-black ${anomalyTheme.textClass}`}
               >
                 {getCompactAnomalyReward(activeAnomalyType, anomalyBuffScale)}
               </span>

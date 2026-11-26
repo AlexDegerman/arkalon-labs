@@ -268,6 +268,14 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
       {/* Middle: Name, Cost, Milestones & Yield */}
       <div className="flex-1 min-w-0 flex flex-col gap-0.5">
         <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            title={`Buy hotkey: ${generatorIndex >= 10 ? 'Shift+' : ''}${
+              generatorIndex % 10 === 9 ? '0' : (generatorIndex % 10) + 1
+            }`}
+            className="text-[9px] font-mono font-black px-1 py-0.2 rounded border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) shrink-0"
+          >
+            #{String(generatorIndex + 1).padStart(2, '0')}
+          </span>
           <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
             {def.name}
           </span>

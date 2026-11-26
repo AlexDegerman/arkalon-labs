@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import GeneratorCard from '@/components/generators/GeneratorCard'
@@ -25,6 +25,38 @@ const SORT_LABELS: Record<'tier_asc' | 'tier_desc' | 'yield_desc', string> = {
   tier_asc: '↕ 1→20',
   tier_desc: '↕ 20→1',
   yield_desc: '↕ Yield%'
+}
+
+const YIELD_SWAP_THRESHOLD_PP = 2
+
+// Near-tied yields keep their previous order so auto-buy cannot shuffle cards mid-click
+function orderYieldWithHysteresis(
+  indices: number[],
+  shares: number[] | undefined,
+  prevOrder: number[]
+): number[] {
+  const share = (i: number) => shares?.[i] ?? 0
+  const sorted = [...indices].sort((a, b) => {
+    const diff = share(b) - share(a)
+    return diff !== 0 ? diff : b - a
+  })
+  if (prevOrder.length === 0) return sorted
+  const prevRank = new Map(prevOrder.map((id, i) => [id, i]))
+  const result = [...sorted]
+  for (let i = 0; i < result.length; i++) {
+    for (let j = result.length - 1; j > i; j--) {
+      const a = result[j - 1]
+      const b = result[j]
+      const ra = prevRank.get(a)
+      const rb = prevRank.get(b)
+      if (ra === undefined || rb === undefined) continue
+      if (ra > rb && Math.abs(share(a) - share(b)) < YIELD_SWAP_THRESHOLD_PP) {
+        result[j - 1] = b
+        result[j] = a
+      }
+    }
+  }
+  return result
 }
 
 export default function GeneratorList() {
@@ -66,6 +98,19 @@ export default function GeneratorList() {
     } catch {}
   }, [setGeneratorSort])
 
+  const lastPrestigeTime = useGameStore((s) => s.stats.lastPrestigeTime)
+  const prevPrestigeRef = useRef<number | null>(null)
+  
+  useEffect(() => {
+    if (!initialized) return
+    const prev = prevPrestigeRef.current
+    prevPrestigeRef.current = lastPrestigeTime
+    if (prev === null || lastPrestigeTime <= prev) return
+    if (useUIStore.getState().generatorSort === 'tier_desc') {
+      setGeneratorSort('tier_asc')
+    }
+  }, [initialized, lastPrestigeTime, setGeneratorSort])
+
   useEffect(() => {
     const handleCycle = () => {
       const prev = useUIStore.getState().bulkAmount
@@ -86,6 +131,8 @@ export default function GeneratorList() {
     })
   }
 
+  const yieldOrderRef = useRef<number[]>([])
+
   const visibleIndices = useMemo(() => {
     const base = GENERATORS.map((_, index) => index).filter((index) =>
       checkGeneratorVisible(index, {
@@ -98,13 +145,20 @@ export default function GeneratorList() {
       return [...base].reverse()
     }
     if (generatorSort === 'yield_desc') {
-      return [...base].sort((a, b) => {
-        const diff = (productionShares?.[b] ?? 0) - (productionShares?.[a] ?? 0)
-        return diff !== 0 ? diff : b - a
-      })
+      return orderYieldWithHysteresis(
+        base,
+        productionShares,
+        yieldOrderRef.current
+      )
     }
     return base
   }, [generators, maxGeneratorTier, generatorSort, productionShares])
+
+  useEffect(() => {
+    if (generatorSort === 'yield_desc') {
+      yieldOrderRef.current = visibleIndices
+    }
+  }, [visibleIndices, generatorSort])
 
   const nextHidden = GENERATORS.findIndex(
     (_, index) =>
