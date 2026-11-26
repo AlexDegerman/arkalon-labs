@@ -18,7 +18,6 @@ const BULK_LABELS: Record<string | number, string> = {
   1: 'x1',
   10: 'x10',
   100: 'x100',
-  milestone: 'NEXT',
   max: 'MAX'
 }
 
@@ -71,15 +70,7 @@ export default function GeneratorList() {
     const handleCycle = () => {
       const prev = useUIStore.getState().bulkAmount
       const next: BulkBuyAmount =
-        prev === 1
-          ? 10
-          : prev === 10
-            ? 100
-            : prev === 100
-              ? 'milestone'
-              : prev === 'milestone'
-                ? 'max'
-                : 1
+        prev === 1 ? 10 : prev === 10 ? 100 : prev === 100 ? 'max' : 1
       setBulkAmount(next)
     }
     window.addEventListener('cycle-bulk-buy', handleCycle)
@@ -229,26 +220,24 @@ export default function GeneratorList() {
             </span>
           )}
           <div className="flex items-center gap-0.5 sm:gap-1 p-0.5 rounded-lg border border-(--border-default) bg-(--bg-elevated)">
-            {([...BULK_BUY_OPTIONS, 'milestone', 'max'] as BulkBuyAmount[]).map(
-              (opt) => (
-                <button
-                  key={String(opt)}
-                  onClick={() => {
-                    playSound('click')
-                    setBulkAmount(opt)
-                  }}
-                  className={[
-                    'px-1.5 sm:px-2.5 py-1 text-[11px] sm:text-xs font-mono font-bold rounded transition-all cursor-pointer select-none',
-                    bulkAmount === opt
-                      ? 'bg-(--border-accent) text-[#080c14] shadow-[0_0_10px_rgba(0,240,255,0.4)]'
-                      : 'text-(--text-secondary) hover:text-(--text-primary)'
-                  ].join(' ')}
-                  aria-pressed={bulkAmount === opt}
-                >
-                  {BULK_LABELS[String(opt)]}
-                </button>
-              )
-            )}
+            {([...BULK_BUY_OPTIONS, 'max'] as BulkBuyAmount[]).map((opt) => (
+              <button
+                key={String(opt)}
+                onClick={() => {
+                  playSound('click')
+                  setBulkAmount(opt)
+                }}
+                className={[
+                  'px-1.5 sm:px-2.5 py-1 text-[11px] sm:text-xs font-mono font-bold rounded transition-all cursor-pointer select-none',
+                  bulkAmount === opt
+                    ? 'bg-(--border-accent) text-[#080c14] shadow-[0_0_10px_rgba(0,240,255,0.4)]'
+                    : 'text-(--text-secondary) hover:text-(--text-primary)'
+                ].join(' ')}
+                aria-pressed={bulkAmount === opt}
+              >
+                {BULK_LABELS[String(opt)]}
+              </button>
+            ))}
           </div>
         </div>
       </div>

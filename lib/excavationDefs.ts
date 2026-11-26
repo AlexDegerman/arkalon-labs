@@ -283,11 +283,19 @@ export function getMaxProbes(
   return max
 }
 
+const PROBE_COSTS: readonly bigint[] = [
+  PROBE_COST_RP,
+  250_000n,
+  5_000_000n,
+  100_000_000n,
+  2_500_000_000n,
+  10n ** 36n,
+  10n ** 86n,
+  10n ** 142n
+]
+
 export function getProbeCost(currentProbeCount: number): bigint {
-  if (currentProbeCount < 5) return PROBE_COST_RP
-  if (currentProbeCount === 5) return 10n ** 36n
-  if (currentProbeCount === 6) return 10n ** 86n
-  return 10n ** 142n
+  return PROBE_COSTS[currentProbeCount] ?? 10n ** 142n
 }
 
 // Returns true if the player meets the gate requirements to build a probe

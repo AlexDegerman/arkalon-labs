@@ -147,12 +147,7 @@ function SynthesizerCard({ synthesizerIndex, bulkAmount }: Props) {
     return () => clearInterval(timer)
   }, [synthesizerIndex, bulkAmount, unlocked, quantity])
 
-  const buyCount =
-    bulkAmount === 'max'
-      ? Math.max(1, maxUnits)
-      : bulkAmount === 'milestone'
-        ? 1
-        : bulkAmount
+  const buyCount = bulkAmount === 'max' ? Math.max(1, maxUnits) : bulkAmount
 
   const cost = useMemo(
     () =>
@@ -279,18 +274,11 @@ function SynthesizerCard({ synthesizerIndex, bulkAmount }: Props) {
         <BuyButton
           cost={cost}
           canAfford={affordable}
-          onClick={() =>
-            buySynthesizer(
-              synthesizerIndex,
-              bulkAmount === 'milestone' ? 1 : bulkAmount
-            )
-          }
+          onClick={() => buySynthesizer(synthesizerIndex, bulkAmount)}
           label={
             bulkAmount === 'max'
               ? `MAX (${maxUnits.toLocaleString()})`
-              : bulkAmount === 'milestone'
-                ? 'x1'
-                : `x${bulkAmount}`
+              : `x${bulkAmount}`
           }
         />
       </div>

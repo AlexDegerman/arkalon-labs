@@ -142,7 +142,7 @@ export const DIALOGUE_LIBRARY: Record<string, string> = {
   research_r3_complete:
     'Metric manipulation successful. Parallel research streams are now possible.',
   research_o1_complete:
-    'Synaptic connection established. I can now guide you more directly.',
+    'Synaptic connection established. Relics & Artifacts and Dust Condensers are now online.',
   research_o10_complete:
     'Synchronicity matrix active. All branches converge. The experiment approaches its conclusion.',
 

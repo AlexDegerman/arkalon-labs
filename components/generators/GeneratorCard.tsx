@@ -109,14 +109,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
     )
   )
 
-  const toMilestoneCount = Math.max(1, milestoneInfo.next - Number(quantity))
-
-  const buyCount =
-    bulkAmount === 'max'
-      ? Math.max(1, maxUnits)
-      : bulkAmount === 'milestone'
-        ? toMilestoneCount
-        : bulkAmount
+  const buyCount = bulkAmount === 'max' ? Math.max(1, maxUnits) : bulkAmount
 
   const costReductionLevel = useGameStore(
     (s) => s.generators[generatorIndex]?.costReductionLevel ?? 0
@@ -445,9 +438,7 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
                   ? maxUnits > 0
                     ? `MAX (${maxUnits.toLocaleString()})`
                     : 'MAX (0)'
-                  : bulkAmount === 'milestone'
-                    ? `NEXT (+${toMilestoneCount})`
-                    : `x${bulkAmount}`
+                  : `x${bulkAmount}`
             }
           />
         </TutorialHighlight>

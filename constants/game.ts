@@ -105,8 +105,8 @@ export const RELIC_SLOT_COUNT_MAX = 6
 
 export const MAX_PROBES = 5
 
-// Probe cost tuned so it's affordable around the time Quantum Computers unlock
-export const PROBE_COST_RP = 1_000_000n
+// Base cost for Probe #1 when Excavation unlocks (25 Server Clusters + 10 Quantum Computers)
+export const PROBE_COST_RP = 25_000n
 
 // Gate: must have 25 Server Clusters AND 10 Quantum Computers
 // Matches the Excavation unlock threshold so players can immediately prep probes
@@ -151,7 +151,4 @@ export const INACTIVE_TAB_THRESHOLD_SECONDS = 1800 // 30 min
 // Bulk buy
 
 export const BULK_BUY_OPTIONS = [1, 10, 100] as const
-export type BulkBuyAmount =
-  | (typeof BULK_BUY_OPTIONS)[number]
-  | 'milestone'
-  | 'max'
+export type BulkBuyAmount = (typeof BULK_BUY_OPTIONS)[number] | 'max'

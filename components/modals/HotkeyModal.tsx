@@ -20,7 +20,7 @@ const SHORTCUT_GROUPS = [
       },
       {
         key: 'B',
-        desc: 'Cycle Purchase Multiplier Mode (x1 → x10 → x100 → NEXT → MAX)'
+        desc: 'Cycle Purchase Multiplier Mode (x1 → x10 → x100 → MAX)'
       }
     ]
   },

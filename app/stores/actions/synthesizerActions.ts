@@ -19,11 +19,7 @@ export function buySynthesizer(index: number, amount: BulkBuyAmount): void {
 
   const currentQty = store.synthesizers[index] ?? 0
   const count =
-    amount === 'max'
-      ? getSynthesizerMaxAffordable(index, store)
-      : amount === 'milestone'
-        ? 1
-        : amount
+    amount === 'max' ? getSynthesizerMaxAffordable(index, store) : amount
 
   if (count <= 0) return
 

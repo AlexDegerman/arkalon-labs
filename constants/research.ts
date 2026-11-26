@@ -378,7 +378,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 2_000n,
     studyTimeSeconds: 30,
     effectDescription:
-      'Unlocks Arkalon telemetry, Relic tab, and awards Relic 1.',
+      "Unlocks Relics & Artifacts, Dust Condensers, and awards Relic 1 (Arkalon's Left Eye).",
     prerequisiteId: null,
     isInfinite: false
   },

@@ -4,7 +4,6 @@ import { useGameStore } from '@/app/stores/gameStore'
 import { useUIStore } from '@/app/stores/uiStore'
 import { GENERATORS } from '@/constants/generators'
 import { costToBuyN, maxAffordable } from '@/lib/generatorCosts'
-import { getNextMilestone } from '@/lib/generatorUtils'
 import {
   getModuleUpgradeCost as getModuleUpgradeCostFn,
   getTrackLevelCap as getTrackLevelCapFn,
@@ -118,9 +117,6 @@ export function buyGenerator(
   let count: number
   if (amount === 'max') {
     count = maxAffordable(generatorIndex, store)
-  } else if (amount === 'milestone') {
-    const mInfo = getNextMilestone(generatorIndex, gen.quantity, store)
-    count = Math.max(1, mInfo.next - Number(gen.quantity))
   } else {
     count = amount
   }
