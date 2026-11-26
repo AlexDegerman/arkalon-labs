@@ -127,23 +127,32 @@ function RelicCard({ relicId }: Props) {
           </div>
         )}
 
-        <div className="flex items-center gap-1 flex-1 min-w-36">
+        <div className="flex items-center gap-1.5 flex-1 min-w-40 justify-end">
           <button
             onClick={() => upgradeRelic(relicId, 1)}
             disabled={!canAffordUpgrade}
             className={[
-              'flex-1 py-1.5 px-2 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap',
+              'flex-1 py-1.5 px-2.5 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap text-center',
               atCap
                 ? 'border-(--status-success)/40 text-(--status-success) bg-(--status-success)/10 cursor-default'
                 : canAffordUpgrade
-                  ? 'border-amber-400 bg-amber-400 text-black hover:brightness-110 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
-                  : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
+                  ? 'border-amber-400/60 bg-amber-400/15 text-amber-300 hover:bg-amber-400 hover:text-[#080c14] shadow-[0_0_12px_rgba(251,191,36,0.2)]'
+                  : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-50'
             ].join(' ')}
           >
-            {atCap ? 'MAX' : `+1 · ${formatPointsShort(BigInt(upgradeCost))}`}
+            {atCap ? (
+              'MAX'
+            ) : (
+              <span>
+                +1 ·{' '}
+                <span className="font-black">
+                  ◆ {formatPointsShort(BigInt(upgradeCost))}
+                </span>
+              </span>
+            )}
           </button>
           {!atCap && (
-            <>
+            <div className="flex items-center gap-0.5 p-0.5 rounded-lg border border-(--border-default) bg-(--bg-elevated) shrink-0">
               <button
                 onClick={() => upgradeRelic(relicId, 10)}
                 disabled={bulk10.levels <= 0}
@@ -153,10 +162,10 @@ function RelicCard({ relicId }: Props) {
                     : 'Not enough Dust'
                 }
                 className={[
-                  'py-1.5 px-2 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none shrink-0',
+                  'py-1 px-1.5 text-[10px] font-mono font-bold uppercase rounded transition-all cursor-pointer select-none',
                   bulk10.levels > 0
-                    ? 'border-amber-400/70 bg-amber-400/15 text-amber-300 hover:bg-amber-400 hover:text-black'
-                    : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-50'
+                    ? 'text-amber-300 hover:bg-amber-400/20 hover:text-amber-200'
+                    : 'text-(--text-secondary)/30 cursor-not-allowed'
                 ].join(' ')}
               >
                 +10
@@ -170,15 +179,15 @@ function RelicCard({ relicId }: Props) {
                     : 'Not enough Dust'
                 }
                 className={[
-                  'py-1.5 px-2 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none shrink-0',
+                  'py-1 px-1.5 text-[10px] font-mono font-bold uppercase rounded transition-all cursor-pointer select-none',
                   bulkMax.levels > 0
-                    ? 'border-amber-400/70 bg-amber-400/15 text-amber-300 hover:bg-amber-400 hover:text-black'
-                    : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-50'
+                    ? 'text-amber-300 hover:bg-amber-400/20 hover:text-amber-200'
+                    : 'text-(--text-secondary)/30 cursor-not-allowed'
                 ].join(' ')}
               >
                 MAX
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>

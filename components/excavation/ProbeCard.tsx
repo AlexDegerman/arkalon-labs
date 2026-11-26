@@ -42,6 +42,7 @@ function ProbeCard({ probe }: Props) {
     (s) => getSynthesizerRates(s).probeSpeedBonus
   )
   const era = useGameStore((s) => getCurrentEra(s.lifetimePoints).era)
+  const voidUnlocked = useGameStore((s) => isZoneUnlocked('void', s))
   const singUnlocked = useGameStore((s) => isZoneUnlocked('singularity', s))
   const omegaUnlocked = useGameStore((s) => isZoneUnlocked('omega', s))
   const dysonSwarmLevel = useGameStore((s) => s.dysonSwarmLevel ?? 0)
@@ -74,8 +75,8 @@ function ProbeCard({ probe }: Props) {
     maxSeenRepairRef.current = probe.repairTimerRemaining
   }
 
-  const minRepair = activeSubsystem === 'shielding' ? 300 : 600
-  const maxRepair = activeSubsystem === 'shielding' ? 900 : 1800
+  const minRepair = activeSubsystem === 'shielding' ? 90 : 180
+  const maxRepair = activeSubsystem === 'shielding' ? 1800 : 3600
   const totalRepairTime =
     probe.repairDuration ??
     (maxSeenRepairRef.current > minRepair ? maxRepair : minRepair)
@@ -199,11 +200,13 @@ function ProbeCard({ probe }: Props) {
             <div className="flex flex-col gap-1.5">
               {ZONE_DEFINITIONS.map((zone) => {
                 const unlocked =
-                  zone.zone === 'singularity'
-                    ? singUnlocked
-                    : zone.zone === 'omega'
-                      ? omegaUnlocked
-                      : true
+                  zone.zone === 'void'
+                    ? voidUnlocked
+                    : zone.zone === 'singularity'
+                      ? singUnlocked
+                      : zone.zone === 'omega'
+                        ? omegaUnlocked
+                        : true
                 if (!unlocked) {
                   return (
                     <div

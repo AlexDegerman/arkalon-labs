@@ -50,6 +50,8 @@ export default function WelcomeModal() {
         const storedVersion = localStorage.getItem(VERSION_KEY)
         if (!storedVersion) {
           setWelcomeModalOpen(true)
+        } else if (storedVersion !== UPDATES_VERSION && setUpdateModalOpen) {
+          setUpdateModalOpen(true)
         }
       })
   }, [setWelcomeModalOpen, setUpdateModalOpen])

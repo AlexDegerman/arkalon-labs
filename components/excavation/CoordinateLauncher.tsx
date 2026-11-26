@@ -30,6 +30,7 @@ export default function CoordinateLauncher() {
   const meetsGate = useGameStore(meetsProbeGateRequirements)
   const maxProbes = useGameStore(getMaxProbes)
   const canBuild = useGameStore(canBuildProbe)
+  const voidUnlocked = useGameStore((s) => isZoneUnlocked('void', s))
   const singUnlocked = useGameStore((s) => isZoneUnlocked('singularity', s))
   const omegaUnlocked = useGameStore((s) => isZoneUnlocked('omega', s))
   const autoLaunchUnlocked = useGameStore(
@@ -94,11 +95,13 @@ export default function CoordinateLauncher() {
           <div className="flex items-center gap-1 flex-wrap">
             {ZONE_DEFINITIONS.map((z) => {
               const unlocked =
-                z.zone === 'singularity'
-                  ? singUnlocked
-                  : z.zone === 'omega'
-                    ? omegaUnlocked
-                    : true
+                z.zone === 'void'
+                  ? voidUnlocked
+                  : z.zone === 'singularity'
+                    ? singUnlocked
+                    : z.zone === 'omega'
+                      ? omegaUnlocked
+                      : true
               if (!unlocked) return null
               const active = autoLaunchZone === z.zone
               return (
@@ -154,11 +157,13 @@ export default function CoordinateLauncher() {
               className="bg-(--bg-surface) border border-(--border-default) rounded px-2 py-1 text-[11px] text-(--text-primary) cursor-pointer"
             >
               {ZONE_DEFINITIONS.filter((z) =>
-                z.zone === 'singularity'
-                  ? singUnlocked
-                  : z.zone === 'omega'
-                    ? omegaUnlocked
-                    : true
+                z.zone === 'void'
+                  ? voidUnlocked
+                  : z.zone === 'singularity'
+                    ? singUnlocked
+                    : z.zone === 'omega'
+                      ? omegaUnlocked
+                      : true
               ).map((z) => (
                 <option key={z.zone} value={z.zone}>
                   {z.label}

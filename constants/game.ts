@@ -113,8 +113,8 @@ export const PROBE_COST_RP = 25_000n
 export const PROBE_GATE_SERVER_CLUSTERS = 25n
 export const PROBE_GATE_QUANTUM_COMPUTERS = 10n
 
-// 10 minutes to repair a damaged probe (Unstable Rift failure)
-export const UNSTABLE_RIFT_REPAIR_SECONDS = 600
+// 3 minutes to repair a damaged probe (Unstable Rift failure)
+export const UNSTABLE_RIFT_REPAIR_SECONDS = 180
 
 // Anomaly timing
 

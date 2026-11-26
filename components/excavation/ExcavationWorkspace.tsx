@@ -3,19 +3,13 @@
 import { useGameStore } from '@/app/stores/gameStore'
 import CoordinateLauncher from '@/components/excavation/CoordinateLauncher'
 import ProbeCard from '@/components/excavation/ProbeCard'
+import { isZoneUnlocked } from '@/lib/excavationDefs'
 
 function SectorStarmap() {
   const probes = useGameStore((s) => s.probes)
-  const singUnlocked = useGameStore(
-    (s) =>
-      (s.stats?.totalPrestigesTier2 ?? 0) > 0 ||
-      (s.stats?.peakLifetimePoints ?? s.lifetimePoints) >= 10n ** 35n
-  )
-  const omegaUnlocked = useGameStore(
-    (s) =>
-      (s.stats?.totalPrestigesTier3 ?? 0) > 0 ||
-      (s.stats?.peakLifetimePoints ?? s.lifetimePoints) >= 10n ** 85n
-  )
+  const voidUnlocked = useGameStore((s) => isZoneUnlocked('void', s))
+  const singUnlocked = useGameStore((s) => isZoneUnlocked('singularity', s))
+  const omegaUnlocked = useGameStore((s) => isZoneUnlocked('omega', s))
 
   const countZone = (z: string) =>
     probes.filter((p) => p.zone === z && p.status === 'scanning').length
@@ -42,7 +36,7 @@ function SectorStarmap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            0% Risk · 1h · Dust
+            0% Risk · 5m · Dust
           </span>
           <div className="flex justify-between items-center text-[10px] pt-1 border-t border-emerald-500/20 text-emerald-200">
             <span>Active Probes:</span>
@@ -60,7 +54,7 @@ function SectorStarmap() {
             </span>
           </div>
           <span className="text-[10px] text-(--text-secondary)">
-            25% Repair · 4h · Dust + PTS
+            25% Repair · 20m · Dust + PTS
           </span>
           <div className="flex justify-between items-center text-[10px] pt-1 border-t border-orange-500/20 text-orange-200">
             <span>Active Probes:</span>
@@ -68,23 +62,25 @@ function SectorStarmap() {
           </div>
         </div>
 
-        <div className="p-2.5 rounded-lg border border-purple-500/40 bg-purple-950/20 flex flex-col gap-1">
-          <div className="flex items-center justify-between">
-            <span className="font-bold text-purple-300 text-[11px]">
-              Void Depths
+        {voidUnlocked && (
+          <div className="p-2.5 rounded-lg border border-purple-500/40 bg-purple-950/20 flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-purple-300 text-[11px]">
+                Void Depths
+              </span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/20 text-purple-200">
+                TIER I
+              </span>
+            </div>
+            <span className="text-[10px] text-(--text-secondary)">
+              40% Repair · 2h · Dust + PTS + -5% Res
             </span>
-            <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/20 text-purple-200">
-              EXTREME
-            </span>
+            <div className="flex justify-between items-center text-[10px] pt-1 border-t border-purple-500/20 text-purple-200">
+              <span>Active Probes:</span>
+              <strong className="font-bold">{countZone('void')}</strong>
+            </div>
           </div>
-          <span className="text-[10px] text-(--text-secondary)">
-            50% Repair · 12h · Dust + PTS + -5% Res
-          </span>
-          <div className="flex justify-between items-center text-[10px] pt-1 border-t border-purple-500/20 text-purple-200">
-            <span>Active Probes:</span>
-            <strong className="font-bold">{countZone('void')}</strong>
-          </div>
-        </div>
+        )}
 
         {singUnlocked && (
           <div className="p-2.5 rounded-lg border border-cyan-500/40 bg-cyan-950/20 flex flex-col gap-1">
@@ -97,7 +93,7 @@ function SectorStarmap() {
               </span>
             </div>
             <span className="text-[10px] text-(--text-secondary)">
-              60% Repair · 24h · Dust + PTS + -10% Res
+              50% Repair · 8h · Dust + PTS + -10% Res
             </span>
             <div className="flex justify-between items-center text-[10px] pt-1 border-t border-cyan-500/20 text-cyan-200">
               <span>Active Probes:</span>
@@ -117,7 +113,7 @@ function SectorStarmap() {
               </span>
             </div>
             <span className="text-[10px] text-(--text-secondary)">
-              65% Repair · 48h · -25% Res + Anomaly
+              55% Repair · 24h · -25% Res + Anomaly
             </span>
             <div className="flex justify-between items-center text-[10px] pt-1 border-t border-amber-500/20 text-amber-200">
               <span>Active Probes:</span>

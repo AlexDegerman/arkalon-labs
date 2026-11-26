@@ -24,22 +24,22 @@ export const SYNTHESIZERS: SynthesizerDefinition[] = [
     id: 'dust_condenser',
     name: 'Dust Condenser',
     description:
-      '+0.5 Artifact Dust/min per unit (used to upgrade Relics and power the Particle Collider).',
+      '+1.0 Artifact Dust/min per unit (used to upgrade Relics and power the Particle Collider).',
     unlockFeature: 'relics',
     baseCost: 10_000n,
     growthFactor: 1.35,
-    dustPerMin: 0.5,
+    dustPerMin: 1.0,
     opPerMin: 0
   },
   {
     index: 1,
     id: 'subspace_dredger',
     name: 'Sub-Space Dredger',
-    description: '+3 Artifact Dust/min and +5% Probe scan speed per unit.',
+    description: '+4 Artifact Dust/min and +5% Probe scan speed per unit.',
     unlockFeature: 'excavation',
-    baseCost: 5_000_000n,
-    growthFactor: 1.45,
-    dustPerMin: 3,
+    baseCost: 50_000n,
+    growthFactor: 1.35,
+    dustPerMin: 4.0,
     opPerMin: 0
   },
   {
@@ -49,8 +49,8 @@ export const SYNTHESIZERS: SynthesizerDefinition[] = [
     description:
       '+2 Operation Points/min per unit for the Operations Artifact Shop (3x faster during Operation Anomalies).',
     unlockFeature: 'anomalousOperations',
-    baseCost: 100_000_000n,
-    growthFactor: 1.5,
+    baseCost: 25_000_000n,
+    growthFactor: 1.45,
     dustPerMin: 0,
     opPerMin: 2
   },
@@ -59,11 +59,11 @@ export const SYNTHESIZERS: SynthesizerDefinition[] = [
     id: 'entropic_crucible',
     name: 'Entropic Crucible',
     description:
-      '+25 Dust/min, +10 Operation Points/min, and +25% output to all Synthesizers per unit.',
+      '+35 Dust/min, +10 Operation Points/min, and +25% output to all Synthesizers per unit.',
     unlockFeature: 'megaprojects',
-    baseCost: 10n ** 15n,
-    growthFactor: 1.65,
-    dustPerMin: 25,
+    baseCost: 10n ** 12n,
+    growthFactor: 1.55,
+    dustPerMin: 35.0,
     opPerMin: 10
   }
 ]

@@ -213,8 +213,7 @@ export function useSaveGame(canSave = true) {
           return null
         }
       })()
-      const onboardingPending =
-        !storedVersion || storedVersion !== UPDATES_VERSION
+      const isFirstTimeVisitor = !storedVersion
       const hasOfflineActivity =
         offlinePayload.rpEarned > 0n ||
         (offlinePayload.dustEarned ?? 0) > 0 ||
@@ -224,9 +223,7 @@ export function useSaveGame(canSave = true) {
       if (
         offlinePayload.actualElapsedSeconds >= 60 &&
         hasOfflineActivity &&
-        !onboardingPending &&
-        !useUIStore.getState().welcomeModalOpen &&
-        !useUIStore.getState().updateModalOpen
+        !isFirstTimeVisitor
       ) {
         useUIStore.getState().setOfflinePayload(offlinePayload)
         useUIStore.getState().setOfflineModalOpen(true)

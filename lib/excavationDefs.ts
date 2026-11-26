@@ -31,7 +31,8 @@ export const SUBSYSTEM_DEFINITIONS: SubsystemDefinition[] = [
   {
     id: 'shielding',
     label: 'Aegis Shielding',
-    description: '-50% repair time on failed scans (5m Unstable, 15m Void).',
+    description:
+      '-50% repair time on failed scans (1.5m Unstable, 6m Void, 15m Singularity, 30m Omega).',
     icon: '🛡'
   },
   {
@@ -134,11 +135,11 @@ export const ZONE_DEFINITIONS: ZoneDefinition[] = [
   {
     zone: 'safe',
     label: 'Safe Sectors',
-    description: 'Stable space with no risk. Guaranteed dust yield.',
+    description: 'Stable space with no risk. Fast-turnaround reconnaissance.',
     successRate: 1.0,
-    durationSeconds: 3600, // 1 hour
-    dustYieldMin: 15,
-    dustYieldMax: 30,
+    durationSeconds: 300, // 5 minutes
+    dustYieldMin: 8,
+    dustYieldMax: 16,
     opYieldMin: 0,
     opYieldMax: 0,
     researchCutFraction: 0,
@@ -153,82 +154,83 @@ export const ZONE_DEFINITIONS: ZoneDefinition[] = [
     zone: 'unstable',
     label: 'Unstable Rifts',
     description:
-      'Volatile sub-space region. Higher Dust, Operation Points, and Relic 9 drops.',
+      'Volatile sub-space rift. Moderate Dust, Operation Points, and Relic 9 drops.',
     successRate: 0.75,
-    durationSeconds: 14400, // 4 hours
-    dustYieldMin: 80,
-    dustYieldMax: 160,
-    opYieldMin: 5,
-    opYieldMax: 15,
+    durationSeconds: 1200, // 20 minutes
+    dustYieldMin: 45,
+    dustYieldMax: 90,
+    opYieldMin: 2,
+    opYieldMax: 6,
     researchCutFraction: 0,
     anomalyIgniteChance: 0,
     relicDropChance: 0.05,
     repairSeconds: UNSTABLE_RIFT_REPAIR_SECONDS,
     salvageDust: 0,
     duplicateRelicDust: 75,
-    failureDescription: 'Probe enters 10-minute repair cycle.'
+    failureDescription: 'Probe enters 3-minute repair cycle.'
   },
   {
     zone: 'void',
     label: 'Void Depths',
     description:
-      'High Dust, Operation Points, and -5% active Research timer skips.',
-    successRate: 0.5,
-    durationSeconds: 43200, // 12 hours
-    dustYieldMin: 450,
-    dustYieldMax: 900,
-    opYieldMin: 25,
-    opYieldMax: 60,
+      'Medium-range survey. High Dust, Operation Points, and -5% active Research skips.',
+    successRate: 0.6,
+    durationSeconds: 7200, // 2 hours
+    dustYieldMin: 300,
+    dustYieldMax: 600,
+    opYieldMin: 20,
+    opYieldMax: 45,
     researchCutFraction: 0.05,
     anomalyIgniteChance: 0,
     relicDropChance: 0.15,
-    repairSeconds: 1800,
-    salvageDust: 75,
+    repairSeconds: 720,
+    salvageDust: 40,
     duplicateRelicDust: 200,
+    unlockHint: 'Requires Tier I Prestige or 10M RP',
     failureDescription:
-      'Probe enters 30-minute structural repair cycle with partial salvage.'
+      'Probe enters 12-minute structural repair cycle with partial salvage.'
   },
   {
     zone: 'singularity',
     label: 'Singularity Rift',
     description:
-      'Deep-space collapse zone yielding heavy Dust, Operation Points, and -10% Research skips.',
-    successRate: 0.4,
-    durationSeconds: 86400, // 24 hours
-    dustYieldMin: 1800,
+      'Deep-space collapse zone. Heavy Dust, Operation Points, and -10% Research skips.',
+    successRate: 0.5,
+    durationSeconds: 28800, // 8 hours (overnight/workday)
+    dustYieldMin: 1600,
     dustYieldMax: 3200,
-    opYieldMin: 75,
-    opYieldMax: 150,
+    opYieldMin: 80,
+    opYieldMax: 160,
     researchCutFraction: 0.1,
     anomalyIgniteChance: 0,
     relicDropChance: 0.2,
-    repairSeconds: 2700,
-    salvageDust: 250,
+    repairSeconds: 1800,
+    salvageDust: 150,
     duplicateRelicDust: 500,
     unlockHint: 'Requires Tier II Prestige or Era 4 (10^35 RP)',
     failureDescription:
-      'Probe enters 45-minute repair cycle with 250 salvage Dust.'
+      'Probe enters 30-minute repair cycle with 150 salvage Dust.'
   },
   {
     zone: 'omega',
     label: 'Omega Horizon',
     description:
       'Endgame boundary survey: massive Dust/PTS, -25% Research skips, and 25% Anomaly ignition.',
-    successRate: 0.35,
-    durationSeconds: 172800, // 48 hours
-    dustYieldMin: 4500,
-    dustYieldMax: 8000,
-    opYieldMin: 200,
-    opYieldMax: 400,
+    successRate: 0.45,
+    durationSeconds: 86400, // 24 hours (daily cycle)
+    dustYieldMin: 6000,
+    dustYieldMax: 12000,
+    opYieldMin: 250,
+    opYieldMax: 500,
     researchCutFraction: 0.25,
     anomalyIgniteChance: 0.25,
     relicDropChance: 0.3,
     repairSeconds: 3600,
-    salvageDust: 800,
+    salvageDust: 600,
     duplicateRelicDust: 1200,
     unlockHint: 'Requires Tier III Prestige or Era 6 (10^85 RP)',
     failureDescription:
-      'Probe enters 60-minute repair cycle with 800 salvage Dust.'
+      'Probe enters 60-minute repair cycle with 600 salvage Dust.'
   }
 ]
 
@@ -247,6 +249,9 @@ export function isZoneUnlocked(
       ? (state.stats?.peakLifetimePoints ?? 0n)
       : (state.lifetimePoints ?? 0n)
 
+  if (zone === 'void') {
+    return (state.stats?.totalPrestigesTier1 ?? 0) > 0 || peakRP >= 10_000_000n
+  }
   if (zone === 'singularity') {
     return (state.stats?.totalPrestigesTier2 ?? 0) > 0 || peakRP >= 10n ** 35n
   }

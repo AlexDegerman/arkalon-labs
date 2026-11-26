@@ -52,8 +52,9 @@ Production runs automatically without a clicker mechanic. New systems unlock pro
 | Research | 40 standard nodes, 4 infinite nodes, four branches, parallel research and overclocking |
 | Prestige | Three nested tiers, separate currencies, 32 shop upgrades and 12 automation systems |
 | Relics | 20 relics, five rarities, class resonance, loadout presets and deterministic pity protection |
+| Excavation | 8-probe fleet, 5 paced sectors (5m–24h), modular subsystems, batch deployment, probe recall, and 6 veteran ranks |
 | Challenges | 24 challenges: 12 standard, 8 advanced and 4 extreme, plus a custom mutator sandbox |
-| World systems | Spatial anomalies, Particle Collider, probe expeditions, Operations epochs, megaprojects and Dyson Swarm |
+| World systems | Spatial anomalies, Particle Collider, 4 Synthesizers, 90-day Operations epochs, megaprojects and Dyson Swarm |
 | Progression | 33 achievements, 7 eras, 60 visual number tiers and Endless Mode toward 10^1000 |
 
 Additional features include five interface themes, responsive mobile navigation, keyboard shortcuts, an installable PWA, Web Audio sound effects and optional browser-based text-to-speech.
