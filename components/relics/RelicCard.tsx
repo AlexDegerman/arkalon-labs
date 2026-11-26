@@ -127,32 +127,29 @@ function RelicCard({ relicId }: Props) {
           </div>
         )}
 
-        <div className="flex items-center gap-1.5 flex-1 min-w-40 justify-end">
-          <button
-            onClick={() => upgradeRelic(relicId, 1)}
-            disabled={!canAffordUpgrade}
-            className={[
-              'flex-1 py-1.5 px-2.5 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap text-center',
-              atCap
-                ? 'border-(--status-success)/40 text-(--status-success) bg-(--status-success)/10 cursor-default'
-                : canAffordUpgrade
-                  ? 'border-amber-400/60 bg-amber-400/15 text-amber-300 hover:bg-amber-400 hover:text-[#080c14] shadow-[0_0_12px_rgba(251,191,36,0.2)]'
-                  : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-50'
-            ].join(' ')}
-          >
-            {atCap ? (
-              'MAX'
-            ) : (
-              <span>
-                +1 ·{' '}
-                <span className="font-black">
-                  ◆ {formatPointsShort(BigInt(upgradeCost))}
+        <div className="grid grid-cols-3 gap-1 flex-1 min-w-56">
+          {atCap ? (
+            <div className="col-span-3 py-1.5 text-center text-[10px] font-mono font-bold uppercase rounded-lg border border-(--status-success)/40 bg-(--status-success)/10 text-(--status-success)">
+              Max Level
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => upgradeRelic(relicId, 1)}
+                disabled={!canAffordUpgrade}
+                className={[
+                  'flex items-center justify-center gap-1 py-1.5 px-1 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap',
+                  canAffordUpgrade
+                    ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) hover:bg-(--status-success) hover:text-[#080c14]'
+                    : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
+                ].join(' ')}
+              >
+                <span>+1</span>
+                <span className="text-[9px] font-black">
+                  <span className="text-amber-400">◆</span>
+                  {formatPointsShort(BigInt(upgradeCost))}
                 </span>
-              </span>
-            )}
-          </button>
-          {!atCap && (
-            <div className="flex items-center gap-0.5 p-0.5 rounded-lg border border-(--border-default) bg-(--bg-elevated) shrink-0">
+              </button>
               <button
                 onClick={() => upgradeRelic(relicId, 10)}
                 disabled={bulk10.levels <= 0}
@@ -162,13 +159,26 @@ function RelicCard({ relicId }: Props) {
                     : 'Not enough Dust'
                 }
                 className={[
-                  'py-1 px-1.5 text-[10px] font-mono font-bold uppercase rounded transition-all cursor-pointer select-none',
+                  'flex items-center justify-center gap-1 py-1.5 px-1 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap',
                   bulk10.levels > 0
-                    ? 'text-amber-300 hover:bg-amber-400/20 hover:text-amber-200'
-                    : 'text-(--text-secondary)/30 cursor-not-allowed'
+                    ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) hover:bg-(--status-success) hover:text-[#080c14]'
+                    : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
                 ].join(' ')}
               >
-                +10
+                <span>+10</span>
+                <span className="text-[9px] font-black">
+                  <span className="text-amber-400">◆</span>
+                  {formatPointsShort(
+                    BigInt(
+                      getRelicBulkUpgradeInfo(
+                        relicId,
+                        level,
+                        Number.MAX_SAFE_INTEGER,
+                        10
+                      ).cost
+                    )
+                  )}
+                </span>
               </button>
               <button
                 onClick={() => upgradeRelic(relicId, 'max')}
@@ -179,15 +189,21 @@ function RelicCard({ relicId }: Props) {
                     : 'Not enough Dust'
                 }
                 className={[
-                  'py-1 px-1.5 text-[10px] font-mono font-bold uppercase rounded transition-all cursor-pointer select-none',
+                  'flex items-center justify-center gap-1 py-1.5 px-1 text-[10px] font-mono font-bold uppercase rounded-lg border transition-all cursor-pointer select-none whitespace-nowrap',
                   bulkMax.levels > 0
-                    ? 'text-amber-300 hover:bg-amber-400/20 hover:text-amber-200'
-                    : 'text-(--text-secondary)/30 cursor-not-allowed'
+                    ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) hover:bg-(--status-success) hover:text-[#080c14]'
+                    : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-60'
                 ].join(' ')}
               >
-                MAX
+                <span>MAX</span>
+                <span className="text-[9px] font-black">
+                  <span className="text-amber-400">◆</span>
+                  {formatPointsShort(
+                    BigInt(bulkMax.levels > 0 ? bulkMax.cost : upgradeCost)
+                  )}
+                </span>
               </button>
-            </div>
+            </>
           )}
         </div>
       </div>

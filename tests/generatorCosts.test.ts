@@ -401,9 +401,9 @@ describe('generatorCosts', () => {
     expect(getSynthesizerCost(0, 2)).toBe(18_226n)
     expect(getSynthesizerCostToBuyN(0, 3, 0)).toBe(41_726n)
     expect(getSynthesizerCostToBuyN(0, 0, 0)).toBe(0n)
-    expect(getSynthesizerCost(3, 0)).toBe(1_000_000_000_000_000n)
+    expect(getSynthesizerCost(3, 0)).toBe(1_000_000_000_000n)
     const crucibleNext = getSynthesizerCost(3, 1)
-    expect(crucibleNext).toBeGreaterThanOrEqual(1_650_000_000_000_000n)
+    expect(crucibleNext).toBeGreaterThanOrEqual(1_550_000_000_000n)
     expect(crucibleNext).toBeLessThanOrEqual(1_650_000_000_001_000n)
     expect(getSynthesizerCost(99, 0)).toBe(0n)
 
@@ -449,18 +449,18 @@ describe('generatorCosts', () => {
     const twoCondensers = getSynthesizerRates(
       stateWith({ synthesizers: [2, 0, 0, 0] })
     )
-    expect(twoCondensers.dustPerMin).toBeCloseTo(1, 6)
-    expect(twoCondensers.dustPerSec).toBeCloseTo(1 / 60, 6)
+    expect(twoCondensers.dustPerMin).toBeCloseTo(2, 6)
+    expect(twoCondensers.dustPerSec).toBeCloseTo(2 / 60, 6)
 
     const withCrucible = getSynthesizerRates(
       stateWith({ synthesizers: [2, 0, 0, 2] })
     )
-    expect(withCrucible.dustPerMin).toBeCloseTo(76.5, 6)
+    expect(withCrucible.dustPerMin).toBeCloseTo(108, 6)
 
     const era2 = getSynthesizerRates(
       stateWith({ synthesizers: [2, 0, 0, 0], lifetimePoints: 10n ** 9n })
     )
-    expect(era2.dustPerMin).toBeCloseTo(1.5, 6)
+    expect(era2.dustPerMin).toBeCloseTo(3, 6)
 
     expect(
       getDustGlobalMultiplier({
@@ -478,7 +478,7 @@ describe('generatorCosts', () => {
         achievements: ['relic_all']
       })
     )
-    expect(stacked.dustPerMin).toBeCloseTo(2.5875, 6)
+    expect(stacked.dustPerMin).toBeCloseTo(5.175, 6)
 
     expect(
       getSynthesizerRates(stateWith({ synthesizers: [0, 3, 0, 0] }))

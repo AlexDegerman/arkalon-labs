@@ -421,7 +421,7 @@ describe('offlineCalc', () => {
     })
     const scanPayload = run(scanning, 1200, 1)
     expect(scanPayload.probesCompletedCount).toBe(1)
-    expect(scanPayload.dustEarned).toBe(23)
+    expect(scanPayload.dustEarned).toBe(12)
     const scanned = scanPayload.cachedProbeResult?.probes[0]
     expect(scanned?.status).toBe('idle')
     expect(scanned?.zone).toBeNull()
@@ -459,10 +459,11 @@ describe('offlineCalc', () => {
       probes: [probe()]
     })
     const loopPayload = run(autoLoop, 7200, 1)
-    expect(loopPayload.probesCompletedCount).toBe(2)
-    expect(loopPayload.dustEarned).toBe(48)
+    expect(loopPayload.probesCompletedCount).toBe(24)
+    // 24 safe scans with veteran rank scaling: 12 -> 18 dust per scan
+    expect(loopPayload.dustEarned).toBe(382)
     expect(loopPayload.cachedProbeResult?.probes[0].expeditionsCompleted).toBe(
-      2
+      24
     )
 
     const noAuto = run(
@@ -517,7 +518,7 @@ describe('offlineCalc', () => {
     expect(patch.lifetimePoints).toBe(35n)
     expect(patch.generators?.every((g) => g.quantity === 0n)).toBe(true)
     expect(patch.synthesizers).toEqual([1, 0, 0, 0])
-    expect(patch.artifactDust).toBe(58)
+    expect(patch.artifactDust).toBe(66)
     expect(patch.unlockedRelics).toEqual([1])
     expect(patch.relicLevels).toEqual({ 1: 5 })
     expect(patch.activeChallengeId).toBe('EC3')

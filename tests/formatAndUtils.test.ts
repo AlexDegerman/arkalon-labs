@@ -399,6 +399,7 @@ describe('format and utils', () => {
 
     const scanning = getWorkspaceActionSignals({
       ...base,
+      researchPoints: 0n,
       probes: [
         {
           ...idleProbe(),

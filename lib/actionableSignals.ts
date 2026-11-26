@@ -184,7 +184,11 @@ export function getWorkspaceActionSignals(state: GameState): ActionSignalMap {
     }
   }
 
-  if (state.unlocks.megaprojects && !state.activeChallengeId) {
+  if (
+    state.unlocks.megaprojects &&
+    !state.activeChallengeId &&
+    !state.activeMegaprojectId
+  ) {
     const canBuildMega = MEGAPROJECTS.some((m) =>
       meetsMegaprojectRequirements(m.id, state)
     )
