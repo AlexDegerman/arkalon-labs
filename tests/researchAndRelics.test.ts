@@ -232,16 +232,16 @@ describe('researchNodes and relics', () => {
   it('applies infinite scaling and every node cost modifier', () => {
     expect(getNodeCost('C1', stateWith())).toBe(100n)
     expect(getNodeCost('NOPE', stateWith())).toBe(0n)
-    expect(getNodeCost('C_INF', stateWith())).toBe(10n ** 20n)
+    expect(getNodeCost('C_INF', stateWith())).toBe(10n ** 64n)
     expect(
       getNodeCost('C_INF', stateWith({ infiniteResearchLevels: { C_INF: 1 } }))
-    ).toBe(15n * 10n ** 19n)
+    ).toBe(15n * 10n ** 63n)
     expect(
       getNodeCost('C_INF', stateWith({ infiniteResearchLevels: { C_INF: 2 } }))
-    ).toBe(225n * 10n ** 18n)
+    ).toBe(225n * 10n ** 62n)
     expect(
       getNodeCost('E_INF', stateWith({ infiniteResearchLevels: { E_INF: 1 } }))
-    ).toBe(8n * 10n ** 20n)
+    ).toBe(16n * 10n ** 69n)
 
     expect(getNodeCost('C1', withRelics(stateWith(), [[14, 10]]))).toBe(85n)
     expect(getNodeCost('C1', withRelics(stateWith(), [[14, 100]]))).toBe(10n)

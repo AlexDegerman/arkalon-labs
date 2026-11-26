@@ -2,26 +2,8 @@
 
 import { useGameStore } from '@/app/stores/gameStore'
 import { useActiveTab, type WorkspaceTab } from '@/hooks/useActiveTab'
-import { FEATURE_REGISTRY, type FeatureKey } from '@/lib/featureRegistry'
+import type { FeatureKey } from '@/lib/featureRegistry'
 import { getFeatureProgress, type ProgressState } from '@/lib/featureProgress'
-import { RESEARCH_NODES } from '@/constants/research'
-import { getNodeCost, isNodeAvailable } from '@/lib/researchNodes'
-import {
-  MEGAPROJECTS,
-  getEffectiveConstructionCost,
-  meetsMegaprojectRequirements
-} from '@/lib/megaprojectDefs'
-import { CHALLENGE_DISPLAY } from '@/constants/challenges'
-import {
-  getEffectiveTarget,
-  isChallengeAccelerantActive
-} from '@/lib/challengeDefs'
-import {
-  formatPointsShort,
-  formatTimeToAfford,
-  getNetSpendablePPS
-} from '@/lib/format'
-import type { GameState } from '@/types/game'
 import ProgressBar from '@/components/ui/ProgressBar'
 import TutorialHighlight from '../tutorial/TutorialHighlight'
 import { useUIStore } from '@/app/stores/uiStore'
@@ -110,135 +92,6 @@ const DIRECTORY_ITEMS: DirectoryItem[] = [
 ]
 
 // Desktop hub: scannable feature grid replacing the scrollable tab bar
-interface NextObjective {
-  title: string
-  detail: string
-  tab: WorkspaceTab
-}
-
-function getNextFacilityObjective(state: GameState): NextObjective | null {
-  const netPPS = getNetSpendablePPS(
-    state.cachedPointsPerSecond,
-    state.activeMegaprojectId,
-    state.megaprojectAllocationPercent
-  )
-
-  if (state.activeMegaprojectId) {
-    const mega = MEGAPROJECTS.find((m) => m.id === state.activeMegaprojectId)
-    const cost = getEffectiveConstructionCost(state.activeMegaprojectId, state)
-    const pct =
-      cost > 0n
-        ? Math.min(100, Number((state.megaprojectRPAbsorbed * 100n) / cost))
-        : 0
-    return {
-      title: `Building ${mega?.name ?? 'Megaproject'}`,
-      detail: `${pct}% absorbed (${formatPointsShort(state.megaprojectRPAbsorbed)} / ${formatPointsShort(cost)} RP)`,
-      tab: 'megaprojects'
-    }
-  }
-
-  if (
-    state.unlocks.techMatrix &&
-    !state.activeChallengeRestrictions?.techMatrixDisabled
-  ) {
-    const activeSet = new Set(
-      state.activeResearchSlots.map((sl) => sl.nodeId).filter(Boolean)
-    )
-    const completedSet = new Set(state.completedResearchNodes)
-    const nextNodes = RESEARCH_NODES.filter(
-      (n) =>
-        !n.isInfinite &&
-        !completedSet.has(n.id) &&
-        !activeSet.has(n.id) &&
-        isNodeAvailable(n.id, state)
-    ).sort((a, b) => {
-      const diff = getNodeCost(a.id, state) - getNodeCost(b.id, state)
-      return diff < 0n ? -1 : diff > 0n ? 1 : 0
-    })
-
-    if (nextNodes.length > 0) {
-      const nextNode = nextNodes[0]
-      const cost = getNodeCost(nextNode.id, state)
-      const eta =
-        state.researchPoints >= cost
-          ? 'Affordable now'
-          : `ETA ${formatTimeToAfford(cost, state.researchPoints, netPPS)}`
-      return {
-        title: `Next Tech: ${nextNode.id} (${nextNode.label})`,
-        detail: `${formatPointsShort(cost)} RP · ${eta}`,
-        tab: 'research'
-      }
-    }
-  }
-
-  if (state.unlocks.megaprojects && !state.activeChallengeId) {
-    const nextMega = MEGAPROJECTS.find(
-      (m) =>
-        m.id !== 'dyson_swarm' && !state.completedMegaprojects.includes(m.id)
-    )
-    if (nextMega) {
-      if (meetsMegaprojectRequirements(nextMega.id, state)) {
-        return {
-          title: `Ready to Build: ${nextMega.name}`,
-          detail: 'All prerequisites met — activate in Megaprojects',
-          tab: 'megaprojects'
-        }
-      }
-      if (nextMega.requiresLifetimeRP) {
-        return {
-          title: `Next Megaproject: ${nextMega.name}`,
-          detail: `Requires ${formatPointsShort(nextMega.requiresLifetimeRP)} lifetime RP (Current: ${formatPointsShort(state.lifetimePoints)})`,
-          tab: 'megaprojects'
-        }
-      }
-    }
-  }
-
-  if (state.unlocks.challenges) {
-    const nextChallenge = CHALLENGE_DISPLAY.find((c) => {
-      if (c.category === 'advanced' && state.stats.totalPrestigesTier2 === 0)
-        return false
-      if (c.category === 'extreme' && state.stats.totalPrestigesTier3 === 0)
-        return false
-      return (state.challengeRecords[c.id]?.completedTiers ?? 0) < c.maxTiers
-    })
-    if (nextChallenge) {
-      const nextTier =
-        (state.challengeRecords[nextChallenge.id]?.completedTiers ?? 0) + 1
-      const target = getEffectiveTarget(
-        nextChallenge.id,
-        nextTier,
-        isChallengeAccelerantActive(nextChallenge.id, state)
-      )
-      return {
-        title: `Next Challenge: ${nextChallenge.name} (Tier ${nextTier}/${nextChallenge.maxTiers})`,
-        detail: `Target: ${formatPointsShort(target)} RP`,
-        tab: 'challenges'
-      }
-    }
-  }
-
-  for (const feat of FEATURE_REGISTRY) {
-    if (state.unlocks[feat.key] || !feat.workspaceTab) continue
-    const prog = getFeatureProgress(feat.key, {
-      lifetimePoints: state.lifetimePoints,
-      generators: state.generators,
-      completedResearchNodes: state.completedResearchNodes,
-      achievementsCount: state.achievements.length,
-      stats: state.stats
-    })
-    if (prog) {
-      return {
-        title: `Unlocking ${feat.label}`,
-        detail: prog.label,
-        tab: 'directory'
-      }
-    }
-  }
-
-  return null
-}
-
 export default function WorkspaceDirectory() {
   const initialized = useGameStore((s) => s._initialized)
   const setWorkspaceTab = useActiveTab((s) => s.setWorkspaceTab)
@@ -266,9 +119,6 @@ export default function WorkspaceDirectory() {
       stats: s.stats
     }
   })
-  const [nextObjective, setNextObjective] = useState<NextObjective | null>(() =>
-    getNextFacilityObjective(useGameStore.getState())
-  )
 
   useEffect(() => {
     const sync = () => {
@@ -280,7 +130,6 @@ export default function WorkspaceDirectory() {
         achievementsCount: s.achievements.length,
         stats: s.stats
       })
-      setNextObjective(getNextFacilityObjective(s))
     }
     sync()
     const timer = setInterval(sync, 2000)
@@ -352,33 +201,6 @@ export default function WorkspaceDirectory() {
           </p>
         </div>
 
-        {nextObjective && (
-          <button
-            type="button"
-            onClick={() =>
-              nextObjective.tab !== 'directory' &&
-              setWorkspaceTab(nextObjective.tab)
-            }
-            className="w-full text-left px-2.5 py-2 rounded-xl border border-(--border-accent)/40 bg-(--border-accent)/5 hover:border-(--border-accent) transition-colors flex items-center justify-between gap-2 cursor-pointer font-mono"
-          >
-            <div className="min-w-0 flex flex-col gap-0.5">
-              <span className="text-[9px] uppercase tracking-widest text-(--text-accent) font-black">
-                ▸ Next Milestone
-              </span>
-              <span className="text-[11px] font-bold text-(--text-primary) truncate">
-                {nextObjective.title}
-              </span>
-              <span className="text-[10px] text-(--text-secondary) truncate">
-                {nextObjective.detail}
-              </span>
-            </div>
-            {nextObjective.tab !== 'directory' && (
-              <span className="text-[10px] font-bold text-(--text-accent) shrink-0">
-                Open →
-              </span>
-            )}
-          </button>
-        )}
         <div className="grid grid-cols-1 @[420px]:grid-cols-2 gap-1">
           {DIRECTORY_ITEMS.map((item) => {
             const isLocked = !unlocks[item.featureKey]

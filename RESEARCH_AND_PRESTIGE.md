@@ -43,14 +43,14 @@ Unlocks upon owning **10 Research Desks**. Research nodes are timed studies unlo
 | :--- | :--- | :--- | :--- | :--- |
 | `C1` | Asymptotic Compaction | `100` RP | `5s` | Reduces Research Desk cost scaling (growth factor `-0.02`). |
 | `C2` | Algorithmic Superposition | `5.00K` RP | `1m` | Reduces all research study times by `5%`. |
-| `C3` | Godel Boundary Decoupling | `7.50 Trillion` RP | `30m` | `+10%` base output to Computation-class buildings per completed research node. |
-| `C4` | Superrecursive Logic Gates | `1.20 Undecillion` RP | `1h` | Neural Cores gain `+5%` production per Server Cluster owned. |
-| `C5` | Hilbert-Space Addressing | `3.00 Septendecillion` RP | `2h` | `+0.1` to global production exponent multiplier. |
-| `C6` | Trans-Finite Recursion | `8.50 Quattuorvigintillion` RP | `4h` | Increases all active anomaly buff multipliers by `+25%`. |
-| `C7` | Non-Turing Architecture | `400.00 Untrigintillion` RP | `8h` | `1.15x` RP output to all Computation-class generators. |
-| `C8` | The Omega Algorithm | `9.00 Novemtrigintillion` RP | `24h` | Computation-class generators multiplied by `ln(lifetime RP)`. |
-| `C9` | Trans-Turing Synapse | `10.00 Duoquadragintillion` RP | `48h` | Reduces cost scaling of generators above Tier 10 by `0.015`. |
-| `C10` | Godel Transcendence | `10.00 Septenquadragintillion` RP | `96h` | `+1%` output to all generators per completed tech node. |
+| `C3` | Godel Boundary Decoupling | `500.00K` RP | `10m` | `+10%` base output to Computation-class buildings per completed research node. |
+| `C4` | Superrecursive Logic Gates | `2.50 Billion` RP | `30m` | Neural Cores gain `+5%` production per Server Cluster owned. |
+| `C5` | Hilbert-Space Addressing | `100.00 Trillion` RP | `2h` | `+0.1` to global production exponent multiplier. |
+| `C6` | Trans-Finite Recursion | `100.00 Sextillion` RP | `4h` | Increases all active anomaly buff multipliers by `+25%`. |
+| `C7` | Non-Turing Architecture | `100.00 Undecillion` RP | `12h` | `1.15x` RP output to all Computation-class generators. |
+| `C8` | The Omega Algorithm | `100.00 Novemdecillion` RP | `24h` | Computation-class generators multiplied by `ln(lifetime RP)`. |
+| `C9` | Trans-Turing Synapse | `100.00 Trigintillion` RP | `48h` | Reduces cost scaling of generators above Tier 10 by `0.015`. |
+| `C10` | Godel Transcendence | `100.00 Quinquadragintillion` RP | `96h` | `+1%` output to all generators per completed tech node. |
 
 ### Energy Branch (E1–E10)
 
@@ -58,13 +58,13 @@ Unlocks upon owning **10 Research Desks**. Research nodes are timed studies unlo
 | :--- | :--- | :--- | :--- | :--- |
 | `E1` | Kinetic Recycling | `300` RP | `10s` | `+15%` offline RP efficiency. |
 | `E2` | Entropy Harvesting | `15.00K` RP | `2m` | `+20%` offline RP efficiency. |
-| `E3` | Singularity Integration | `4.50 Quadrillion` RP | `45m` | Singularity Reactors apply `+0.25%` to all lower-tier generators per Reactor owned. |
-| `E4` | Zero-Point Inflation | `90.00 Duodecillion` RP | `2h` | `5x` RP output to all Energy-class generators. |
-| `E5` | Vacuum Polarisers | `180.00 Novemdecillion` RP | `4h` | `+0.5%` global production per AR earned (scales with Harmonic Cap). |
-| `E6` | Plasma Lattice Confinement | `2.20 Septenvigintillion` RP | `8h` | Reduces Energy-class generator cost scaling (growth factor `-0.02`). |
-| `E7` | Chronal Disruption Fuses | `7.10 Quintrigintillion` RP | `16h` | All spatial anomalies last `1.5x` longer. |
-| `E8` | Infinite Entropic Sink | `1.50 Unquadragintillion` RP | `32h` | Energy-class generators scale by `1 + 0.1 * ln(lifetime RP)`. |
-| `E9` | Primordial Inflation Loops | `10.00 Duoquadragintillion` RP | `48h` | `1.5x` RP output for Stellar Harvesters and Galactic Engines. |
+| `E3` | Singularity Integration | `3.50 Million` RP | `15m` | Singularity Reactors apply `+0.25%` to all lower-tier generators per Reactor owned. |
+| `E4` | Zero-Point Inflation | `25.00 Billion` RP | `45m` | `5x` RP output to all Energy-class generators. |
+| `E5` | Vacuum Polarisers | `10.00 Quadrillion` RP | `2h 30m` | `+0.5%` global production per AR earned (scales with Harmonic Cap). |
+| `E6` | Plasma Lattice Confinement | `100.00 Septillion` RP | `6h` | Reduces Energy-class generator cost scaling (growth factor `-0.02`). |
+| `E7` | Chronal Disruption Fuses | `10.00 Tredecillion` RP | `16h` | All spatial anomalies last `1.5x` longer. |
+| `E8` | Infinite Entropic Sink | `100.00 Unvigintillion` RP | `28h` | Energy-class generators scale by `1 + 0.1 * ln(lifetime RP)`. |
+| `E9` | Primordial Inflation Loops | `1.00 Quattuortrigintillion` RP | `48h` | `1.5x` RP output for Stellar Harvesters and Galactic Engines. |
 | `E10` | Absolute Entropic Death | `10.00 Septenquadragintillion` RP | `96h` | Energy-class generators receive `10x` point generation. |
 
 ### Reality Branch (R1–R10)
@@ -73,28 +73,28 @@ Unlocks upon owning **10 Research Desks**. Research nodes are timed studies unlo
 | :--- | :--- | :--- | :--- | :--- |
 | `R1` | Spatial Compactness | `800` RP | `15s` | Reduces the first purchase cost of Server Clusters and Quantum Computers by `15%`. |
 | `R2` | Sub-Space Tunneling | `40.00K` RP | `3m` | Research study durations permanently reduced by `15%`. |
-| `R3` | Metric Manipulation | `9.10 Quintillion` RP | `1h` | Allows two simultaneous research projects from different branches. |
-| `R4` | Localized Chronology Erasers | `5.00 Quindecillion` RP | `3h` | Research timers run `2x` faster while any anomaly is active. |
-| `R5` | Dimensional Permeability | `13.00 Duovigintillion` RP | `6h` | Persists across Tier I prestiges and grants `1.10x` RP output to all generators. |
-| `R6` | Matter-Data Coexistence | `660.00 Novemvigintillion` RP | `12h` | `+1%` global generator RP per generator unit currently owned. |
-| `R7` | Anthropic Fine-Tuning | `8.00 Septentrigintillion` RP | `24h` | Persists across Tier I prestiges; Reality Engines produce `10x` RP for `5m` after prestige. |
-| `R8` | Timeline Collapse Protocol | `330.00 Unquadragintillion` RP | `48h` | Amplifies prestige currency exponentially based on proximity to Trequinquagintillion. |
-| `R9` | Multi-Dimensional Manifold | `10.00 Duoquadragintillion` RP | `48h` | Increases max offline progression from `12h` to `24h`. |
-| `R10` | Timeline Collapser Core | `10.00 Septenquadragintillion` RP | `96h` | `+0.5` to master global production exponent. |
+| `R3` | Metric Manipulation | `25.00 Million` RP | `20m` | Allows two simultaneous research projects from different branches. |
+| `R4` | Localized Chronology Erasers | `250.00 Billion` RP | `1h` | Research timers run `2x` faster while any anomaly is active. |
+| `R5` | Dimensional Permeability | `1.00 Quintillion` RP | `3h` | Persists across Tier I prestiges and grants `1.10x` RP output to all generators. |
+| `R6` | Matter-Data Coexistence | `100.00 Octillion` RP | `8h` | `+1%` global generator RP per generator unit currently owned. |
+| `R7` | Anthropic Fine-Tuning | `1.00 Quindecillion` RP | `20h` | Persists across Tier I prestiges; Reality Engines produce `10x` RP for `5m` after prestige. |
+| `R8` | Timeline Collapse Protocol | `100.00 Trevigintillion` RP | `36h` | Amplifies prestige currency exponentially based on proximity to Trequinquagintillion. |
+| `R9` | Multi-Dimensional Manifold | `10.00 Septentrigintillion` RP | `48h` | Increases max offline progression from `12h` to `24h`. |
+| `R10` | Timeline Collapser Core | `1.00 Novemquadragintillion` RP | `96h` | `+0.5` to master global production exponent. |
 
 ### Arkalon Branch (O1–O10)
 
 | ID | Name | Cost | Base Time | Effect |
 | :--- | :--- | :--- | :--- | :--- |
-| `O1` | Synaptic Resonance | `2.00K` RP | `30s` | Unlocks Arkalon telemetry, Relic tab, and awards Relic 1. |
+| `O1` | Synaptic Resonance | `2.00K` RP | `30s` | Unlocks Relics & Artifacts, Dust Condensers, and awards Relic 1 (Arkalon's Left Eye). |
 | `O2` | Sub-Vocal Telemetry | `100.00K` RP | `5m` | Reduces Arkalon Branch research study times by `10%`. |
-| `O3` | Predictive Synchronization | `2.00 Sextillion` RP | `1h 30m` | Arkalon predicts anomaly arrivals with a live countdown timer. |
-| `O4` | Forbidden Protocol Theta | `88.00 Sexdecillion` RP | `3h` | Arkalon Interface base yield increased by `300%` (`4x`). |
-| `O5` | Synapse Replication | `410.00 Trevigintillion` RP | `6h` | Reduces all generator RP costs by `0.01%` per Arkalon Interface owned (max `90%`). |
-| `O6` | Non-Causal Intercepts | `3.90 Untrigintillion` RP | `12h` | Bypass one missing prerequisite tech choice per reset run. |
-| `O7` | Trans-Reality Synthesis | `50.00 Octotrigintillion` RP | `24h` | `+1%` Arkalon Resonance effectiveness per prestige completed. |
-| `O8` | Dimensional Convergence | `10.00 Unquadragintillion` RP | `48h` | `+0.5%` RP output to all generators per completed research node. |
-| `O9` | Omega Mind Mirror | `10.00 Duoquadragintillion` RP | `48h` | Arkalon Interface base output multiplied by `5.0x`. |
+| `O3` | Predictive Synchronization | `150.00 Million` RP | `25m` | Arkalon predicts anomaly arrivals with a live countdown timer. |
+| `O4` | Forbidden Protocol Theta | `2.50 Trillion` RP | `1h 30m` | Arkalon Interface base yield increased by `300%` (`4x`). |
+| `O5` | Synapse Replication | `100.00 Quintillion` RP | `4h` | Reduces all generator RP costs by `0.01%` per Arkalon Interface owned (max `90%`). |
+| `O6` | Non-Causal Intercepts | `100.00 Nonillion` RP | `10h` | Bypass one missing prerequisite tech choice per reset run. |
+| `O7` | Trans-Reality Synthesis | `1.00 Septendecillion` RP | `24h` | `+1%` Arkalon Resonance effectiveness per prestige completed. |
+| `O8` | Dimensional Convergence | `100.00 Quinvigintillion` RP | `48h` | `+0.5%` RP output to all generators per completed research node. |
+| `O9` | Omega Mind Mirror | `100.00 Quadragintillion` RP | `48h` | Arkalon Interface base output multiplied by `5.0x`. |
 | `O10` | Arkalon Synchronicity Matrix | `100.00 Quinquagintillion` RP | `192h` (`8d`) | All branch multipliers apply to all generator classes. Ultimate convergence node. |
 
 ### Infinite Nodes
@@ -103,10 +103,10 @@ Unlocked per branch upon completing **Tier 8** (`C8`, `E8`, `R8`, `O8`). Infinit
 
 | ID | Name | Base Cost | Scaling | Effect per Level |
 | :--- | :--- | :--- | :--- | :--- |
-| `C_INF` | Infinite Computational Throughput | `100.00 Quintillion` (`10²⁰`) | `1.5x` | `+10%` compounding calculation efficiency (Computation-class). |
-| `E_INF` | Infinite Vacuum Extraction | `500.00 Quintillion` (`5×10²⁰`) | `1.6x` | `+8%` compounding energy output (Energy-class). |
-| `R_INF` | Infinite Space-Time Dilation | `2.50 Sextillion` (`2.5×10²¹`) | `1.7x` | `-1%` research study durations multiplicatively (hard-capped at `95%` / Lv299; scales active timers immediately). |
-| `O_INF` | Infinite Synaptic Expansion | `10.00 Sextillion` (`10²²`) | `1.8x` | `+5%` Arkalon Resonance multiplier strength. |
+| `C_INF` | Infinite Computational Throughput | `10.00 Vigintillion` (`10⁶⁴`) | `1.5x` | `+10%` compounding calculation efficiency (Computation-class). |
+| `E_INF` | Infinite Vacuum Extraction | `100.00 Unvigintillion` (`10⁷⁰`) | `1.6x` | `+8%` compounding energy output (Energy-class). |
+| `R_INF` | Infinite Space-Time Dilation | `10.00 Quattuorvigintillion` (`10⁷⁶`) | `1.7x` | `-1%` research study durations multiplicatively (hard-capped at `95%` / Lv299; scales active timers immediately). |
+| `O_INF` | Infinite Synaptic Expansion | `10.00 Sexvigintillion` (`10⁸²`) | `1.8x` | `+5%` Arkalon Resonance multiplier strength. |
 
 ---
 

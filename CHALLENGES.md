@@ -6,7 +6,7 @@ Complete reference for all 24 multi-tier Facility Challenges (`SC1–SC12`, `AC1
 
 ## 📋 Overview & Rules
 
-- **Lossless Run Snapshotting:** Entering any challenge pauses and snapshots your active run (`PreChallengeSnapshot`: RP, generators, module levels, synthesizers, completed/active/queued/infinite research, `O6` bypass state, megaproject progress, anomaly timers, and run duration) before launching a clean restricted simulation. Completing or abandoning restores your main run automatically.
+- **Lossless Run Snapshotting:** Entering any challenge pauses and snapshots your active run (`PreChallengeSnapshot`: RP, generators, module levels, synthesizers, probes, completed/active/queued/infinite research, `O6` bypass state, megaproject progress, anomaly timers, and run duration) before launching a clean restricted simulation. Completing or abandoning restores your main run automatically.
 - **Persistent Carry-Over:** While prestige starting bonuses (`Chronal Anchor`, `Dimensional Blueprinting`, Tier II/III starter units, and retained research) are suppressed inside challenges, your permanent **module levels**, **AR/CF/OS upgrades** (unless disabled), **unlocked relics** (unless disabled), **achievements**, and **past challenge rewards** remain active.
 - **Tier Scaling:** Multi-tier challenges scale their lifetime RP target by **`10x` per tier** (`Tier 1 Target × 10^(tier - 1)`).
 - **Challenge Accelerant:** Purchasing the `Challenge Accelerant` AR upgrade reduces challenge RP targets by **`25%`** (automatically suspended in `AC2` and `EC1`, where prestige upgrades are disabled).
@@ -46,7 +46,7 @@ Complete reference for all 24 multi-tier Facility Challenges (`SC1–SC12`, `AC1
 | `AC2` | **Closed System** | `3` | `1.00 Trillion` (`10¹²`) | No prestige upgrades active. | AR upgrade effectiveness `+20%` per tier. |
 | `AC3` | **Chronal Freeze** | `3` | `10.00 Billion` (`10¹⁰`) | Research timers only tick while an anomaly is active (at `5x` speed). | All research timers permanently `-20%` per tier. |
 | `AC4` | **Depth Restriction** | `3` | `1.00 Quintillion` (`10¹⁸`) | Only generators 1–5 available. | Generators 1–5 base output tripled (`3x` compounding) per tier. |
-| `AC5` | **Module Overload** | `3` | `100.00 Quintillion` (`10²⁰`) | Installed module levels doubled (cap `10` during run), but generator costs `10x`. | Permanent module cap increased by `+1` per tier (max Level `8`). |
+| `AC5` | **Module Overload** | `3` | `100.00 Quintillion` (`10²⁰`) | Installed module levels doubled, but generator costs `10x`. | Permanent module cap increased by `+1` per tier (max Level `8`). |
 | `AC6` | **Relic Dependency** | `3` | `10.00 Quadrillion` (`10¹⁶`) | Base generator output replaced by `2%` per equipped relic level (`0` output without relics). | `+1` free relic level to all unlocked relics per completion & unlocks **Auto-Equip Relic**. |
 | `AC7` | **Anomaly Storm** | `3` | `100.00 Trillion` (`10¹⁴`) | Anomalies spawn every `60s` and last only `10s`. | Anomaly buff power `+15%` permanently per tier. |
 | `AC8` | **Combined Entropy** | `1` | `10.00 Sextillion` (`10²²`) | `AC1` + `AC3` combined. | `+1` research queue slot & `+0.1` global production exponent. |
