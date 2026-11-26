@@ -14,7 +14,7 @@ A browser-based idle game I independently designed, directed and shipped, with a
 | --- | --- |
 | Role | Sole creator: architecture, design, AI direction, playtesting, deployment and operations |
 | Stack | Next.js 16, React 19, TypeScript, Tailwind CSS v4, Zustand 5, PostgreSQL 17 |
-| Engineering | BigInt mathematics to 10^1000, stepped offline simulation, lossless snapshots, multi-tab synchronization |
+| Engineering | BigInt mathematics to 10^1000, stepped offline simulation, lossless snapshots, live build detection, multi-tab sync |
 | Performance | 100 ms simulation tick, cached production calculations, DOM-driven HUD updates |
 | Quality | 85 Vitest tests across 9 suites, automated CI, health-checked Docker deployments |
 | Infrastructure | Hetzner VPS, Docker, Caddy, PostgreSQL, GitHub Actions, Backblaze B2 |
@@ -103,6 +103,7 @@ The persistence system combines:
 - Base64 and TXT export/import.
 - BroadcastChannel-based tab coordination with a 3-second heartbeat and 8-second timeout.
 - Automatic ownership handover if the primary tab becomes unresponsive.
+- Live build detection via SHA polling with a 10-second automated save-and-reload modal to eliminate stale-client play and prevent Server Action ID desynchronization across deployments.
 
 The server validates incoming saves, checking structure, negative balances, future timestamps and progression consistency. It also enforces a 30-second per-player rate limit.
 

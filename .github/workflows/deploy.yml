@@ -55,7 +55,7 @@ jobs:
             export DEPLOY_SHA="${{ steps.sha.outputs.short }}"
 
             echo "Building image for commit: ${DEPLOY_SHA}"
-            docker build -t "arkalon-labs:${DEPLOY_SHA}" -t "arkalon-labs:latest" .
+            docker build --build-arg "DEPLOY_SHA=${DEPLOY_SHA}" -t "arkalon-labs:${DEPLOY_SHA}" -t "arkalon-labs:latest" .
 
             echo "Restarting container with new image..."
             DEPLOY_SHA="${DEPLOY_SHA}" docker compose up -d --force-recreate

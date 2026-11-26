@@ -43,6 +43,7 @@ export function useKeyboardShortcuts(enabled = true) {
       if (key === 'Escape') {
         e.preventDefault()
         const ui = useUIStore.getState()
+        if (ui.clientUpdateAvailable) return
         if (ui.hotkeyModalOpen) {
           const returnToSettings = ui.hotkeyFromSettings
           ui.setHotkeyModalOpen(false)
@@ -80,6 +81,7 @@ export function useKeyboardShortcuts(enabled = true) {
       // Suspend gameplay shortcuts while any modal or settings panel is open
       const uiState = useUIStore.getState()
       if (
+        uiState.clientUpdateAvailable ||
         uiState.welcomeModalOpen ||
         uiState.updateModalOpen ||
         uiState.offlineModalOpen ||

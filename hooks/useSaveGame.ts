@@ -79,6 +79,7 @@ export function useSaveGame(canSave = true) {
       }
     } catch {
       setSaveStatus('offline')
+      window.dispatchEvent(new CustomEvent('arkalon_check_version'))
     }
   }, [])
 

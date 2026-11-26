@@ -55,6 +55,9 @@ interface UIStore {
   // Update modal
   updateModalOpen: boolean
 
+  // Newer server build detected
+  clientUpdateAvailable: boolean
+
   // Offline gains modal
   offlineModalOpen: boolean
   offlinePayload: import('@/types/offline').OfflineProgressPayload | null
@@ -99,6 +102,7 @@ interface UIStore {
   setHotkeyModalOpen: (open: boolean, fromSettings?: boolean) => void
   setWelcomeModalOpen: (open: boolean) => void
   setUpdateModalOpen: (open: boolean) => void
+  setClientUpdateAvailable: (available: boolean) => void
   setOfflineModalOpen: (open: boolean) => void
   setOfflinePayload: (
     payload: import('@/types/offline').OfflineProgressPayload | null
@@ -134,6 +138,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   hotkeyFromSettings: false,
   welcomeModalOpen: false,
   updateModalOpen: false,
+  clientUpdateAvailable: false,
   offlineModalOpen: false,
   offlinePayload: null,
   challengeCompleteModalOpen: false,
@@ -210,6 +215,8 @@ export const useUIStore = create<UIStore>((set, get) => ({
     }),
   setWelcomeModalOpen: (welcomeModalOpen) => set({ welcomeModalOpen }),
   setUpdateModalOpen: (open) => set({ updateModalOpen: open }),
+  setClientUpdateAvailable: (clientUpdateAvailable) =>
+    set({ clientUpdateAvailable }),
   setOfflineModalOpen: (offlineModalOpen) => set({ offlineModalOpen }),
   setOfflinePayload: (offlinePayload) => set({ offlinePayload }),
   setChallengeCompleteModalOpen: (challengeCompleteModalOpen) =>

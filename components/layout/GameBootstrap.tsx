@@ -12,6 +12,7 @@ import { useBGM } from '@/hooks/useBGM'
 import { useSound } from '@/hooks/useSound'
 import { primeArkalonVoices } from '@/lib/arkalonTTS'
 import { useMusicStore } from '@/app/stores/musicStore'
+import { useUIStore } from '@/app/stores/uiStore'
 
 // Handles game initialization, save/load, and starts the game loop
 // Runs entirely client-side after hydration
@@ -38,6 +39,50 @@ export default function GameBootstrap() {
       prev = s.activeAnomalyType
       useMusicStore.getState().setContext(prev ? 'anomaly' : 'idle')
     })
+  }, [])
+
+  useEffect(() => {
+    const clientBuildId = process.env.NEXT_PUBLIC_BUILD_ID
+    if (!clientBuildId || process.env.NODE_ENV === 'development') return
+
+    let lastCheck = 0
+    let stopped = false
+
+    const checkVersion = async (force = false) => {
+      if (stopped || useUIStore.getState().clientUpdateAvailable) return
+      const now = Date.now()
+      if (!force && now - lastCheck < 60_000) return
+      lastCheck = now
+
+      try {
+        const res = await fetch('/api/version', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = (await res.json()) as { buildId?: string }
+        if (data.buildId && data.buildId !== clientBuildId) {
+          useUIStore.getState().setClientUpdateAvailable(true)
+        }
+      } catch {
+        // Ignore transient network errors
+      }
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') checkVersion()
+    }
+    const onCheckEvent = () => checkVersion(true)
+
+    const initialTimer = setTimeout(() => checkVersion(true), 10_000)
+    const interval = setInterval(() => checkVersion(true), 5 * 60_000)
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('arkalon_check_version', onCheckEvent)
+
+    return () => {
+      stopped = true
+      clearTimeout(initialTimer)
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('arkalon_check_version', onCheckEvent)
+    }
   }, [])
 
   useInactiveTabDetection()

@@ -15,6 +15,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build-time public environment variables
+ARG DEPLOY_SHA
+ENV NEXT_PUBLIC_BUILD_ID=${DEPLOY_SHA}
 ENV NEXT_PUBLIC_APP_URL=https://labs.rpsleague.fi
 ENV NEXT_TELEMETRY_DISABLED=1
 

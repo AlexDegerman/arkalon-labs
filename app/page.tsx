@@ -22,6 +22,7 @@ import { Volume2, VolumeX } from 'lucide-react'
 import { useGameStore } from '@/app/stores/gameStore'
 import { useMusicStore } from '@/app/stores/musicStore'
 import VictoryModal from '@/components/modals/VictoryModal'
+import ClientUpdateBanner from '@/components/ui/ClientUpdateBanner'
 
 function HeaderMuteButton() {
   const muted = useMusicStore((s) => s.muted)
@@ -54,6 +55,7 @@ export default function GamePage() {
       <HotkeyModal />
       <ChallengeCompleteModal />
       <VictoryModal />
+      <ClientUpdateBanner />
       <GameBootstrap />
       <SettingsPanel />
 
