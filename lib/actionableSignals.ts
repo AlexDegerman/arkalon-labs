@@ -27,7 +27,18 @@ import {
   MEGAPROJECTS,
   meetsMegaprojectRequirements
 } from '@/lib/megaprojectDefs'
-import { OPERATION_ARTIFACTS } from '@/lib/operationDefs'
+import {
+  OPERATION_ARTIFACTS,
+  getAttunementCost,
+  getTemporalCost
+} from '@/lib/operationDefs'
+import { getModuleUpgradeCost, getTrackLevelCap } from '@/lib/moduleDefs'
+import {
+  AR_UPGRADES,
+  CF_UPGRADES,
+  OS_UPGRADES,
+  getUpgradeCost
+} from '@/lib/prestigeUpgradeDefs'
 
 export type ActionSignalMap = Partial<Record<WorkspaceTab, string>>
 
@@ -73,15 +84,48 @@ export function getWorkspaceActionSignals(state: GameState): ActionSignalMap {
   }
 
   if (
+    state.unlocks.modules &&
+    !state.activeChallengeRestrictions?.modulesDisabled &&
+    !(state.automation.autoModuleBuy && state.cfUpgrades.auto_module_buyer > 0)
+  ) {
+    const sc4Tiers = state.challengeRecords['SC4']?.completedTiers ?? 0
+    const types = ['efficiency', 'cost_reduction', 'synergy'] as const
+    let canUpgradeModule = false
+    for (let i = 0; i < 20 && !canUpgradeModule; i++) {
+      const gen = state.generators[i]
+      if (!gen || gen.quantity === 0n) continue
+      for (const type of types) {
+        const cap = getTrackLevelCap(i, type, state)
+        const lvl =
+          type === 'efficiency'
+            ? gen.efficiencyLevel
+            : type === 'cost_reduction'
+              ? gen.costReductionLevel
+              : gen.synergyLevel
+        if (lvl >= cap) continue
+        if (
+          state.researchPoints >= getModuleUpgradeCost(i, type, lvl, sc4Tiers)
+        ) {
+          canUpgradeModule = true
+          break
+        }
+      }
+    }
+    if (canUpgradeModule) signals.modules = 'Upgrade Ready'
+  }
+
+  if (
     state.unlocks.excavation &&
     !state.activeChallengeRestrictions?.excavationDisabled
   ) {
-    const hasIdleProbe = state.probes.some((p) => p.status === 'idle')
-    const canAssembleFirst =
-      state.probes.length === 0 &&
-      meetsProbeGateRequirements(state) &&
-      canBuildProbe(state)
-    if (hasIdleProbe || canAssembleFirst) {
+    const autoLaunchOn =
+      state.automation.autoLaunchProbe &&
+      (state.challengeRecords['SC12']?.completedTiers ?? 0) >= 3
+    const hasIdleProbe =
+      !autoLaunchOn && state.probes.some((p) => p.status === 'idle')
+    const canAssembleProbe =
+      meetsProbeGateRequirements(state) && canBuildProbe(state)
+    if (hasIdleProbe || canAssembleProbe) {
       signals.excavation = 'Probe Ready'
     }
   }
@@ -91,12 +135,56 @@ export function getWorkspaceActionSignals(state: GameState): ActionSignalMap {
       signals.prestige = 'Synth Ready'
     } else if (canPrestigeTier2(state) && calculateCFGain(state) > 0) {
       signals.prestige = 'Sever Ready'
-    } else if (canPrestigeTier1(state) && calculateARGain(state) > 0) {
-      signals.prestige = 'Recalibrate'
+    } else {
+      const arGain = canPrestigeTier1(state) ? calculateARGain(state) : 0
+      const meaningfulT1 =
+        arGain > 0 &&
+        (state.stats.totalPrestigesTier1 === 0 ||
+          arGain >= Math.max(10, Math.floor(state.arkalonResonance * 0.5)))
+      if (meaningfulT1) {
+        signals.prestige = 'Recalibrate'
+      } else if (!state.activeChallengeRestrictions?.prestigeUpgradesDisabled) {
+        const canBuyAR = AR_UPGRADES.some((u) => {
+          const lvl = state.arUpgrades[u.id] ?? 0
+          return (
+            lvl < u.maxLevel && state.arkalonResonance >= getUpgradeCost(u, lvl)
+          )
+        })
+        const canBuyCF =
+          state.stats.totalPrestigesTier2 > 0 &&
+          CF_UPGRADES.some((u) => {
+            const lvl = state.cfUpgrades[u.id] ?? 0
+            return (
+              lvl < u.maxLevel &&
+              state.chronalFractures >= getUpgradeCost(u, lvl)
+            )
+          })
+        const canBuyOS =
+          state.stats.totalPrestigesTier3 > 0 &&
+          OS_UPGRADES.some((u) => {
+            if (
+              u.id === 'automated_timeline_severance' &&
+              state.osUpgrades.the_automated_lab <= 0
+            ) {
+              return false
+            }
+            if (
+              u.id === 'automated_singular_synthesis' &&
+              state.osUpgrades.automated_timeline_severance <= 0
+            ) {
+              return false
+            }
+            const lvl = state.osUpgrades[u.id] ?? 0
+            return lvl < u.maxLevel && state.omniSpars >= getUpgradeCost(u, lvl)
+          })
+        if (canBuyAR || canBuyCF || canBuyOS) {
+          signals.prestige = 'Perk Ready'
+        }
+      }
     }
   }
 
-  if (state.unlocks.megaprojects && !state.activeMegaprojectId) {
+  if (state.unlocks.megaprojects && !state.activeChallengeId) {
     const canBuildMega = MEGAPROJECTS.some((m) =>
       meetsMegaprojectRequirements(m.id, state)
     )
@@ -110,7 +198,18 @@ export function getWorkspaceActionSignals(state: GameState): ActionSignalMap {
           a.id as OperationArtifactId
         ) && state.currentOperationPoints >= a.cost
     )
-    if (canBuyArtifact) signals.operations = 'Artifact Ready'
+    if (canBuyArtifact) {
+      signals.operations = 'Artifact Ready'
+    } else {
+      const attCost = getAttunementCost(state.cosmicAttunementLevel ?? 0)
+      const tempCost = getTemporalCost(state.cosmicTemporalLevel ?? 0)
+      if (
+        state.currentOperationPoints >= attCost ||
+        (tempCost > 0 && state.currentOperationPoints >= tempCost)
+      ) {
+        signals.operations = 'Sink Ready'
+      }
+    }
   }
 
   return signals

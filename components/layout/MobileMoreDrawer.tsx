@@ -90,6 +90,8 @@ export default function MobileMoreDrawer({ onClose }: Props) {
   const unseenUnlockedTabs = useUIStore((s) => s.unseenUnlockedTabs)
   const actionSignals = useActionSignals()
   const unlocks = useGameStore((s) => s.unlocks)
+  const activeChallengeId = useGameStore((s) => s.activeChallengeId)
+  const restrictions = useGameStore((s) => s.activeChallengeRestrictions)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const [belowSignal, setBelowSignal] = useState<'new' | 'action' | null>(null)
 
@@ -258,10 +260,20 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                     )
                   }
 
+                  const isRestricted =
+                    (item.id === 'modules' &&
+                      Boolean(restrictions?.modulesDisabled)) ||
+                    (item.id === 'excavation' &&
+                      Boolean(restrictions?.excavationDisabled)) ||
+                    (item.id === 'megaprojects' && Boolean(activeChallengeId))
+                  const isChallengeActive =
+                    item.id === 'challenges' && Boolean(activeChallengeId)
                   const isCurrent =
                     mobileTab === 'research' && workspaceTab === item.id
                   const isUnseen = unseenUnlockedTabs.includes(item.id)
-                  const actionLabel = actionSignals[item.id]
+                  const actionLabel = isRestricted
+                    ? undefined
+                    : actionSignals[item.id]
                   const signalType = isUnseen
                     ? 'new'
                     : actionLabel
@@ -318,11 +330,23 @@ export default function MobileMoreDrawer({ onClose }: Props) {
                         {isCurrent ? (
                           <p className="text-[9px] font-mono font-black text-(--text-accent) leading-tight">
                             ▸ CURRENT TAB
-                            {actionLabel ? ` · ${actionLabel}` : ''}
+                            {isRestricted
+                              ? ' · Offline'
+                              : actionLabel
+                                ? ` · ${actionLabel}`
+                                : ''}
+                          </p>
+                        ) : isRestricted ? (
+                          <p className="text-[9px] font-mono font-bold text-amber-400 leading-tight">
+                            ⚠ Offline
                           </p>
                         ) : isUnseen ? (
                           <p className="text-[9px] font-mono font-black text-(--status-success) leading-tight">
                             ★ NEW UNLOCK
+                          </p>
+                        ) : isChallengeActive ? (
+                          <p className="text-[9px] font-mono font-bold text-amber-300 leading-tight">
+                            ● Challenge Active
                           </p>
                         ) : actionLabel ? (
                           <p className="text-[9px] font-mono font-bold text-amber-300 leading-tight">

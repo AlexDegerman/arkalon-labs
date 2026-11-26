@@ -98,6 +98,8 @@ export default function WorkspaceDirectory() {
   const unseenUnlockedTabs = useUIStore((s) => s.unseenUnlockedTabs)
   const actionSignals = useActionSignals()
   const unlocks = useGameStore((s) => s.unlocks)
+  const activeChallengeId = useGameStore((s) => s.activeChallengeId)
+  const restrictions = useGameStore((s) => s.activeChallengeRestrictions)
   const completedResearchCount = useGameStore(
     (s) => s.completedResearchNodes.length
   )
@@ -250,8 +252,22 @@ export default function WorkspaceDirectory() {
               )
             }
 
+            const isRestricted =
+              (item.tab === 'research' &&
+                Boolean(restrictions?.techMatrixDisabled)) ||
+              (item.tab === 'modules' &&
+                Boolean(restrictions?.modulesDisabled)) ||
+              (item.tab === 'relics' &&
+                Boolean(restrictions?.relicsDisabled)) ||
+              (item.tab === 'excavation' &&
+                Boolean(restrictions?.excavationDisabled)) ||
+              (item.tab === 'megaprojects' && Boolean(activeChallengeId))
+            const isChallengeActive =
+              item.tab === 'challenges' && Boolean(activeChallengeId)
             const isUnseen = unseenUnlockedTabs.includes(item.tab)
-            const actionLabel = actionSignals[item.tab]
+            const actionLabel = isRestricted
+              ? undefined
+              : actionSignals[item.tab]
             const signalType = isUnseen
               ? 'new'
               : actionLabel
@@ -264,11 +280,13 @@ export default function WorkspaceDirectory() {
                 data-signal-type={signalType}
                 className={[
                   'card flex flex-col gap-0.5 p-2 rounded-xl text-left transition-all cursor-pointer select-none w-full h-full',
-                  isUnseen
-                    ? 'border-(--status-success) bg-(--status-success)/10 shadow-[0_0_16px_rgba(57,255,138,0.28)]'
-                    : actionLabel
-                      ? 'border-(--border-accent)/75 bg-(--border-accent)/5 shadow-[0_0_12px_rgba(0,240,255,0.14)] hover:border-(--border-accent)'
-                      : 'border-(--border-default) bg-(--bg-surface) hover:border-(--border-accent)'
+                  isRestricted
+                    ? 'border-amber-500/40 bg-(--bg-surface)/70 opacity-75 hover:border-amber-400/60'
+                    : isUnseen
+                      ? 'border-(--status-success) bg-(--status-success)/10 shadow-[0_0_16px_rgba(57,255,138,0.28)]'
+                      : actionLabel
+                        ? 'border-(--border-accent)/75 bg-(--border-accent)/5 shadow-[0_0_12px_rgba(0,240,255,0.14)] hover:border-(--border-accent)'
+                        : 'border-(--border-default) bg-(--bg-surface) hover:border-(--border-accent)'
                 ].join(' ')}
                 aria-label={`Open ${item.label}`}
               >
@@ -277,9 +295,11 @@ export default function WorkspaceDirectory() {
                     <span
                       className={[
                         'text-sm shrink-0',
-                        isUnseen
-                          ? 'text-(--status-success)'
-                          : 'text-(--border-accent)'
+                        isRestricted
+                          ? 'text-amber-400'
+                          : isUnseen
+                            ? 'text-(--status-success)'
+                            : 'text-(--border-accent)'
                       ].join(' ')}
                       aria-hidden="true"
                     >
@@ -289,9 +309,17 @@ export default function WorkspaceDirectory() {
                       {item.label}
                     </span>
                   </div>
-                  {isUnseen ? (
+                  {isRestricted ? (
+                    <span className="text-[9px] font-mono font-bold text-amber-400 shrink-0">
+                      OFFLINE
+                    </span>
+                  ) : isUnseen ? (
                     <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-(--status-success) text-[#080c14] shrink-0">
                       NEW
+                    </span>
+                  ) : isChallengeActive ? (
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border border-amber-400/50 bg-amber-400/15 text-amber-300 shrink-0">
+                      ACTIVE
                     </span>
                   ) : actionLabel ? (
                     <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border border-(--border-accent)/50 bg-(--border-accent)/15 text-(--text-accent) shrink-0">
