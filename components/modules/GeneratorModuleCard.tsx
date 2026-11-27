@@ -103,8 +103,8 @@ const ModuleTrack = memo(function ModuleTrack({
             )}
           </button>
         ) : (
-          <span className="text-[10px] font-mono font-bold text-(--status-success) px-1.5 py-0.2 rounded bg-(--status-success)/10 border border-(--status-success)/30 shrink-0">
-            MAX
+          <span className="text-[10px] font-mono font-bold text-slate-400 px-1.5 py-0.2 rounded bg-slate-800/40 border border-slate-700/60 shrink-0">
+            ✓ MAX
           </span>
         )}
       </div>
@@ -175,6 +175,36 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
     gen.synergyLevel >= synCap
   const [expanded, setExpanded] = useState(!isFullyMaxed)
 
+  const rp = useGameStore((s) => s.researchPoints)
+  const canAffordAny =
+    Boolean(gen) &&
+    gen.quantity > 0n &&
+    !modulesDisabled &&
+    ((gen.efficiencyLevel < effCap &&
+      rp >=
+        getModuleUpgradeCost(
+          generatorIndex,
+          'efficiency',
+          gen.efficiencyLevel,
+          sc4Tiers
+        )) ||
+      (gen.costReductionLevel < costCap &&
+        rp >=
+          getModuleUpgradeCost(
+            generatorIndex,
+            'cost_reduction',
+            gen.costReductionLevel,
+            sc4Tiers
+          )) ||
+      (gen.synergyLevel < synCap &&
+        rp >=
+          getModuleUpgradeCost(
+            generatorIndex,
+            'synergy',
+            gen.synergyLevel,
+            sc4Tiers
+          )))
+
   const def = GENERATORS[generatorIndex]
   if (!def) return null
 
@@ -231,6 +261,11 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
           <span className="text-xs sm:text-sm font-bold text-(--text-primary) truncate">
             #{String(generatorIndex + 1).padStart(2, '0')} {def.name}
           </span>
+          {canAffordAny && (
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-(--status-success)/15 border border-(--status-success)/40 text-(--status-success) shrink-0">
+              ● READY
+            </span>
+          )}
           {isOverclocked && (
             <span
               title="All 3 upgrades maxed: 2x Generator Output & +25% Cross-Boost"

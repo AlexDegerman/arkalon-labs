@@ -156,11 +156,11 @@ export default function ArkalonTerminal({ lines, maxLines = 3 }: Props) {
 
   return (
     <div
-      className="w-full rounded-xl border border-(--border-default) bg-(--bg-surface)/95 overflow-hidden flex flex-col font-mono text-[13px] shadow-[inset_0_1px_4px_rgba(0,0,0,0.6)]"
+      className="w-full rounded-xl border border-(--border-default) bg-(--bg-surface)/95 overflow-hidden flex flex-col font-mono text-xs shadow-[inset_0_1px_4px_rgba(0,0,0,0.6)]"
       aria-live="polite"
       aria-label="Arkalon communications terminal"
     >
-      <div className="flex items-center justify-between px-3 py-1.5 bg-(--bg-elevated) border-b border-(--border-default)/70 select-none">
+      <div className="flex items-center justify-between px-2.5 py-1 bg-(--bg-elevated) border-b border-(--border-default)/70 select-none">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="w-1.5 h-1.5 rounded-full bg-(--border-accent) shrink-0" />
           <span className="text-[10px] font-black uppercase tracking-wider text-(--text-accent) truncate">
@@ -172,7 +172,7 @@ export default function ArkalonTerminal({ lines, maxLines = 3 }: Props) {
         </span>
       </div>
 
-      <div className="p-3 flex flex-col gap-1 min-h-18">
+      <div className="p-2 sm:p-2.5 flex flex-col gap-1 min-h-14">
         {displayedLines.length === 0 ? (
           <p className="text-(--text-secondary)/50">&gt; Awaiting signal...</p>
         ) : (

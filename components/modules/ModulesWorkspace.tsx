@@ -5,6 +5,7 @@ import { useGameStore } from '@/app/stores/gameStore'
 import GeneratorModuleCard from '@/components/modules/GeneratorModuleCard'
 import { buyAllModules } from '@/app/stores/actions/generatorActions'
 import {
+  getModuleUpgradeCost,
   getModuleLevelCap,
   getTrackLevelCap,
   getNextModuleCapHint,
@@ -70,12 +71,12 @@ const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
   const postPurchaseRemaining = plan.remainingToMaxCost - plan.totalCost
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1">
       <button
         onClick={() => buyAllModules()}
         disabled={!canBuyAny}
         className={[
-          'w-full py-2 px-3 text-xs font-mono font-black uppercase tracking-wider rounded-lg border transition-all select-none',
+          'w-full py-1.5 px-2.5 text-xs font-mono font-black uppercase tracking-wider rounded-lg border transition-all select-none',
           modulesDisabled
             ? 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
             : allOwnedMaxed
@@ -115,16 +116,16 @@ const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
       </button>
 
       {!modulesDisabled && !allOwnedMaxed && (
-        <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-(--text-secondary)/80 px-0.5 flex-wrap">
-          <span>
+        <div className="flex items-center justify-between gap-1 text-[9px] font-mono text-(--text-secondary)/80 px-0.5 flex-wrap">
+          <span className="truncate">
             {canBuyAny && postPurchaseRemaining === 0n
-              ? 'Maxes all currently owned generators'
+              ? 'Maxes all owned generators'
               : canBuyAny
-                ? `Left after upgrade: ${formatPointsShort(postPurchaseRemaining)} RP to max owned`
+                ? `Remaining: ${formatPointsShort(postPurchaseRemaining)} RP to max owned`
                 : `Full max cost: ${formatPointsShort(plan.remainingToMaxCost)} RP`}
           </span>
           {!canBuyAny && plan.nextCheapestCost !== null && (
-            <span className="text-amber-300 font-bold">
+            <span className="text-amber-300 font-bold shrink-0">
               Next: {formatPointsShort(plan.nextCheapestCost)} RP
             </span>
           )}
@@ -136,7 +137,10 @@ const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
 
 export default function ModulesWorkspace() {
   const [showSynergyLinks, setShowSynergyLinks] = useState(false)
-  const [filterMode, setFilterMode] = useState<'all' | 'upgradable'>('all')
+  const [filterMode, setFilterMode] = useState<
+    'all' | 'affordable' | 'upgradable'
+  >('all')
+  const [sortMode, setSortMode] = useState<'tier' | 'cost'>('tier')
   const generators = useGameStore((s) => s.generators)
   const challengeRecords = useGameStore((s) => s.challengeRecords)
   const activeChallengeRestrictions = useGameStore(
@@ -156,6 +160,8 @@ export default function ModulesWorkspace() {
       s.arUpgrades.bulk_procurement > 0 &&
       !s.activeChallengeRestrictions?.prestigeUpgradesDisabled
   )
+  const rp = useGameStore((s) => s.researchPoints)
+  const sc4Tiers = challengeRecords['SC4']?.completedTiers ?? 0
 
   const capTierThresholds = [
     0n,
@@ -178,6 +184,44 @@ export default function ModulesWorkspace() {
     .map((g, i) => (g.quantity > 0n ? i : -1))
     .filter((i) => i !== -1)
 
+  const getLowestNextCost = (index: number): bigint | null => {
+    const g = generators[index]
+    if (!g || g.quantity === 0n) return null
+    let minCost: bigint | null = null
+    const effCap = getTrackLevelCap(index, 'efficiency', capCtx)
+    if (g.efficiencyLevel < effCap) {
+      const c = getModuleUpgradeCost(
+        index,
+        'efficiency',
+        g.efficiencyLevel,
+        sc4Tiers
+      )
+      if (minCost === null || c < minCost) minCost = c
+    }
+    const costCap = getTrackLevelCap(index, 'cost_reduction', capCtx)
+    if (g.costReductionLevel < costCap) {
+      const c = getModuleUpgradeCost(
+        index,
+        'cost_reduction',
+        g.costReductionLevel,
+        sc4Tiers
+      )
+      if (minCost === null || c < minCost) minCost = c
+    }
+    const synCap = getTrackLevelCap(index, 'synergy', capCtx)
+    if (g.synergyLevel < synCap) {
+      const c = getModuleUpgradeCost(index, 'synergy', g.synergyLevel, sc4Tiers)
+      if (minCost === null || c < minCost) minCost = c
+    }
+    return minCost
+  }
+
+  const affordableIndices = ownedGeneratorIndices.filter((i) => {
+    if (modulesDisabled) return false
+    const min = getLowestNextCost(i)
+    return min !== null && rp >= min
+  })
+
   const upgradableIndices = ownedGeneratorIndices.filter((i) => {
     const g = generators[i]
     return (
@@ -186,8 +230,26 @@ export default function ModulesWorkspace() {
       g.synergyLevel < getTrackLevelCap(i, 'synergy', capCtx)
     )
   })
+
+  const filteredIndices =
+    filterMode === 'affordable'
+      ? affordableIndices
+      : filterMode === 'upgradable'
+        ? upgradableIndices
+        : ownedGeneratorIndices
+
   const visibleIndices =
-    filterMode === 'upgradable' ? upgradableIndices : ownedGeneratorIndices
+    sortMode === 'cost'
+      ? [...filteredIndices].sort((a, b) => {
+          const costA = getLowestNextCost(a)
+          const costB = getLowestNextCost(b)
+          if (costA === null && costB === null) return a - b
+          if (costA === null) return 1
+          if (costB === null) return -1
+          if (costA !== costB) return costA < costB ? -1 : 1
+          return a - b
+        })
+      : filteredIndices
 
   const totalInstalledModules = generators.reduce(
     (sum, g) => sum + g.efficiencyLevel + g.costReductionLevel + g.synergyLevel,
@@ -222,47 +284,51 @@ export default function ModulesWorkspace() {
           constraints.
         </div>
       )}
-      <div className="flex items-center justify-between px-1 flex-wrap gap-2">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest">
+      <div className="flex items-center justify-between px-1 gap-2 shrink-0">
+        <div className="flex flex-col min-w-0">
+          <p className="text-[10px] font-mono font-bold text-(--text-secondary) uppercase tracking-widest leading-tight">
             Generator Upgrades
           </p>
-          <p className="text-xs text-(--text-secondary)">
-            Upgrade output, price scaling, and cross-generator boosts. Max all 3
-            on a generator for a 2x output bonus.
+          <p className="text-[11px] text-(--text-secondary)/85 leading-tight truncate">
+            Max all 3 module tracks on a generator for a 2x output bonus.
           </p>
         </div>
         <button
           onClick={() => setShowSynergyLinks((prev) => !prev)}
-          className="px-2.5 py-1 text-xs font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-accent) transition-all cursor-pointer"
+          className="px-2 py-1 text-[10px] font-mono font-bold rounded-lg border border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-accent) transition-all cursor-pointer shrink-0 whitespace-nowrap"
         >
-          {showSynergyLinks ? 'Hide Synergy Links' : 'View Synergy Links ◈'}
+          {showSynergyLinks ? 'Hide Links' : 'Synergy Links ◈'}
         </button>
       </div>
 
       {/* Distribute Modules Master Bar */}
-      <div className="card rounded-xl p-2.5 bg-(--bg-surface) border border-(--border-default) flex flex-col gap-2 shadow-sm">
-        <div className="flex items-center justify-between flex-wrap gap-1.5 text-xs font-mono">
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <div className="card rounded-xl p-2 sm:p-2.5 bg-(--bg-surface) border border-(--border-default) flex flex-col gap-1.5 shadow-sm">
+        <div className="flex items-center justify-between gap-1.5 text-xs font-mono">
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
             <span className="text-[10px] font-bold text-(--text-secondary) uppercase tracking-wider">
-              Upgrades Installed:
+              Installed:
             </span>
             <span className="font-bold text-(--text-primary)">
-              {totalInstalledModules} / {maxPossibleModules}
+              {totalInstalledModules}/{maxPossibleModules}
+            </span>
+            <span className="text-[10px] text-(--text-secondary)/70">
+              (Cap Lv{capInfo.currentCap})
             </span>
           </div>
           {overclockedCount > 0 && (
-            <span className="text-[10px] font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-400/40 px-2 py-0.5 rounded whitespace-nowrap">
-              ⚡ {overclockedCount} Maxed Sets (2x Output)
+            <span
+              title={`${overclockedCount} generators have all 3 module tracks maxed for 2x output`}
+              className="text-[9px] font-bold text-cyan-300 bg-cyan-950/40 border border-cyan-400/40 px-1.5 py-0.2 rounded whitespace-nowrap shrink-0"
+            >
+              ⚡ {overclockedCount} Maxed (2x)
             </span>
           )}
         </div>
-        <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-(--text-secondary)/80 flex-wrap">
-          <span>Output Cap: Lv{capInfo.currentCap}</span>
-          {capInfo.nextHint && (
-            <span className="text-cyan-300/80">{capInfo.nextHint}</span>
-          )}
-        </div>
+        {capInfo.nextHint && (
+          <p className="text-[9px] font-mono text-cyan-300/75 leading-none truncate -mt-0.5">
+            {capInfo.nextHint}
+          </p>
+        )}
 
         {canBulkUpgrade ? (
           <UpgradeAllModulesButton />
@@ -272,34 +338,71 @@ export default function ModulesWorkspace() {
           </p>
         )}
 
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-(--border-default)/50 font-mono text-[10px]">
-          <span className="text-(--text-secondary)">
-            Show Generators ({visibleIndices.length})
-          </span>
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-(--border-default)/50 font-mono text-[10px]">
+          <div className="flex items-center p-0.5 rounded-lg bg-(--bg-elevated) border border-(--border-default) min-w-0">
             <button
               onClick={() => setFilterMode('all')}
               className={[
-                'px-2 py-0.5 rounded border font-bold uppercase cursor-pointer transition-colors',
+                'px-1.5 sm:px-2 py-0.5 rounded font-bold transition-all cursor-pointer select-none whitespace-nowrap',
                 filterMode === 'all'
-                  ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent)'
-                  : 'border-(--border-default) text-(--text-secondary)'
+                  ? 'bg-(--border-accent) text-[#080c14]'
+                  : 'text-(--text-secondary) hover:text-(--text-primary)'
               ].join(' ')}
             >
               All ({ownedGeneratorIndices.length})
             </button>
             <button
-              onClick={() => setFilterMode('upgradable')}
+              onClick={() => setFilterMode('affordable')}
               className={[
-                'px-2 py-0.5 rounded border font-bold uppercase cursor-pointer transition-colors',
-                filterMode === 'upgradable'
-                  ? 'border-(--border-accent) bg-(--border-accent)/10 text-(--border-accent)'
-                  : 'border-(--border-default) text-(--text-secondary)'
+                'px-1.5 sm:px-2 py-0.5 rounded font-bold transition-all cursor-pointer select-none whitespace-nowrap flex items-center gap-1',
+                filterMode === 'affordable'
+                  ? 'bg-(--status-success) text-[#080c14]'
+                  : affordableIndices.length > 0
+                    ? 'text-(--status-success) hover:bg-(--status-success)/10'
+                    : 'text-(--text-secondary) hover:text-(--text-primary)'
               ].join(' ')}
             >
-              Upgradable ({upgradableIndices.length})
+              {affordableIndices.length > 0 && filterMode !== 'affordable' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-(--status-success) shrink-0" />
+              )}
+              <span>
+                <span className="hidden @[380px]:inline">Affordable</span>
+                <span className="@[380px]:hidden">Ready</span> (
+                {affordableIndices.length})
+              </span>
+            </button>
+            <button
+              onClick={() => setFilterMode('upgradable')}
+              className={[
+                'px-1.5 sm:px-2 py-0.5 rounded font-bold transition-all cursor-pointer select-none whitespace-nowrap',
+                filterMode === 'upgradable'
+                  ? 'bg-(--border-accent) text-[#080c14]'
+                  : 'text-(--text-secondary) hover:text-(--text-primary)'
+              ].join(' ')}
+            >
+              Unmaxed ({upgradableIndices.length})
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              setSortMode((prev) => (prev === 'tier' ? 'cost' : 'tier'))
+            }
+            title={
+              sortMode === 'tier'
+                ? 'Currently sorted by generator tier (#01→#20). Click to sort by lowest upgrade cost.'
+                : 'Currently sorted by lowest upgrade cost. Click to sort by generator tier.'
+            }
+            className={[
+              'px-2 py-1 rounded-lg border font-bold cursor-pointer transition-colors shrink-0 whitespace-nowrap',
+              sortMode === 'cost'
+                ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--text-accent)'
+                : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) hover:text-(--text-primary)'
+            ].join(' ')}
+          >
+            {sortMode === 'tier' ? '↕ Tier' : '↕ Cost'}
+          </button>
         </div>
       </div>
 
@@ -394,8 +497,10 @@ export default function ModulesWorkspace() {
       {/* Generator Modules List */}
       <div className="flex flex-col gap-2 pt-1 border-t border-(--border-default)/60">
         {visibleIndices.length === 0 ? (
-          <p className="text-center text-xs font-mono text-(--status-success) py-4">
-            All owned generators are maxed!
+          <p className="text-center text-xs font-mono text-(--text-secondary) py-4">
+            {filterMode === 'affordable'
+              ? 'No module upgrades currently affordable.'
+              : 'All owned generators are maxed!'}
           </p>
         ) : (
           visibleIndices.map((index) => (

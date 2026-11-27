@@ -184,13 +184,13 @@ function ChallengeCard({ challengeId }: Props) {
                     getAmountColor(bestRP) || 'text-(--text-primary)'
                   ].join(' ')}
                 >
-                  {formatPoints(bestRP)}
+                  {formatPoints(bestRP)} RP
                 </span>
               </>
             )}
             {bestTime !== undefined && (
               <span className="text-cyan-300 font-bold mt-0.5">
-                Best Active: {formatDuration(bestTime)}
+                Fastest: {formatDuration(bestTime)}
               </span>
             )}
           </div>
@@ -235,7 +235,9 @@ function ChallengeCard({ challengeId }: Props) {
                   : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/40 cursor-not-allowed opacity-50'
               ].join(' ')}
             >
-              Enter Tier {completedTiers + 1}
+              {activeChallengeId
+                ? 'Challenge in Progress'
+                : `Enter Tier ${completedTiers + 1}`}
             </button>
           ) : confirmAbandon ? (
             <div className="flex gap-2 w-full">

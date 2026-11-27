@@ -35,19 +35,21 @@ export default function ArtifactShop() {
   return (
     <div className="flex flex-col gap-3.5">
       {/* Operational Title Rank */}
-      {activeTitle && (
-        <div className="p-2.5 rounded-xl border border-cyan-400/40 bg-cyan-950/20 flex items-center justify-between font-mono text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
-              {activeTitle.badge}
-            </span>
-            <span className="font-bold text-cyan-200">{activeTitle.title}</span>
-          </div>
-          <span className="text-[10px] text-(--text-secondary)">
-            {totalPointsSpent.toLocaleString()} Total PTS Invested
+      <div className="p-2.5 rounded-xl border border-cyan-400/40 bg-cyan-950/20 flex items-center justify-between font-mono text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
+            {activeTitle ? activeTitle.badge : 'INIT'}
+          </span>
+          <span className="font-bold text-cyan-200">
+            {activeTitle ? activeTitle.title : 'Initiate Observer'}
           </span>
         </div>
-      )}
+        <span className="text-[10px] text-(--text-secondary)">
+          {activeTitle
+            ? `${totalPointsSpent.toLocaleString()} Total PTS Invested`
+            : `${totalPointsSpent.toLocaleString()} / 5,000 PTS to Epoch Observer`}
+        </span>
+      </div>
 
       {/* Repeatable Cosmic Sinks */}
       <div className="flex flex-col gap-2">
@@ -88,7 +90,7 @@ export default function ArtifactShop() {
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-(--text-primary)">
-                  Temporal Compression
+                  Temporal Extension
                 </span>
                 <span className="text-[9px] font-mono font-black px-1.5 py-0.2 rounded bg-(--bg-elevated) text-purple-300">
                   Lv{Math.min(30, temporalLevel)}/30

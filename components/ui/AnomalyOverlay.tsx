@@ -212,17 +212,17 @@ export default function AnomalyOverlay() {
   const progress = timeRemaining > 0 ? timeRemaining / baseDuration : 0
 
   return (
-    <div className="w-full mb-2" role="status" aria-live="polite">
+    <div className="w-full" role="status" aria-live="polite">
       <div
-        className={`card rounded-xl border ${theme.borderColor} bg-(--bg-surface)/95 w-full p-3 flex flex-col gap-2`}
+        className={`card rounded-xl border ${theme.borderColor} bg-(--bg-surface)/95 w-full p-2 sm:p-2.5 flex flex-col gap-1.5`}
         style={{ boxShadow: theme.glowColor }}
       >
-        <div className="flex items-center justify-between gap-2 border-b border-(--border-default)/50 pb-1.5">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center justify-between gap-2 border-b border-(--border-default)/50 pb-1">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span
               className={`w-2 h-2 rounded-full ${theme.pingColor} shrink-0`}
             />
-            <span className="text-xs font-mono font-black uppercase tracking-wider leading-tight text-(--text-primary)">
+            <span className="text-xs font-mono font-black uppercase tracking-wider leading-tight text-(--text-primary) truncate">
               {label}
             </span>
           </div>
@@ -231,13 +231,8 @@ export default function AnomalyOverlay() {
           </span>
         </div>
 
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-(--text-secondary)">
-            Active Facility Buffer
-          </span>
-          <span className={`text-xs font-mono font-bold ${theme.textClass}`}>
-            ✦ {reward}
-          </span>
+        <div className="flex items-center justify-between gap-1 text-xs font-mono font-bold">
+          <span className={theme.textClass}>✦ {reward}</span>
         </div>
 
         <ProgressBar
@@ -246,10 +241,6 @@ export default function AnomalyOverlay() {
           height={3}
           animated={false}
         />
-
-        <span className="text-[10px] font-mono text-(--text-secondary)/75 leading-snug">
-          Passive field active · Temporary facility-wide boost
-        </span>
       </div>
     </div>
   )

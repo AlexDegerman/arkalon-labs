@@ -161,12 +161,12 @@ export default function CenterColumn() {
 
       <div className="flex-1 min-h-0 flex flex-col items-center gap-2 p-2.5 sm:p-3 overflow-y-auto scrollbar-dark">
         {/* Animated vector sphere */}
-        <div className="shrink-0 flex-1 min-h-36 flex flex-col items-center justify-center gap-1.5 py-1">
+        <div className="shrink-0 flex-1 min-h-28 flex flex-col items-center justify-center gap-1 py-0.5">
           <ArkalonSphere
             state={sphereState}
             interactive={true}
             onClick={handleSphereClick}
-            size={128}
+            size={112}
             stage={coreStage}
           />
           <span className="text-[10px] font-mono uppercase tracking-widest text-(--text-secondary)/80">
@@ -185,7 +185,7 @@ export default function CenterColumn() {
         </div>
 
         {/* Diagnostic Status Pips */}
-        <div className="w-full grid grid-cols-2 gap-2 p-2 rounded-xl bg-(--bg-surface) border border-(--border-default) shrink-0 text-xs font-mono">
+        <div className="w-full grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-(--bg-surface) border border-(--border-default) shrink-0 text-xs font-mono">
           <AnomalyStatusPip />
 
           <div className="flex items-center gap-1.5 truncate justify-end">
@@ -203,21 +203,6 @@ export default function CenterColumn() {
           </div>
 
           <ParticleColliderButton />
-
-          {/* Prestige info - shown after first prestige */}
-          {prestige1Done && (
-            <div className="col-span-2 flex items-center justify-between pt-1 border-t border-(--border-default)/50 text-[11px]">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-(--status-success) shrink-0" />
-                <span className="text-(--text-secondary)">
-                  Operations: Active
-                </span>
-              </div>
-              <span className="text-(--text-accent) font-bold">
-                Recalibration Available
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </div>

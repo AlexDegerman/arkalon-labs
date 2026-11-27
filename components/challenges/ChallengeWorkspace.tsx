@@ -12,9 +12,9 @@ import type { ChallengeRestrictions } from '@/types/game'
 type WorkspaceCategory = ChallengeCategory | 'sandbox'
 
 const CATEGORY_TABS: { id: WorkspaceCategory; label: string }[] = [
-  { id: 'standard', label: 'Standard (T1)' },
-  { id: 'advanced', label: 'Advanced (T2)' },
-  { id: 'extreme', label: 'Extreme (T3)' },
+  { id: 'standard', label: 'Standard' },
+  { id: 'advanced', label: 'Advanced' },
+  { id: 'extreme', label: 'Extreme' },
   { id: 'sandbox', label: 'Sandbox ⚙' }
 ]
 
@@ -212,6 +212,8 @@ export default function ChallengeWorkspace() {
   const tier1Done = useGameStore((s) => s.stats.totalPrestigesTier1 > 0)
   const tier2Done = useGameStore((s) => s.stats.totalPrestigesTier2 > 0)
   const tier3Done = useGameStore((s) => s.stats.totalPrestigesTier3 > 0)
+  const ec4Completed =
+    useGameStore((s) => s.challengeRecords['EC4']?.completedTiers ?? 0) >= 1
 
   const challenges = CHALLENGE_DISPLAY.filter(
     (c) => c.category === activeCategory
@@ -221,7 +223,7 @@ export default function ChallengeWorkspace() {
     standard: tier1Done,
     advanced: tier2Done,
     extreme: tier3Done,
-    sandbox: true
+    sandbox: ec4Completed
   }
 
   return (

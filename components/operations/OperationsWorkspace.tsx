@@ -76,6 +76,14 @@ export default function OperationsWorkspace() {
           {OPERATION_CYCLES.map((c) => {
             const isSelected = currentCycle.cycleNumber === c.cycleNumber
             const canRetune = !isSelected
+            const phaseBonus =
+              c.cycleNumber === 1
+                ? '2x RP · 3x Tech'
+                : c.cycleNumber === 2
+                  ? '3x Energy Output'
+                  : c.cycleNumber === 3
+                    ? '2.5x Global RP'
+                    : '2x AR Output'
 
             return (
               <button
@@ -97,6 +105,9 @@ export default function OperationsWorkspace() {
                 </div>
                 <span className="text-[10px] font-bold leading-tight wrap-break-word">
                   {c.name}
+                </span>
+                <span className="text-[9px] text-cyan-300/80 leading-tight">
+                  {phaseBonus}
                 </span>
               </button>
             )
@@ -147,9 +158,20 @@ export default function OperationsWorkspace() {
         />
 
         <div className="p-2.5 rounded-lg bg-(--bg-elevated) border border-(--border-default) text-[11px] font-mono">
-          <span className="text-(--text-secondary) text-[10px] uppercase tracking-wider block mb-0.5">
-            Operation Anomaly
-          </span>
+          <div className="flex items-center justify-between gap-1 flex-wrap mb-0.5">
+            <span className="text-(--text-secondary) text-[10px] uppercase tracking-wider">
+              Operation Anomaly
+            </span>
+            <span className="text-[10px] font-bold text-cyan-300">
+              {currentCycle.cycleNumber === 1
+                ? '✦ 2x RP & 3x Research Speed'
+                : currentCycle.cycleNumber === 2
+                  ? '✦ 3x Energy Generator Output'
+                  : currentCycle.cycleNumber === 3
+                    ? '✦ 2.5x Global RP Production'
+                    : '✦ 2x Arkalon Resonance Output'}
+            </span>
+          </div>
           <span className="font-bold text-(--text-primary)">
             {cycleAnomaly?.name ?? currentCycle.anomalyType}
           </span>
@@ -164,7 +186,7 @@ export default function OperationsWorkspace() {
       <div className="card rounded-xl p-3 flex items-center justify-between border border-(--border-default) bg-(--bg-surface)">
         <div className="flex flex-col">
           <span className="text-[10px] font-mono text-(--text-secondary) uppercase tracking-wider">
-            Operations Points
+            Operation Points
           </span>
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-lg font-black font-mono text-(--text-accent)">
