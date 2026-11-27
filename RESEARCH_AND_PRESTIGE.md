@@ -79,7 +79,7 @@ Unlocks upon owning **10 Research Desks**. Research nodes are timed studies unlo
 | `R6` | Matter-Data Coexistence | `100.00 Octillion` RP | `8h` | `+1%` global generator RP per generator unit currently owned. |
 | `R7` | Anthropic Fine-Tuning | `1.00 Quindecillion` RP | `20h` | Persists across Tier I prestiges; Reality Engines produce `10x` RP for `5m` after prestige. |
 | `R8` | Timeline Collapse Protocol | `100.00 Trevigintillion` RP | `36h` | Amplifies prestige currency exponentially based on proximity to Trequinquagintillion. |
-| `R9` | Multi-Dimensional Manifold | `10.00 Septentrigintillion` RP | `48h` | Increases max offline progression from `12h` to `24h`. |
+| `R9` | Multi-Dimensional Manifold | `10.00 Septentrigintillion` RP | `48h` | Expands max offline progression cap to `24h` (from `8h` base / `12h` Chronos Loom). |
 | `R10` | Timeline Collapser Core | `1.00 Novemquadragintillion` RP | `96h` | `+0.5` to master global production exponent. |
 
 ### Arkalon Branch (O1–O10)

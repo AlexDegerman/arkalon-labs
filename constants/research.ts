@@ -353,7 +353,7 @@ export const RESEARCH_NODES: ResearchNodeDefinition[] = [
     cost: 10n ** 115n,
     studyTimeSeconds: 172800,
     effectDescription:
-      'Increases max offline progression from 12 hours to 24 hours.',
+      'Expands max offline progression cap to 24 hours (from 8h base / 12h Chronos Loom).',
     prerequisiteId: 'R8',
     isInfinite: false
   },

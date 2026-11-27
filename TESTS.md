@@ -1,6 +1,6 @@
 # 🧪 Test Suite
 
-Focused Vitest unit and integration suite covering the `BigInt` production engine, segmented bulk pricing, nested prestige resets, research and relic systems, stepped offline simulation, save persistence, store/challenge state machines, and server boundaries.
+Focused Vitest unit and integration suite (**85 tests across 9 suites**) covering the `BigInt` production engine, segmented bulk pricing, nested prestige resets, research and relic systems, stepped offline simulation, save persistence, store/challenge state machines, and server boundaries.
 
 ---
 

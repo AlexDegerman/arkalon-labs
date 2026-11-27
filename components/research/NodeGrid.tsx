@@ -1,10 +1,14 @@
 'use client'
 
 import { memo, useCallback } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useGameStore } from '@/app/stores/gameStore'
 import { RESEARCH_NODE_MAP } from '@/constants/research'
 import {
   isNodeAvailable,
+  isNodeCompleted,
+  isNodeActive,
+  isNodeQueued,
   getNodeCost,
   getEffectiveStudyTime,
   getBranchNodes
@@ -232,16 +236,43 @@ function NodeTreeItem({
 }
 
 function NodeGrid({ branch, viewMode = 'grid' }: Props) {
-  const standardNodes = getBranchNodes(branch, false)
+  const orderedNodeIds = useGameStore(
+    useShallow(
+      useCallback(
+        (s) => {
+          const nodes = getBranchNodes(branch, false)
+          if (viewMode === 'tree') return nodes.map((n) => n.id)
+
+          const getPriority = (nodeId: string): number => {
+            if (isNodeCompleted(nodeId, s)) return 3
+            if (isNodeActive(nodeId, s) || isNodeQueued(nodeId, s)) return 1
+            if (!isNodeAvailable(nodeId, s)) return 2
+            const cost = getNodeCost(nodeId, s)
+            return s.researchPoints >= cost ? 0 : 1
+          }
+
+          return [...nodes]
+            .sort((a, b) => {
+              const pa = getPriority(a.id)
+              const pb = getPriority(b.id)
+              if (pa !== pb) return pa - pb
+              return a.tier - b.tier
+            })
+            .map((n) => n.id)
+        },
+        [branch, viewMode]
+      )
+    )
+  )
 
   if (viewMode === 'tree') {
     return (
       <div className="flex flex-col items-center gap-1 w-full max-w-xl mx-auto py-1">
-        {standardNodes.map((node, i) => (
+        {orderedNodeIds.map((nodeId, i) => (
           <NodeTreeItem
-            key={node.id}
-            nodeId={node.id}
-            isLast={i === standardNodes.length - 1}
+            key={nodeId}
+            nodeId={nodeId}
+            isLast={i === orderedNodeIds.length - 1}
           />
         ))}
 
@@ -255,8 +286,8 @@ function NodeGrid({ branch, viewMode = 'grid' }: Props) {
   return (
     <div className="@container flex flex-col gap-2">
       <div className="grid grid-cols-1 @[360px]:grid-cols-2 gap-1.5">
-        {standardNodes.map((node) => (
-          <NodeCard key={node.id} nodeId={node.id} />
+        {orderedNodeIds.map((nodeId) => (
+          <NodeCard key={nodeId} nodeId={nodeId} />
         ))}
       </div>
 
