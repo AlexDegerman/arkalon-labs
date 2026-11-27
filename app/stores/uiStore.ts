@@ -76,6 +76,9 @@ interface UIStore {
   // Selected generator bulk purchase mode
   bulkAmount: BulkBuyAmount
 
+  // Selected generator module purchase mode
+  moduleBulkAmount: 1 | 'max'
+
   // Generator list sort order
   generatorSort: 'tier_asc' | 'tier_desc' | 'yield_desc'
 
@@ -115,6 +118,7 @@ interface UIStore {
   setVictoryPayload: (payload: VictoryPayload | null) => void
   triggerPrestigeAnimation: () => void
   setBulkAmount: (amount: BulkBuyAmount) => void
+  setModuleBulkAmount: (amount: 1 | 'max') => void
   setGeneratorSort: (sort: 'tier_asc' | 'tier_desc' | 'yield_desc') => void
   cycleGeneratorSort: () => void
   setAutoPrestigePending: (tier: 0 | 1 | 2 | 3, countdown: number) => void
@@ -147,6 +151,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
   victoryPayload: null,
   prestigeAnimating: false,
   bulkAmount: 1,
+  moduleBulkAmount: 1,
   generatorSort: 'tier_asc',
   autoPrestigePendingTier: 0,
   autoPrestigeCountdown: 0,
@@ -232,6 +237,8 @@ export const useUIStore = create<UIStore>((set, get) => ({
   },
 
   setBulkAmount: (bulkAmount) => set({ bulkAmount }),
+
+  setModuleBulkAmount: (moduleBulkAmount) => set({ moduleBulkAmount }),
 
   setGeneratorSort: (generatorSort) => {
     try {

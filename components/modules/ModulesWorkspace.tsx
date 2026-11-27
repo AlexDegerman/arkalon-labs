@@ -1,7 +1,10 @@
 'use client'
 
-import { memo, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useGameStore } from '@/app/stores/gameStore'
+import { useUIStore } from '@/app/stores/uiStore'
+import { playSound } from '@/hooks/useSound'
 import GeneratorModuleCard from '@/components/modules/GeneratorModuleCard'
 import { buyAllModules } from '@/app/stores/actions/generatorActions'
 import {
@@ -44,6 +47,44 @@ function getCapTierSnapshot(s: {
   return 0
 }
 
+const ModuleBulkToggle = memo(function ModuleBulkToggle() {
+  const bulkAmount = useUIStore((s) => s.moduleBulkAmount)
+  const setBulkAmount = useUIStore((s) => s.setModuleBulkAmount)
+
+  return (
+    <div
+      className="flex items-center p-0.5 rounded-lg bg-(--bg-elevated) border border-(--border-default) shrink-0 font-mono text-[10px]"
+      role="group"
+      aria-label="Module purchase amount"
+    >
+      {([1, 'max'] as const).map((opt) => (
+        <button
+          key={String(opt)}
+          type="button"
+          onClick={() => {
+            playSound('click')
+            setBulkAmount(opt)
+          }}
+          title={
+            opt === 1
+              ? 'Buy 1 module level per click'
+              : 'Buy max affordable module levels per click'
+          }
+          className={[
+            'px-2 py-1 rounded font-bold uppercase transition-all cursor-pointer select-none whitespace-nowrap',
+            bulkAmount === opt
+              ? 'bg-(--border-accent) text-[#080c14] shadow-[0_0_8px_rgba(0,240,255,0.35)]'
+              : 'text-(--text-secondary) hover:text-(--text-primary)'
+          ].join(' ')}
+          aria-pressed={bulkAmount === opt}
+        >
+          {opt === 1 ? 'x1' : 'MAX'}
+        </button>
+      ))}
+    </div>
+  )
+})
+
 const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
   const generators = useGameStore((s) => s.generators)
   const challengeRecords = useGameStore((s) => s.challengeRecords)
@@ -72,48 +113,51 @@ const UpgradeAllModulesButton = memo(function UpgradeAllModulesButton() {
 
   return (
     <div className="flex flex-col gap-1">
-      <button
-        onClick={() => buyAllModules()}
-        disabled={!canBuyAny}
-        className={[
-          'w-full py-1.5 px-2.5 text-xs font-mono font-black uppercase tracking-wider rounded-lg border transition-all select-none',
-          modulesDisabled
-            ? 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
-            : allOwnedMaxed
-              ? 'border-(--status-success)/40 bg-(--status-success)/10 text-(--status-success) cursor-default'
-              : canBuyAny
-                ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent) hover:bg-(--border-accent) hover:text-[#080c14] cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.22)]'
-                : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
-        ].join(' ')}
-      >
-        {modulesDisabled ? (
-          'Modules Restricted'
-        ) : allOwnedMaxed ? (
-          'All Owned Generators Maxed'
-        ) : canBuyAny ? (
-          <>
-            <span className="@[420px]:hidden">
-              Upgrade All (+{plan.purchaseCount}) ·{' '}
-              {formatPointsShort(plan.totalCost)} RP
-            </span>
-            <span className="hidden @[420px]:inline">
-              Upgrade All (+{plan.purchaseCount}) ·{' '}
-              {formatPoints(plan.totalCost)} RP
-            </span>
-          </>
-        ) : plan.nextCheapestCost !== null ? (
-          <>
-            <span className="@[420px]:hidden">
-              Upgrade All · Need {formatPointsShort(plan.nextCheapestCost)} RP
-            </span>
-            <span className="hidden @[420px]:inline">
-              Upgrade All · Need {formatPoints(plan.nextCheapestCost)} RP
-            </span>
-          </>
-        ) : (
-          'Upgrade All'
-        )}
-      </button>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => buyAllModules()}
+          disabled={!canBuyAny}
+          className={[
+            'flex-1 min-w-0 py-1.5 px-2 text-[10px] @[420px]:text-xs font-mono font-black uppercase tracking-wider rounded-lg border transition-all select-none truncate',
+            modulesDisabled
+              ? 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
+              : allOwnedMaxed
+                ? 'border-(--status-success)/40 bg-(--status-success)/10 text-(--status-success) cursor-default'
+                : canBuyAny
+                  ? 'border-(--border-accent) bg-(--border-accent)/15 text-(--border-accent) hover:bg-(--border-accent) hover:text-[#080c14] cursor-pointer shadow-[0_0_10px_rgba(0,240,255,0.22)]'
+                  : 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
+          ].join(' ')}
+        >
+          {modulesDisabled ? (
+            'Modules Restricted'
+          ) : allOwnedMaxed ? (
+            'All Owned Generators Maxed'
+          ) : canBuyAny ? (
+            <>
+              <span className="@[420px]:hidden">
+                Upgrade All (+{plan.purchaseCount}) ·{' '}
+                {formatPointsShort(plan.totalCost)} RP
+              </span>
+              <span className="hidden @[420px]:inline">
+                Upgrade All (+{plan.purchaseCount}) ·{' '}
+                {formatPoints(plan.totalCost)} RP
+              </span>
+            </>
+          ) : plan.nextCheapestCost !== null ? (
+            <>
+              <span className="@[420px]:hidden">
+                Upgrade All · Need {formatPointsShort(plan.nextCheapestCost)} RP
+              </span>
+              <span className="hidden @[420px]:inline">
+                Upgrade All · Need {formatPoints(plan.nextCheapestCost)} RP
+              </span>
+            </>
+          ) : (
+            'Upgrade All'
+          )}
+        </button>
+        <ModuleBulkToggle />
+      </div>
 
       {!modulesDisabled && !allOwnedMaxed && (
         <div className="flex items-center justify-between gap-1 text-[9px] font-mono text-(--text-secondary)/80 px-0.5 flex-wrap">
@@ -160,7 +204,6 @@ export default function ModulesWorkspace() {
       s.arUpgrades.bulk_procurement > 0 &&
       !s.activeChallengeRestrictions?.prestigeUpgradesDisabled
   )
-  const rp = useGameStore((s) => s.researchPoints)
   const sc4Tiers = challengeRecords['SC4']?.completedTiers ?? 0
 
   const capTierThresholds = [
@@ -184,43 +227,67 @@ export default function ModulesWorkspace() {
     .map((g, i) => (g.quantity > 0n ? i : -1))
     .filter((i) => i !== -1)
 
-  const getLowestNextCost = (index: number): bigint | null => {
-    const g = generators[index]
-    if (!g || g.quantity === 0n) return null
-    let minCost: bigint | null = null
-    const effCap = getTrackLevelCap(index, 'efficiency', capCtx)
-    if (g.efficiencyLevel < effCap) {
-      const c = getModuleUpgradeCost(
-        index,
-        'efficiency',
-        g.efficiencyLevel,
-        sc4Tiers
-      )
-      if (minCost === null || c < minCost) minCost = c
-    }
-    const costCap = getTrackLevelCap(index, 'cost_reduction', capCtx)
-    if (g.costReductionLevel < costCap) {
-      const c = getModuleUpgradeCost(
-        index,
-        'cost_reduction',
-        g.costReductionLevel,
-        sc4Tiers
-      )
-      if (minCost === null || c < minCost) minCost = c
-    }
-    const synCap = getTrackLevelCap(index, 'synergy', capCtx)
-    if (g.synergyLevel < synCap) {
-      const c = getModuleUpgradeCost(index, 'synergy', g.synergyLevel, sc4Tiers)
-      if (minCost === null || c < minCost) minCost = c
-    }
-    return minCost
-  }
+  const getLowestNextCost = useCallback(
+    (index: number): bigint | null => {
+      const g = generators[index]
+      if (!g || g.quantity === 0n) return null
+      let minCost: bigint | null = null
+      const effCap = getTrackLevelCap(index, 'efficiency', capCtx)
+      if (g.efficiencyLevel < effCap) {
+        const c = getModuleUpgradeCost(
+          index,
+          'efficiency',
+          g.efficiencyLevel,
+          sc4Tiers
+        )
+        if (minCost === null || c < minCost) minCost = c
+      }
+      const costCap = getTrackLevelCap(index, 'cost_reduction', capCtx)
+      if (g.costReductionLevel < costCap) {
+        const c = getModuleUpgradeCost(
+          index,
+          'cost_reduction',
+          g.costReductionLevel,
+          sc4Tiers
+        )
+        if (minCost === null || c < minCost) minCost = c
+      }
+      const synCap = getTrackLevelCap(index, 'synergy', capCtx)
+      if (g.synergyLevel < synCap) {
+        const c = getModuleUpgradeCost(
+          index,
+          'synergy',
+          g.synergyLevel,
+          sc4Tiers
+        )
+        if (minCost === null || c < minCost) minCost = c
+      }
+      return minCost
+    },
+    [
+      generators,
+      capTier,
+      challengeRecords,
+      activeChallengeRestrictions,
+      completedResearchNodes,
+      sc4Tiers
+    ]
+  )
 
-  const affordableIndices = ownedGeneratorIndices.filter((i) => {
-    if (modulesDisabled) return false
-    const min = getLowestNextCost(i)
-    return min !== null && rp >= min
-  })
+  const affordableIndices = useGameStore(
+    useShallow(
+      useCallback(
+        (s) => {
+          if (modulesDisabled) return []
+          return ownedGeneratorIndices.filter((i) => {
+            const min = getLowestNextCost(i)
+            return min !== null && s.researchPoints >= min
+          })
+        },
+        [modulesDisabled, ownedGeneratorIndices, getLowestNextCost]
+      )
+    )
+  )
 
   const upgradableIndices = ownedGeneratorIndices.filter((i) => {
     const g = generators[i]
@@ -333,9 +400,12 @@ export default function ModulesWorkspace() {
         {canBulkUpgrade ? (
           <UpgradeAllModulesButton />
         ) : (
-          <p className="text-[10px] font-mono text-(--text-secondary)/70">
-            Upgrade All unlocks via Bulk Procurement (Prestige AR Shop).
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-mono text-(--text-secondary)/70 min-w-0 leading-tight">
+              Upgrade All unlocks via Bulk Procurement (Prestige AR Shop).
+            </p>
+            <ModuleBulkToggle />
+          </div>
         )}
 
         <div className="flex items-center justify-between gap-1.5 pt-1.5 border-t border-(--border-default)/50 font-mono text-[10px]">

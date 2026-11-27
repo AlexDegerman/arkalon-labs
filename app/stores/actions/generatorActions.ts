@@ -6,6 +6,7 @@ import { GENERATORS } from '@/constants/generators'
 import { costToBuyN, maxAffordable } from '@/lib/generatorCosts'
 import {
   getModuleUpgradeCost as getModuleUpgradeCostFn,
+  getModuleMaxUpgradeInfo,
   getTrackLevelCap as getTrackLevelCapFn,
   getUpgradeAllModulesPlan
 } from '@/lib/moduleDefs'
@@ -70,6 +71,61 @@ export function buyModule(
   if (!silent) playSound('purchase')
 
   // Modules affect production
+  useGameStore.getState().recalcPPS()
+  markUnlocksDirty()
+}
+
+export function buyModuleMax(
+  generatorIndex: number,
+  moduleType: ModuleType
+): void {
+  const store = useGameStore.getState()
+  if (store.activeChallengeRestrictions?.modulesDisabled) return
+  const gen = store.generators[generatorIndex]
+  if (!gen) return
+
+  const actualLevel =
+    moduleType === 'efficiency'
+      ? gen.efficiencyLevel
+      : moduleType === 'cost_reduction'
+        ? gen.costReductionLevel
+        : gen.synergyLevel
+
+  const cap = getTrackLevelCapFn(generatorIndex, moduleType, store)
+  if (actualLevel >= cap) return
+
+  const sc4Tiers = store.challengeRecords['SC4']?.completedTiers ?? 0
+  const { levels, cost } = getModuleMaxUpgradeInfo(
+    generatorIndex,
+    moduleType,
+    actualLevel,
+    cap,
+    store.researchPoints,
+    sc4Tiers
+  )
+  if (levels <= 0 || store.researchPoints < cost) return
+
+  useGameStore.setState((s) => {
+    const newGenerators = s.generators.map((g, i) => {
+      if (i !== generatorIndex) return g
+      switch (moduleType) {
+        case 'efficiency':
+          return { ...g, efficiencyLevel: g.efficiencyLevel + levels }
+        case 'cost_reduction':
+          return { ...g, costReductionLevel: g.costReductionLevel + levels }
+        case 'synergy':
+          return { ...g, synergyLevel: g.synergyLevel + levels }
+        default:
+          return g
+      }
+    })
+    return {
+      researchPoints: s.researchPoints - cost,
+      generators: newGenerators
+    }
+  })
+
+  playSound('purchase')
   useGameStore.getState().recalcPPS()
   markUnlocksDirty()
 }

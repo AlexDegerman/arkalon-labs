@@ -1,9 +1,12 @@
 'use client'
 
-import { memo, useState } from 'react'
+import { memo, useCallback, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useGameStore } from '@/app/stores/gameStore'
+import { useUIStore } from '@/app/stores/uiStore'
 import {
   getModuleUpgradeCost,
+  getModuleMaxUpgradeInfo,
   getModuleLevelCap,
   getTrackLevelCap,
   getModuleEffectLabel,
@@ -14,7 +17,7 @@ import { MODULE_SYNERGIES, GENERATORS } from '@/constants/generators'
 import { formatPoints, formatPointsShort } from '@/lib/format'
 import type { ModuleType } from '@/types/game'
 import ProgressBar from '@/components/ui/ProgressBar'
-import { buyModule } from '@/app/stores/actions/generatorActions'
+import { buyModule, buyModuleMax } from '@/app/stores/actions/generatorActions'
 import { getRelicSynergyBonus } from '@/lib/relicEffects'
 
 interface ModuleTrackProps {
@@ -22,6 +25,7 @@ interface ModuleTrackProps {
   moduleType: ModuleType
   currentLevel: number
   levelCap: number
+  bulkAmount: 1 | 'max'
   modulesDisabled: boolean
   sc4Tiers: number
   ac5Active: boolean
@@ -33,6 +37,7 @@ const ModuleTrack = memo(function ModuleTrack({
   moduleType,
   currentLevel,
   levelCap,
+  bulkAmount,
   modulesDisabled,
   sc4Tiers,
   ac5Active,
@@ -40,12 +45,42 @@ const ModuleTrack = memo(function ModuleTrack({
 }: ModuleTrackProps) {
   const def = MODULE_DEFINITIONS[moduleType]
   const atCap = currentLevel >= levelCap
-  const cost = atCap
+  const singleCost = atCap
     ? 0n
     : getModuleUpgradeCost(generatorIndex, moduleType, currentLevel, sc4Tiers)
-  const canAfford = useGameStore(
-    (s) => !atCap && !modulesDisabled && s.researchPoints >= cost
+  const canAffordSingle = useGameStore(
+    (s) => !atCap && !modulesDisabled && s.researchPoints >= singleCost
   )
+  const maxInfo = useGameStore(
+    useShallow(
+      useCallback(
+        (s) =>
+          atCap || modulesDisabled || bulkAmount !== 'max'
+            ? { levels: 0, cost: 0n }
+            : getModuleMaxUpgradeInfo(
+                generatorIndex,
+                moduleType,
+                currentLevel,
+                levelCap,
+                s.researchPoints,
+                sc4Tiers
+              ),
+        [
+          atCap,
+          modulesDisabled,
+          bulkAmount,
+          generatorIndex,
+          moduleType,
+          currentLevel,
+          levelCap,
+          sc4Tiers
+        ]
+      )
+    )
+  )
+  const canAfford = bulkAmount === 'max' ? maxInfo.levels > 0 : canAffordSingle
+  const displayCost =
+    bulkAmount === 'max' && maxInfo.levels > 0 ? maxInfo.cost : singleCost
   const effectLabel = getModuleEffectLabel(moduleType, currentLevel, ac5Active)
   const hint =
     moduleType === 'synergy' && !hasSynergyLink
@@ -54,7 +89,11 @@ const ModuleTrack = memo(function ModuleTrack({
 
   function handleUpgrade() {
     if (atCap || modulesDisabled || !canAfford) return
-    buyModule(generatorIndex, moduleType, currentLevel)
+    if (bulkAmount === 'max') {
+      buyModuleMax(generatorIndex, moduleType)
+    } else {
+      buyModule(generatorIndex, moduleType, currentLevel)
+    }
   }
 
   return (
@@ -94,10 +133,16 @@ const ModuleTrack = memo(function ModuleTrack({
             ) : (
               <>
                 <span className="@[420px]:hidden">
-                  {formatPointsShort(cost)} RP
+                  {bulkAmount === 'max' && maxInfo.levels > 0
+                    ? `+${maxInfo.levels} · `
+                    : ''}
+                  {formatPointsShort(displayCost)} RP
                 </span>
                 <span className="hidden @[420px]:inline">
-                  {formatPoints(cost)} RP
+                  {bulkAmount === 'max' && maxInfo.levels > 0
+                    ? `+${maxInfo.levels} · `
+                    : ''}
+                  {formatPoints(displayCost)} RP
                 </span>
               </>
             )}
@@ -175,21 +220,21 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
     gen.synergyLevel >= synCap
   const [expanded, setExpanded] = useState(!isFullyMaxed)
 
-  const rp = useGameStore((s) => s.researchPoints)
-  const canAffordAny =
-    Boolean(gen) &&
-    gen.quantity > 0n &&
-    !modulesDisabled &&
-    ((gen.efficiencyLevel < effCap &&
-      rp >=
-        getModuleUpgradeCost(
-          generatorIndex,
-          'efficiency',
-          gen.efficiencyLevel,
-          sc4Tiers
-        )) ||
+  const moduleBulkAmount = useUIStore((s) => s.moduleBulkAmount)
+  const canAffordAny = useGameStore((s) => {
+    if (!gen || gen.quantity === 0n || modulesDisabled) return false
+    const curRP = s.researchPoints
+    return (
+      (gen.efficiencyLevel < effCap &&
+        curRP >=
+          getModuleUpgradeCost(
+            generatorIndex,
+            'efficiency',
+            gen.efficiencyLevel,
+            sc4Tiers
+          )) ||
       (gen.costReductionLevel < costCap &&
-        rp >=
+        curRP >=
           getModuleUpgradeCost(
             generatorIndex,
             'cost_reduction',
@@ -197,13 +242,15 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
             sc4Tiers
           )) ||
       (gen.synergyLevel < synCap &&
-        rp >=
+        curRP >=
           getModuleUpgradeCost(
             generatorIndex,
             'synergy',
             gen.synergyLevel,
             sc4Tiers
-          )))
+          ))
+    )
+  })
 
   const def = GENERATORS[generatorIndex]
   if (!def) return null
@@ -378,6 +425,7 @@ function GeneratorModuleCard({ generatorIndex }: Props) {
                   ? costCap
                   : synCap
             }
+            bulkAmount={moduleBulkAmount}
             modulesDisabled={modulesDisabled}
             sc4Tiers={sc4Tiers}
             ac5Active={ac5Active}

@@ -101,6 +101,34 @@ export function getModuleUpgradeCost(
   return cost
 }
 
+export function getModuleMaxUpgradeInfo(
+  generatorIndex: number,
+  moduleType: ModuleType,
+  currentLevel: number,
+  levelCap: number,
+  availableRP: bigint,
+  sc4Tiers = 0
+): { levels: number; cost: bigint } {
+  let levels = 0
+  let totalCost = 0n
+  let remaining = availableRP
+
+  for (let lvl = currentLevel; lvl < levelCap; lvl++) {
+    const nextCost = getModuleUpgradeCost(
+      generatorIndex,
+      moduleType,
+      lvl,
+      sc4Tiers
+    )
+    if (nextCost <= 0n || remaining < nextCost) break
+    remaining -= nextCost
+    totalCost += nextCost
+    levels++
+  }
+
+  return { levels, cost: totalCost }
+}
+
 // Returns the effective core level cap for modules (used for 2x Maxed Set bonus)
 // AC5 challenge completion raises cap by +1 per tier up to 8
 export function getModuleLevelCap(state: {
