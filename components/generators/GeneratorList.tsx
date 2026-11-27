@@ -22,8 +22,8 @@ const BULK_LABELS: Record<string | number, string> = {
 }
 
 const SORT_LABELS: Record<'tier_asc' | 'tier_desc' | 'yield_desc', string> = {
-  tier_asc: '↕ 1→20',
-  tier_desc: '↕ 20→1',
+  tier_asc: '↕ Tier 1→20',
+  tier_desc: '↕ Tier 20→1',
   yield_desc: '↕ Yield%'
 }
 
@@ -38,7 +38,7 @@ function orderYieldWithHysteresis(
   const share = (i: number) => shares?.[i] ?? 0
   const sorted = [...indices].sort((a, b) => {
     const diff = share(b) - share(a)
-    return diff !== 0 ? diff : b - a
+    return diff !== 0 ? diff : a - b
   })
   if (prevOrder.length === 0) return sorted
   const prevRank = new Map(prevOrder.map((id, i) => [id, i]))
@@ -106,7 +106,7 @@ export default function GeneratorList() {
     const prev = prevPrestigeRef.current
     prevPrestigeRef.current = lastPrestigeTime
     if (prev === null || lastPrestigeTime <= prev) return
-    if (useUIStore.getState().generatorSort === 'tier_desc') {
+    if (useUIStore.getState().generatorSort !== 'tier_asc') {
       setGeneratorSort('tier_asc')
     }
   }, [initialized, lastPrestigeTime, setGeneratorSort])
