@@ -74,6 +74,13 @@ export default function GeneratorList() {
   const maxGeneratorTier = useGameStore(
     (s) => s.activeChallengeRestrictions?.maxGeneratorTier ?? null
   )
+  const highestReachedBaseCost = useGameStore((s) => {
+    let best = 0n
+    for (const g of GENERATORS) {
+      if (s.lifetimePoints >= g.baseCost) best = g.baseCost
+    }
+    return best
+  })
   const noSynthesizersOwned = useGameStore((s) =>
     (s.synthesizers ?? [0, 0, 0, 0]).every((q) => q === 0)
   )
@@ -100,7 +107,7 @@ export default function GeneratorList() {
 
   const lastPrestigeTime = useGameStore((s) => s.stats.lastPrestigeTime)
   const prevPrestigeRef = useRef<number | null>(null)
-  
+
   useEffect(() => {
     if (!initialized) return
     const prev = prevPrestigeRef.current
@@ -126,6 +133,7 @@ export default function GeneratorList() {
   function isGeneratorVisible(index: number): boolean {
     return checkGeneratorVisible(index, {
       generators,
+      lifetimePoints: highestReachedBaseCost,
       activeChallengeRestrictions:
         maxGeneratorTier !== null ? { maxGeneratorTier } : null
     })
@@ -137,6 +145,7 @@ export default function GeneratorList() {
     const base = GENERATORS.map((_, index) => index).filter((index) =>
       checkGeneratorVisible(index, {
         generators,
+        lifetimePoints: highestReachedBaseCost,
         activeChallengeRestrictions:
           maxGeneratorTier !== null ? { maxGeneratorTier } : null
       })
@@ -152,7 +161,13 @@ export default function GeneratorList() {
       )
     }
     return base
-  }, [generators, maxGeneratorTier, generatorSort, productionShares])
+  }, [
+    generators,
+    highestReachedBaseCost,
+    maxGeneratorTier,
+    generatorSort,
+    productionShares
+  ])
 
   useEffect(() => {
     if (generatorSort === 'yield_desc') {

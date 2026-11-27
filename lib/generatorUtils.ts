@@ -1,6 +1,7 @@
 // Generator display utilities used by GeneratorCard and tooltip components
 
 import type { GameState } from '@/types/game'
+import { GENERATORS } from '@/constants/generators'
 import {
   generatorEffectiveCost,
   getNextMilestoneInfo,
@@ -30,6 +31,7 @@ export function isGeneratorVisible(
   index: number,
   state: {
     generators: GameState['generators']
+    lifetimePoints?: bigint
     activeChallengeRestrictions: { maxGeneratorTier: number | null } | null
   }
 ): boolean {
@@ -39,6 +41,15 @@ export function isGeneratorVisible(
 
   const gen = state.generators[index]
   if (gen && gen.quantity > 0n) return true
+
+  const baseCost = GENERATORS[index]?.baseCost
+  if (
+    baseCost !== undefined &&
+    state.lifetimePoints !== undefined &&
+    state.lifetimePoints >= baseCost
+  ) {
+    return true
+  }
 
   const highestOwned = state.generators.reduce((max, g, i) => {
     if (maxTier !== null && i >= maxTier) return max

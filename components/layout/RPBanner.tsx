@@ -15,7 +15,6 @@ import {
   useProgressionTier,
 } from '@/hooks/useProgressionTier'
 import TutorialHighlight from '@/components/tutorial/TutorialHighlight'
-import { calculateARGain } from '@/lib/prestigeCalc'
 import {
   getARCap,
   getCountedAR,
@@ -203,7 +202,6 @@ export default function RPBanner() {
 
   const autoPrestigePendingTier = useUIStore((s) => s.autoPrestigePendingTier)
   const autoPrestigeCountdown = useUIStore((s) => s.autoPrestigeCountdown)
-  const prestige1Done = useGameStore((s) => s.stats.totalPrestigesTier1 > 0)
 
   const zeroPpsReason =
     initialized && pps === 0n && activeChallengeId
@@ -235,8 +233,7 @@ export default function RPBanner() {
   const era = getCurrentEra(trophyPoints)
   const eraColorClass = getAmountColor(trophyPoints)
 
-  // Projected AR & AR cap details
-  const projectedAR = useGameStore(calculateARGain)
+  // AR cap details for hover tooltip
   const arCounted = useGameStore(getCountedAR)
   const arCap = useGameStore(getARCap)
 
@@ -390,50 +387,30 @@ export default function RPBanner() {
             {(arkalonResonance > 0 || arCounted > 0) && (
               <span
                 title={`Passive AR Counted: ${arCounted.toLocaleString()} / ${arCap.toLocaleString()} Cap`}
-                className="inline-flex items-center gap-1 bg-(--bg-elevated) border border-purple-500/40 px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold shadow-[0_0_8px_rgba(168,85,247,0.25)]"
+                className="inline-flex items-center gap-1 bg-(--bg-elevated) border border-purple-500/40 px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold shadow-[0_0_8px_rgba(168,85,247,0.25)] whitespace-nowrap"
               >
                 <span className="g-dd">
-                  {formatPoints(BigInt(Math.floor(arkalonResonance)))}
+                  {formatPointsShort(BigInt(Math.floor(arkalonResonance)))}
                 </span>
                 <span className="text-purple-300 opacity-75">AR</span>
-                <span className="text-[9px] text-purple-300/70">
-                  ({formatPoints(BigInt(arCounted))}/
-                  {formatPoints(BigInt(arCap))})
-                </span>
               </span>
             )}
 
             {chronalFractures > 0 && (
-              <span className="inline-flex items-center gap-1 bg-(--bg-elevated) border border-cyan-500/40 px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold shadow-[0_0_8px_rgba(34,211,238,0.25)]">
+              <span className="inline-flex items-center gap-1 bg-(--bg-elevated) border border-cyan-500/40 px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold shadow-[0_0_8px_rgba(34,211,238,0.25)] whitespace-nowrap">
                 <span className="g-sp">
-                  {formatPoints(BigInt(Math.floor(chronalFractures)))}
+                  {formatPointsShort(BigInt(Math.floor(chronalFractures)))}
                 </span>
                 <span className="text-cyan-300 opacity-75">CF</span>
               </span>
             )}
 
             {omniSpars > 0 && (
-              <span className="inline-flex items-center gap-1 bg-(--bg-elevated) border border-amber-500/40 px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold shadow-[0_0_8px_rgba(245,158,11,0.25)]">
+              <span className="inline-flex items-center gap-1 bg-(--bg-elevated) border border-amber-500/40 px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold shadow-[0_0_8px_rgba(245,158,11,0.25)] whitespace-nowrap">
                 <span className="g-tqgs">
-                  {formatPoints(BigInt(Math.floor(omniSpars)))}
+                  {formatPointsShort(BigInt(Math.floor(omniSpars)))}
                 </span>
                 <span className="text-amber-300 opacity-75">OS</span>
-              </span>
-            )}
-
-            {/* Projected prestige gain */}
-            {projectedAR > 0 && (
-              <span className="text-[11px] font-mono text-(--text-secondary) ml-auto sm:ml-0 whitespace-nowrap">
-                <span className="hidden sm:inline">
-                  {prestige1Done ? 'Recalibrate:' : 'Prestige:'}{' '}
-                </span>
-                <strong className="text-(--status-success) font-bold">
-                  {isCompact ? '+' : '~'}
-                  {isCompact
-                    ? formatPointsShort(BigInt(projectedAR))
-                    : formatPoints(BigInt(projectedAR))}{' '}
-                  AR
-                </strong>
               </span>
             )}
           </>
