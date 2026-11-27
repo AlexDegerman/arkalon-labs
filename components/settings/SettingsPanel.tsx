@@ -287,12 +287,31 @@ export default function SettingsPanel() {
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    setImportError('')
+    setImportSuccess(false)
+
+    // Reject files larger than 1MB (valid saves are < 25KB)
+    if (file.size > 1024 * 1024) {
+      setImportOpen(true)
+      setImportError(
+        'File is too large. Please select a valid Arkalon Labs save file.'
+      )
+      e.target.value = ''
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = (event) => {
       const content = event.target?.result as string
       if (content) {
         setImportText(content.trim())
+        setImportOpen(true)
       }
+    }
+    reader.onerror = () => {
+      setImportOpen(true)
+      setImportError('Failed to read file.')
     }
     reader.readAsText(file)
     e.target.value = ''

@@ -230,10 +230,9 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
 
   const stage = getStageForQuantity(quantity)
   const multStr = formatMilestoneMultiplier(milestoneInfo.doublings)
-  const milestoneStr =
-    quantity === 0n
-      ? `0/${milestoneInfo.next} - ${multStr} at ${milestoneInfo.next}`
-      : `${milestoneInfo.current}/${milestoneInfo.next} - ${multStr} at ${milestoneInfo.next}`
+  const unitsToNext = Math.max(0, milestoneInfo.next - Number(quantity))
+  const isMilestoneClose = unitsToNext <= 3 && unitsToNext > 0
+  const milestoneStr = `${milestoneInfo.current}/${milestoneInfo.next}`
 
   const milestoneProgress =
     milestoneInfo.next > 0
@@ -350,40 +349,52 @@ function GeneratorCard({ generatorIndex, bulkAmount }: Props) {
               </span>
             ) : (
               <div className="flex flex-col gap-0.5">
-                <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] font-mono text-(--text-secondary)/80">
+                <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-0.5 text-[9px] sm:text-[10px] font-mono">
                   <span
-                    className="min-w-0"
+                    className="min-w-0 flex items-center gap-1"
                     title={
                       milestoneInfo.doublings > 8
                         ? 'First 8 milestones double (2x up to 256x); steps 9-100 scale by 1.08x, then taper linearly (+5% per step).'
                         : undefined
                     }
                   >
-                    {milestoneStr}
+                    <span
+                      className={
+                        isMilestoneClose
+                          ? 'text-cyan-300 font-bold'
+                          : 'text-(--text-secondary)/80'
+                      }
+                    >
+                      {milestoneStr}
+                    </span>
+                    <span
+                      className={
+                        isMilestoneClose
+                          ? 'text-cyan-200 font-bold'
+                          : 'text-(--text-secondary)'
+                      }
+                    >
+                      ({multStr})
+                    </span>
                     {milestoneInfo.doublings > 8 && (
-                      <span className="hidden sm:inline text-cyan-300/75 ml-1">
-                        (
-                        {milestoneInfo.doublings > 100
-                          ? 'linear taper'
-                          : '1.08x taper'}
-                        )
+                      <span className="hidden sm:inline text-cyan-300/60 ml-0.5 text-[9px]">
+                        ({milestoneInfo.doublings > 100 ? 'linear' : '1.08x'})
                       </span>
                     )}
                   </span>
-                  {nextMutation && (
+                  {nextMutation && nextMutation.threshold - quantity <= 50n && (
                     <span
-                      title={`Next Mutation at ${nextMutation.threshold}: ${nextMutation.name} (${nextMutation.description})`}
-                      className="text-amber-400 font-bold shrink-0"
+                      title={`Mutation at ${nextMutation.threshold}: ${nextMutation.name} (${nextMutation.description})`}
+                      className="text-amber-400 font-bold shrink-0 text-[9px]"
                     >
-                      ★ {nextMutation.badge} in{' '}
-                      {Number(nextMutation.threshold - quantity)}
+                      ★ Mutation in {Number(nextMutation.threshold - quantity)}
                     </span>
                   )}
                 </div>
-                <div className="w-24 sm:w-28 opacity-80">
+                <div className="w-24 sm:w-28 opacity-90">
                   <ProgressBar
                     progress={milestoneProgress}
-                    variant="default"
+                    variant={isMilestoneClose ? 'success' : 'default'}
                     height={2}
                     animated={false}
                   />

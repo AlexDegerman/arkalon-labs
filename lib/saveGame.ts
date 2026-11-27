@@ -288,8 +288,16 @@ export function deserialiseState(raw: unknown): GameState {
   // Helper: safely parse a bigint string
   function parseBigInt(v: unknown, fallback: bigint): bigint {
     try {
-      if (typeof v === 'string') return BigInt(v)
-      if (typeof v === 'number' && isFinite(v)) return BigInt(Math.floor(v))
+      if (typeof v === 'string') {
+        if (v.length > 1050) return fallback
+        const b = BigInt(v)
+        if (b < 0n) return 0n
+        return b > 10n ** 1000n ? 10n ** 1000n : b
+      }
+      if (typeof v === 'number' && isFinite(v)) {
+        const b = BigInt(Math.floor(v))
+        return b < 0n ? 0n : b
+      }
       return fallback
     } catch {
       return fallback
@@ -370,7 +378,7 @@ export function deserialiseState(raw: unknown): GameState {
       )
     )
   }
-  
+
   function parseChallengeRestrictions(
     rawRest: unknown
   ): ChallengeRestrictions | null {
