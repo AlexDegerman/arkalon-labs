@@ -140,7 +140,7 @@ Unlocked per branch upon completing **Tier 8** (`C8`, `E8`, `R8`, `O8`). Infinit
 
 *(Standard multi-level upgrades scale linearly as `baseCost * (level + 1)` unless noted with exponential `costScaling`; all prestige upgrades are suspended during `AC2` and `EC1`.)*
 
-### Arkalon Resonance Upgrades (16)
+### Arkalon Resonance Upgrades (15)
 
 | Upgrade | Base Cost & Scaling | Max Lv | Effect |
 | :--- | :--- | :--- | :--- |
@@ -159,9 +159,8 @@ Unlocked per branch upon completing **Tier 8** (`C8`, `E8`, `R8`, `O8`). Infinit
 | Quantum Overdrive | `500 AR` (`2.0x` exp) | `20` | Doubles (`2x`) global RP production per level. |
 | Harmonic Resonance Cap | `1,500 AR` (`3.0x` exp) | `10` | Raises passive AR bonus cap by `+500 AR` per level (up to `5,500 AR`). |
 | Resonance Compression | `25,000 AR` (`5.0x` exp) | `5` | `+0.02` to global production exponent per level. |
-| Bulk Procurement | `500,000 AR` | `1` | Unlocks `MAX ALL (M)` equipment sweep and `Upgrade All` modules button. |
 
-### Chronal Fracture Upgrades (10)
+### Chronal Fracture Upgrades (11)
 
 | Upgrade | Base Cost | Max Lv | Effect |
 | :--- | :--- | :--- | :--- |
@@ -171,6 +170,7 @@ Unlocked per branch upon completing **Tier 8** (`C8`, `E8`, `R8`, `O8`). Infinit
 | Generator Transcendence | `20 CF` (linear) | `5` | `+5%` base output to generators Tier 6+ per level. |
 | Quantum Memory | `25 CF` | `1` | Retain up to `3` Tier-4 research nodes across Tier I prestiges. |
 | Relic Preservation | `30 CF` | `1` | Relic swap cooldown removed (instant swaps). |
+| Bulk Procurement | `30 CF` | `1` | Unlocks `MAX ALL (M)` equipment sweep and `Upgrade All` modules button. |
 | Auto-Upgrade Relics | `35 CF` | `1` | Automatically upgrades unlocked Relics with Dust up to your target level cap. |
 | Megaproject Efficiency | `35 CF` (linear) | `3` | Megaproject construction costs `-10%` per level (up to `-30%`). |
 | Deep Research Slots | `40 CF` | `1` | Unlocks 3rd parallel research slot (requires distinct branch from both). |

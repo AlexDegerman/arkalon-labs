@@ -146,7 +146,7 @@ describe('store and challenges', () => {
 
     seed({
       researchPoints: 10_000n,
-      arUpgrades: { ...makeInitialState().arUpgrades, bulk_procurement: 1 }
+      cfUpgrades: { ...makeInitialState().cfUpgrades, bulk_procurement: 1 }
     })
     buyMaxAllGenerators()
     s = useGameStore.getState()

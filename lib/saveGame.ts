@@ -663,11 +663,18 @@ export function deserialiseState(raw: unknown): GameState {
     }
   }
 
+  const rawArUpgrades = {
+    ...((s.arUpgrades ?? {}) as unknown as Record<string, number>)
+  }
+  const hadLegacyArBulk = (rawArUpgrades.bulk_procurement ?? 0) > 0
+  delete rawArUpgrades.bulk_procurement
+
   return {
     ...initial,
     researchPoints: parseBigInt(s.researchPoints, initial.researchPoints),
     lifetimePoints: parseBigInt(s.lifetimePoints, initial.lifetimePoints),
-    arkalonResonance: parseNum(s.arkalonResonance, 0),
+    arkalonResonance:
+      parseNum(s.arkalonResonance, 0) + (hadLegacyArBulk ? 500_000 : 0),
     chronalFractures: parseNum(s.chronalFractures, 0),
     omniSpars: parseNum(s.omniSpars, 0),
     artifactDust: Math.min(
@@ -682,7 +689,7 @@ export function deserialiseState(raw: unknown): GameState {
     infiniteResearchLevels,
     o6BypassUsed: Boolean(s.o6BypassUsed),
     resonanceMemoryAR: parseNum(s.resonanceMemoryAR, 0),
-    arUpgrades: { ...initial.arUpgrades, ...(s.arUpgrades ?? {}) },
+    arUpgrades: { ...initial.arUpgrades, ...rawArUpgrades },
     cfUpgrades: { ...initial.cfUpgrades, ...(s.cfUpgrades ?? {}) },
     osUpgrades: { ...initial.osUpgrades, ...(s.osUpgrades ?? {}) },
     relicSlots,

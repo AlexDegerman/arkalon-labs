@@ -79,7 +79,7 @@ export default function GeneratorList() {
   )
   const canMaxAll = useGameStore(
     (s) =>
-      s.arUpgrades.bulk_procurement > 0 &&
+      s.cfUpgrades.bulk_procurement > 0 &&
       !s.activeChallengeRestrictions?.prestigeUpgradesDisabled
   )
 

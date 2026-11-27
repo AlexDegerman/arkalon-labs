@@ -164,17 +164,6 @@ export const AR_UPGRADES: PrestigeUpgradeDef<keyof ARUpgrades>[] = [
     costScaling: 5.0,
     currency: 'ar',
     effectAtLevel: (l) => `+${(l * 0.02).toFixed(2)} exponent`
-  },
-  {
-    id: 'bulk_procurement',
-    label: 'Bulk Procurement',
-    description:
-      'Unlocks MAX ALL (M) equipment sweep and Upgrade All modules button.',
-    baseCost: 500_000,
-    maxLevel: 1,
-    currency: 'ar',
-    effectAtLevel: (l) =>
-      l > 0 ? 'MAX ALL & Bulk Modules active' : 'Not purchased'
   }
 ]
 
@@ -264,6 +253,17 @@ export const CF_UPGRADES: PrestigeUpgradeDef<keyof CFUpgrades>[] = [
     currency: 'cf',
     effectAtLevel: (l) =>
       l > 0 ? '+25% equipped relic effects' : 'Not purchased'
+  },
+  {
+    id: 'bulk_procurement',
+    label: 'Bulk Procurement',
+    description:
+      'Unlocks MAX ALL (M) equipment sweep and Upgrade All modules button.',
+    baseCost: 30,
+    maxLevel: 1,
+    currency: 'cf',
+    effectAtLevel: (l) =>
+      l > 0 ? 'MAX ALL & Bulk Modules active' : 'Not purchased'
   },
   {
     id: 'megaproject_efficiency',

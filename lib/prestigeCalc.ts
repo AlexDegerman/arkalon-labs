@@ -341,12 +341,12 @@ export function buildTier3ResetState(
     // Reset economic prestige upgrades while preserving QoL automation unlocks
     arUpgrades: {
       ...makeInitialState().arUpgrades,
-      bulk_procurement: state.arUpgrades.bulk_procurement,
       auto_buy_basic: state.arUpgrades.auto_buy_basic,
       auto_research_queue: state.arUpgrades.auto_research_queue
     },
     cfUpgrades: {
       ...makeInitialState().cfUpgrades,
+      bulk_procurement: state.cfUpgrades.bulk_procurement,
       auto_module_buyer: state.cfUpgrades.auto_module_buyer,
       auto_buy_synthesizers: state.cfUpgrades.auto_buy_synthesizers,
       auto_upgrade_relics: state.cfUpgrades.auto_upgrade_relics

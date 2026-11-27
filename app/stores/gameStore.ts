@@ -42,7 +42,6 @@ function makeDefaultRelicSlots(): RelicSlotState[] {
 const DEFAULT_AR_UPGRADES: ARUpgrades = {
   chronal_anchor: 0,
   dimensional_blueprinting: 0,
-  bulk_procurement: 0,
   neural_pipeline: 0,
   super_symmetry: 0,
   auto_buy_basic: 0,
@@ -68,6 +67,7 @@ const DEFAULT_CF_UPGRADES: CFUpgrades = {
   generator_transcendence: 0,
   deep_research_slots: 0,
   relic_preservation: 0,
+  bulk_procurement: 0,
   megaproject_efficiency: 0
 }
 

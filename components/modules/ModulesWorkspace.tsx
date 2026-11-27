@@ -201,7 +201,7 @@ export default function ModulesWorkspace() {
   const isAC5 = useGameStore((s) => s.activeChallengeId === 'AC5')
   const canBulkUpgrade = useGameStore(
     (s) =>
-      s.arUpgrades.bulk_procurement > 0 &&
+      s.cfUpgrades.bulk_procurement > 0 &&
       !s.activeChallengeRestrictions?.prestigeUpgradesDisabled
   )
   const sc4Tiers = challengeRecords['SC4']?.completedTiers ?? 0
@@ -402,7 +402,7 @@ export default function ModulesWorkspace() {
         ) : (
           <div className="flex items-center justify-between gap-2">
             <p className="text-[10px] font-mono text-(--text-secondary)/70 min-w-0 leading-tight">
-              Upgrade All unlocks via Bulk Procurement (Prestige AR Shop).
+              Upgrade All unlocks via Bulk Procurement (Tier II CF Shop).
             </p>
             <ModuleBulkToggle />
           </div>

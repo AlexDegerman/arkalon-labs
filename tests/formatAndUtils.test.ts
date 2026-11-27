@@ -302,7 +302,7 @@ describe('format and utils', () => {
     })
 
     expect(getFeatureProgress('challenges', progressState())).toEqual({
-      label: '0/1 Recalibration',
+      label: '0/1 Prestige',
       fraction: 0
     })
     expect(
@@ -312,7 +312,7 @@ describe('format and utils', () => {
           stats: { ...makeInitialState().stats, totalPrestigesTier1: 1 }
         })
       )
-    ).toEqual({ label: '1/1 Recalibration', fraction: 1 })
+    ).toEqual({ label: '1/1 Prestige', fraction: 1 })
 
     expect(getFeatureProgress('nope' as FeatureKey, progressState())).toBeNull()
   })

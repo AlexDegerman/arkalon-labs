@@ -80,7 +80,6 @@ export interface RelicSlotState {
 export interface ARUpgrades {
   chronal_anchor: number // 0 or 1
   dimensional_blueprinting: number // 0 or 1
-  bulk_procurement: number // 0 or 1
   neural_pipeline: number // 0-5
   super_symmetry: number // 0 or 1
   auto_buy_basic: number // 0 or 1
@@ -107,6 +106,7 @@ export interface CFUpgrades {
   generator_transcendence: number // 0-5
   deep_research_slots: number // 0 or 1
   relic_preservation: number // 0 or 1
+  bulk_procurement: number // 0 or 1
   megaproject_efficiency: number // 0-3
 }
 

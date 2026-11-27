@@ -16,7 +16,7 @@ const SHORTCUT_GROUPS = [
       },
       {
         key: 'M',
-        desc: 'Buy Max All across all tiers (Requires Bulk Procurement AR upgrade)'
+        desc: 'Buy Max All across all tiers (Requires Bulk Procurement CF upgrade)'
       },
       {
         key: 'B',

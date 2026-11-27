@@ -133,7 +133,7 @@ export function buyModuleMax(
 export function buyAllModules(filterType?: ModuleType): void {
   const store = useGameStore.getState()
   if (
-    store.arUpgrades.bulk_procurement <= 0 ||
+    store.cfUpgrades.bulk_procurement <= 0 ||
     store.activeChallengeRestrictions?.prestigeUpgradesDisabled
   ) {
     return
@@ -250,7 +250,7 @@ export function buyGenerator(
 export function buyMaxAllGenerators(): void {
   const store = useGameStore.getState()
   if (
-    store.arUpgrades.bulk_procurement <= 0 ||
+    store.cfUpgrades.bulk_procurement <= 0 ||
     store.activeChallengeRestrictions?.prestigeUpgradesDisabled
   ) {
     return

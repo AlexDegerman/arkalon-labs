@@ -482,13 +482,13 @@ describe('prestigeCalc', () => {
       chronalFractures: 12,
       omniSpars: 4,
       arUpgrades: ar({
-        bulk_procurement: 1,
         auto_buy_basic: 1,
         auto_research_queue: 1,
         generator_priming: 5,
         quantum_overdrive: 3
       }),
       cfUpgrades: cf({
+        bulk_procurement: 1,
         auto_module_buyer: 1,
         auto_buy_synthesizers: 1,
         auto_upgrade_relics: 1,
@@ -503,11 +503,11 @@ describe('prestigeCalc', () => {
     expect(patch.chronalFractures).toBe(0)
     expect(patch.omniSpars).toBe(10)
     expect(patch.arkalonResonance).toBe(0)
-    expect(patch.arUpgrades?.bulk_procurement).toBe(1)
     expect(patch.arUpgrades?.auto_buy_basic).toBe(1)
     expect(patch.arUpgrades?.auto_research_queue).toBe(1)
     expect(patch.arUpgrades?.generator_priming).toBe(0)
     expect(patch.arUpgrades?.quantum_overdrive).toBe(0)
+    expect(patch.cfUpgrades?.bulk_procurement).toBe(1)
     expect(patch.cfUpgrades?.auto_module_buyer).toBe(1)
     expect(patch.cfUpgrades?.auto_buy_synthesizers).toBe(1)
     expect(patch.cfUpgrades?.auto_upgrade_relics).toBe(1)
