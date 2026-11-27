@@ -2,11 +2,13 @@
 
 import { useRef, useEffect, useCallback } from 'react'
 import { formatPoints, formatPointsShort, getAmountColor } from '@/lib/format'
+import type { NotationMode } from '@/types/game'
 
 interface AnimatedBigIntOptions {
   // Duration in ms for the number to animate toward the target
   duration?: number
   compact?: boolean
+  notationMode?: NotationMode
 }
 
 // Zero-rerender animation of bigint display values via direct DOM ref writes
@@ -15,7 +17,7 @@ export function useAnimatedBigInt(
   targetValue: bigint,
   options: AnimatedBigIntOptions = {}
 ) {
-  const { duration = 150, compact = false } = options
+  const { duration = 150, compact = false, notationMode } = options
 
   const displayRef = useRef<HTMLElement | null>(null)
   const baseClassRef = useRef<string | null>(null)
@@ -61,7 +63,7 @@ export function useAnimatedBigInt(
         rafRef.current = requestAnimationFrame(animate)
       }
     },
-    [duration, compact]
+    [duration, compact, notationMode]
   )
 
   useEffect(() => {

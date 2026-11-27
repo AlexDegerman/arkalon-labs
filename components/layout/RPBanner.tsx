@@ -2,6 +2,7 @@
 
 import { useGameStore } from '@/app/stores/gameStore'
 import { useAnimatedBigInt } from '@/hooks/useAnimatedBigInt'
+import type { NotationMode } from '@/types/game'
 import {
   formatCountdown,
   formatPoints,
@@ -36,14 +37,21 @@ import {
 import { getAnomalyBuffScale } from '@/lib/anomalyDefs'
 
 // Mono advance is ~0.6em; reserve covers the trailing RP label
-const RP_FIT_TIERS = [
-  { cls: 'text-5xl', px: 48 },
-  { cls: 'text-4xl', px: 36 },
+const RP_FIT_TIERS_DESKTOP = [
   { cls: 'text-3xl', px: 30 },
   { cls: 'text-2xl', px: 24 },
   { cls: 'text-xl', px: 20 },
   { cls: 'text-lg', px: 18 },
-  { cls: 'text-base', px: 16 }
+  { cls: 'text-base', px: 16 },
+  { cls: 'text-sm', px: 14 }
+] as const
+
+const RP_FIT_TIERS_MOBILE = [
+  { cls: 'text-2xl', px: 24 },
+  { cls: 'text-xl', px: 20 },
+  { cls: 'text-lg', px: 18 },
+  { cls: 'text-base', px: 16 },
+  { cls: 'text-sm', px: 14 }
 ] as const
 
 const RP_LABEL_RESERVE_PX = 26
@@ -109,12 +117,14 @@ function useIsCompactViewport(): boolean {
 
 function AnimatedRPValue({
   value,
-  compact
+  compact,
+  notationMode
 }: {
   value: bigint
   compact: boolean
+  notationMode: NotationMode
 }) {
-  const displayRef = useAnimatedBigInt(value, { compact })
+  const displayRef = useAnimatedBigInt(value, { compact, notationMode })
   return (
     <span
       ref={displayRef}
@@ -156,6 +166,7 @@ export default function RPBanner() {
 
   const initialized = useGameStore((s) => s._initialized)
   const researchPoints = useGameStore((s) => s.researchPoints)
+  const notationMode = useGameStore((s) => s.settings.notationMode)
   const peakLifetimePoints = useGameStore(
     (s) => s.stats.peakLifetimePoints ?? 0n
   )
@@ -250,24 +261,26 @@ export default function RPBanner() {
 
   const fullText = initialized ? formatPoints(researchPoints) : '0'
   const shortText = initialized ? formatPointsShort(researchPoints) : '0'
+  const tiers = isCompact ? RP_FIT_TIERS_MOBILE : RP_FIT_TIERS_DESKTOP
   const fitAvail = fitWidth || (isCompact ? 320 : 900)
-  const fullTier = RP_FIT_TIERS.find(
+  const fullTier = tiers.find(
     (t) => rpFitWidth(fullText.length, t.px) <= fitAvail
   )
-  const shortTier = RP_FIT_TIERS.find(
+  const shortTier = tiers.find(
     (t) => rpFitWidth(shortText.length, t.px) <= fitAvail
   )
-  const lastTier = RP_FIT_TIERS[RP_FIT_TIERS.length - 1]
+  const lastTier = tiers[tiers.length - 1]
   const valueTier = isCompact
     ? (shortTier ?? lastTier)
     : (fullTier ?? shortTier ?? lastTier)
   const valueCompact = isCompact || !fullTier
+  const ppsCompact = isCompact || pps >= 1_000_000n
 
   return (
     <div className="px-3 sm:px-4 py-1.5 sm:py-2.5 border-b border-(--border-default) bg-(--bg-surface)/95 backdrop-blur-md shrink-0 relative">
       {/* Main RP display */}
       <TutorialHighlight targetId="rp-banner">
-        <div className="flex items-center gap-2 sm:gap-3 flex-nowrap relative">
+        <div className="flex items-center gap-2 sm:gap-3 flex-nowrap relative min-h-8 sm:min-h-9">
           <div
             onClick={() => initialized && setShowBreakdown((prev) => !prev)}
             onKeyDown={(e) => {
@@ -285,13 +298,14 @@ export default function RPBanner() {
               ref={setFitEl}
               className={[
                 valueTier.cls,
-                'block flex-1 min-w-0 truncate font-black font-mono leading-none tracking-tight whitespace-nowrap group-hover:brightness-125 transition-all'
+                'block flex-1 min-w-0 truncate font-black font-mono leading-none tracking-tight whitespace-nowrap group-hover:brightness-125 transition-[filter]'
               ].join(' ')}
             >
               {initialized ? (
                 <AnimatedRPValue
                   value={researchPoints}
                   compact={valueCompact}
+                  notationMode={notationMode}
                 />
               ) : (
                 <span className="text-(--text-secondary)">...</span>
@@ -301,14 +315,15 @@ export default function RPBanner() {
               </span>
             </span>
             {initialized && (
-              <span className="hidden sm:inline shrink-0 text-[10px] font-mono text-(--text-secondary)/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                [Diagnostic]
+              <span className="hidden sm:inline shrink-0 text-[11px] font-mono text-(--text-secondary)/45 group-hover:text-(--text-accent) transition-colors">
+                ⓘ
               </span>
             )}
           </div>
           <div
+            title={initialized ? `+${formatRate(pps)}` : undefined}
             className={[
-              'flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 whitespace-nowrap transition-all duration-300',
+              'flex items-center gap-1.5 px-2 py-0.5 rounded border shrink-0 whitespace-nowrap transition-colors duration-300',
               anomalyTheme
                 ? `${anomalyTheme.borderColor} ${anomalyTheme.accentBg}`
                 : 'border-(--border-accent)/30 bg-(--border-accent)/10'
@@ -334,7 +349,7 @@ export default function RPBanner() {
               ].join(' ')}
             >
               {initialized
-                ? `+${isCompact ? `${formatPointsShort(pps)}/s` : formatRate(pps)}`
+                ? `+${ppsCompact ? `${formatPointsShort(pps)}/s` : formatRate(pps)}`
                 : '+--/sec'}
             </span>
             {initialized && activeAnomalyType && anomalyTheme && (
