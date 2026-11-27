@@ -111,7 +111,7 @@ export const FEATURE_REGISTRY: FeatureDefinition[] = [
     label: 'Anomalous Operations',
     description:
       '90-day cosmic observation epochs. Generate Operation Points with Cosmic Telemetry Arrays to buy permanent artifacts and passive boosts.',
-    unlockHint: 'Perform your first Reality Recalibration to activate.',
+    unlockHint: 'Perform your first Prestige reset to activate.',
     workspaceTab: 'operations',
     mobileTab: 'more'
   },
@@ -120,7 +120,7 @@ export const FEATURE_REGISTRY: FeatureDefinition[] = [
     label: 'Challenges',
     description:
       'Restricted operational runs with severe constraints to earn permanent facility-wide multipliers.',
-    unlockHint: 'Perform your first Reality Recalibration to activate.',
+    unlockHint: 'Perform your first Prestige reset to activate.',
     workspaceTab: 'challenges',
     mobileTab: 'more'
   }

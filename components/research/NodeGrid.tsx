@@ -85,11 +85,11 @@ const NodeCard = memo(function NodeCard({ nodeId }: NodeCardProps) {
   let statusBadge: React.ReactNode = null
 
   if (completed && !node.isInfinite) {
-    borderClass = 'border-(--status-success)/40'
-    bgClass = 'bg-(--status-success)/5'
+    borderClass = 'border-slate-700/50'
+    bgClass = 'bg-slate-900/20'
     statusBadge = (
-      <span className="text-[9px] font-mono font-bold text-(--status-success) px-1.5 py-0.2 rounded border border-(--status-success)/30 bg-(--status-success)/10">
-        DONE
+      <span className="text-[9px] font-mono font-bold text-slate-400 px-1.5 py-0.2 rounded border border-slate-700/60 bg-slate-800/50">
+        ✓ DONE
       </span>
     )
   } else if (active) {

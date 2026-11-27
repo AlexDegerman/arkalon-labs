@@ -118,7 +118,7 @@ export function getFeatureProgress(
     case 'anomalousOperations':
     case 'challenges':
       return {
-        label: `${state.stats.totalPrestigesTier1}/1 Recalibration`,
+        label: `${state.stats.totalPrestigesTier1}/1 Prestige`,
         fraction: Math.min(1, state.stats.totalPrestigesTier1)
       }
     default:
