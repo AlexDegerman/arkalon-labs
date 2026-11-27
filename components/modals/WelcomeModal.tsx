@@ -22,7 +22,7 @@ export default function WelcomeModal() {
   useEffect(() => {
     getOrCreateLabsPlayer()
       .then(({ coreId, displayName }) => {
-        localStorage.setItem('arkalon_labs_player_id', coreId)
+        useUIStore.getState().setPlayerCoreId(coreId)
         window.dispatchEvent(
           new CustomEvent('arkalon_player_ready', { detail: coreId })
         )
@@ -38,9 +38,13 @@ export default function WelcomeModal() {
       })
       .catch(() => {
         // Fallback for offline or dev environment without postgres
-        const fallbackId = '11111111-1111-4111-8111-111111111111'
+        let existingId: string | null = null
+        try {
+          existingId = localStorage.getItem('arkalon_labs_player_id')
+        } catch {}
+        const fallbackId = existingId || '11111111-1111-4111-8111-111111111111'
         const fallbackName = 'OfflineDirector'
-        localStorage.setItem('arkalon_labs_player_id', fallbackId)
+        useUIStore.getState().setPlayerCoreId(fallbackId)
         window.dispatchEvent(
           new CustomEvent('arkalon_player_ready', { detail: fallbackId })
         )

@@ -7,7 +7,8 @@ import {
   loadFromLocalStorage,
   serialiseState,
   deserialiseState,
-  getLastSaveTime
+  getLastSaveTime,
+  initPlayerLocalStorage
 } from '@/lib/saveGame'
 import {
   calculateOfflineProgress,
@@ -84,6 +85,39 @@ export function useSaveGame(canSave = true) {
   }, [])
 
   const runBoot = useCallback(async () => {
+    if (!canSaveRef.current) return
+
+    let resolvedCoreId = useUIStore.getState().playerCoreId
+    if (!resolvedCoreId) {
+      resolvedCoreId = await new Promise<string>((resolve) => {
+        const current = useUIStore.getState().playerCoreId
+        if (current) {
+          resolve(current)
+          return
+        }
+        let settled = false
+        const finish = (id: string) => {
+          if (settled) return
+          settled = true
+          clearTimeout(timer)
+          unsub()
+          resolve(id)
+        }
+        const unsub = useUIStore.subscribe((s) => {
+          if (s.playerCoreId) finish(s.playerCoreId)
+        })
+        const timer = setTimeout(() => {
+          let fallbackId: string | null = null
+          try {
+            fallbackId = localStorage.getItem('arkalon_labs_player_id')
+          } catch {}
+          finish(fallbackId || '11111111-1111-4111-8111-111111111111')
+        }, 6000)
+      })
+    }
+    if (!canSaveRef.current) return
+    initPlayerLocalStorage(resolvedCoreId)
+
     let loadedState = null
     let cloudState: Record<string, unknown> | null = null
     let cloudTime = 0
@@ -113,6 +147,8 @@ export function useSaveGame(canSave = true) {
     } catch {
       // Cloud unavailable - fall through to localStorage
     }
+
+    if (!canSaveRef.current) return
 
     if (!loadedState && localState) {
       loadedState = localState

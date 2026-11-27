@@ -213,6 +213,18 @@ export async function saveState(payload: SavePayload): Promise<{
           cf: save.cfUpgrades ?? {},
           os: save.osUpgrades ?? {},
           resonanceMemoryAR: save.resonanceMemoryAR ?? 0,
+          arkalonResonance: Math.min(
+            Number.MAX_SAFE_INTEGER,
+            Math.max(0, Math.floor(save.arkalonResonance ?? 0))
+          ),
+          chronalFractures: Math.min(
+            Number.MAX_SAFE_INTEGER,
+            Math.max(0, Math.floor(save.chronalFractures ?? 0))
+          ),
+          omniSpars: Math.min(
+            Number.MAX_SAFE_INTEGER,
+            Math.max(0, Math.floor(save.omniSpars ?? 0))
+          ),
           autoPrestigeMode: save.autoPrestigeMode ?? 'ratio',
           autoPrestigeTargetAR: save.autoPrestigeTargetAR ?? 1000,
           autoPrestigeRatio: save.autoPrestigeRatio ?? 2,

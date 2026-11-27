@@ -59,7 +59,8 @@ export async function getOrCreateLabsPlayer() {
         'Content-Type': 'application/json',
         'x-internal-secret': process.env.INTERNAL_SERVICE_SECRET || ''
       },
-      ...(coreId ? { body: JSON.stringify({ coreId }) } : {})
+      ...(coreId ? { body: JSON.stringify({ coreId }) } : {}),
+      signal: AbortSignal.timeout(5000)
     })
 
     if (!res.ok) {

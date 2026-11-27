@@ -467,9 +467,11 @@ export function getCountedAR(state: GameState): number {
 
 // Computes the AR production bonus using total AR earned + Resonance Memory floor
 export function computeARBonus(state: GameState): number {
-  if (state.activeChallengeRestrictions?.prestigeUpgradesDisabled) return 1
   const ec4Doubling =
     (state.challengeRecords['EC4']?.completedTiers ?? 0) > 0 ? 2 : 1
+  if (state.activeChallengeRestrictions?.prestigeUpgradesDisabled) {
+    return ec4Doubling
+  }
   const matrixInversionMultiplier =
     state.activeAnomalyType === 'operation_matrix_inversion'
       ? 2 * getAnomalyBuffScale(state)

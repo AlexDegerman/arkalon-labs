@@ -61,6 +61,9 @@ export async function loadState(): Promise<LoadResult> {
         cf?: Partial<CFUpgrades>
         os?: Partial<OSUpgrades>
         resonanceMemoryAR?: number
+        arkalonResonance?: number
+        chronalFractures?: number
+        omniSpars?: number
         autoPrestigeMode?: string
         autoPrestigeTargetAR?: number
         autoPrestigeRatio?: number
@@ -160,9 +163,9 @@ export async function loadState(): Promise<LoadResult> {
     const reconstructed: Record<string, unknown> = {
       researchPoints: row.current_points,
       lifetimePoints: row.lifetime_points,
-      arkalonResonance: row.arkalon_resonance,
-      chronalFractures: row.chronal_fractures,
-      omniSpars: row.omni_spars,
+      arkalonResonance: prestigeData.arkalonResonance ?? row.arkalon_resonance,
+      chronalFractures: prestigeData.chronalFractures ?? row.chronal_fractures,
+      omniSpars: prestigeData.omniSpars ?? row.omni_spars,
       artifactDust: relicData.artifactDust ?? row.artifact_dust,
       generators: row.generator_data,
       completedResearchNodes: researchData.completedNodes ?? [],

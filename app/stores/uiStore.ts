@@ -89,10 +89,11 @@ interface UIStore {
   // Newly unlocked workspace tabs not yet opened by the player
   unseenUnlockedTabs: WorkspaceTab[]
 
-  // Master Core Identity nickname synced from Network Hub
+  // Master Core Identity ID & nickname synced from Network Hub
+  playerCoreId: string | null
+  setPlayerCoreId: (coreId: string | null) => void
   playerName: string | null
   setPlayerName: (name: string | null) => void
-
   setMusicEnabled: (enabled: boolean) => void
   setMusicVolume: (volume: number) => void
   setSfxEnabled: (enabled: boolean) => void
@@ -156,6 +157,8 @@ export const useUIStore = create<UIStore>((set, get) => ({
   autoPrestigePendingTier: 0,
   autoPrestigeCountdown: 0,
   unseenUnlockedTabs: [],
+  playerCoreId: null,
+  setPlayerCoreId: (playerCoreId) => set({ playerCoreId }),
   playerName: null,
   setPlayerName: (playerName) => set({ playerName }),
 

@@ -422,11 +422,32 @@ function checkAutoPrestige(store: GameState): void {
   let targetTier: 1 | 2 | 3 | 0 = 0
   const runElapsed = store.stats.currentRunSeconds ?? 0
 
-  // Protect active Megaprojects from Auto-Prestige resets (bypass Dyson hold when Auto-Dyson is active)
+  // Protect active Megaprojects from Auto-Prestige resets (hold Dyson when toggled or finishable within 5m)
   const activeMega = store.activeMegaprojectId
+  let dysonFinishableSoon = false
+  if (
+    activeMega === 'dyson_swarm' &&
+    store.megaprojectAllocationPercent > 0 &&
+    store.cachedPointsPerSecond > 0n
+  ) {
+    const allocatedPPS =
+      (store.cachedPointsPerSecond *
+        BigInt(store.megaprojectAllocationPercent)) /
+      100n
+    const absorptionMult =
+      getMegaprojectPhase('chronos_array', store) >= 3 ? 120n : 100n
+    const effectivePPS = (allocatedPPS * absorptionMult) / 100n
+    if (effectivePPS > 0n) {
+      const cost = getEffectiveConstructionCost('dyson_swarm', store)
+      const remaining =
+        cost > store.megaprojectRPAbsorbed
+          ? cost - store.megaprojectRPAbsorbed
+          : 0n
+      dysonFinishableSoon = remaining <= effectivePPS * 300n
+    }
+  }
   const holdForDyson =
-    (store.autoPrestigeHoldForDyson ?? false) &&
-    !store.automation.autoDysonSwarm
+    (store.autoPrestigeHoldForDyson ?? false) || dysonFinishableSoon
   const megaProtected =
     activeMega !== null &&
     (store.megaprojectAllocationPercent > 0 ||

@@ -230,7 +230,7 @@ function simulateOfflineProbes(
     const p = { ...orig }
     let tLeft = elapsedSeconds
 
-    for (let iter = 0; iter < 500 && tLeft > 0; iter++) {
+    for (let iter = 0; iter < 2000 && tLeft > 0; iter++) {
       if (p.status === 'repairing') {
         if (p.repairTimerRemaining > tLeft) {
           p.repairTimerRemaining = Math.max(0, p.repairTimerRemaining - tLeft)
@@ -451,7 +451,6 @@ export function calculateOfflineProgress(
   const currentCompleted = [...state.completedResearchNodes]
   const currentQueue = [...state.researchQueue]
   const slots = state.activeResearchSlots.map((s) => ({ ...s }))
-  const slotCount = getActiveSlotCount(state)
   const completedNames: string[] = []
   let newlyCompletedCount = 0
 
@@ -482,6 +481,56 @@ export function calculateOfflineProgress(
     completedMegaprojects,
     dysonSwarmLevel
   }
+
+  const fillEmptyResearchSlots = () => {
+    if (!autoQueueUnlocked || techDisabled || !state.unlocks.techMatrix) return
+    const curSlotCount = getActiveSlotCount(simState)
+    while (slots.length < curSlotCount) {
+      slots.push({ nodeId: null, timerRemaining: 0 })
+    }
+    while (currentQueue.length > 0) {
+      const emptyIdx = slots
+        .slice(0, curSlotCount)
+        .findIndex((sl) => !sl.nodeId)
+      if (emptyIdx === -1) break
+
+      const activeBranches = new Set(
+        slots
+          .slice(0, curSlotCount)
+          .filter((sl) => sl.nodeId !== null)
+          .map((sl) => RESEARCH_NODE_MAP[sl.nodeId!]?.branch)
+          .filter(Boolean)
+      )
+      simState.researchPoints = currentRP
+      const qIdx = currentQueue.findIndex((id) => {
+        const node = RESEARCH_NODE_MAP[id]
+        if (!node || activeBranches.has(node.branch)) return false
+        if (!isNodeAvailable(id, simState)) return false
+        return currentRP >= getNodeCost(id, simState)
+      })
+      if (qIdx === -1) break
+
+      const nextId = currentQueue[qIdx]
+      currentRP -= getNodeCost(nextId, simState)
+      currentQueue.splice(qIdx, 1)
+      const studyTime = getEffectiveStudyTime(nextId, simState)
+      if (studyTime === 0) {
+        if (!currentCompleted.includes(nextId)) {
+          currentCompleted.push(nextId)
+          newlyCompletedCount++
+          const def = RESEARCH_NODE_MAP[nextId]
+          if (def) completedNames.push(def.label)
+        }
+      } else {
+        slots[emptyIdx] = {
+          nodeId: nextId,
+          timerRemaining: studyTime
+        }
+      }
+    }
+  }
+
+  fillEmptyResearchSlots()
 
   const anomaliesEnabled =
     state.unlocks.anomalies &&
@@ -546,8 +595,9 @@ export function calculateOfflineProgress(
         dt = Math.min(dt, timeToNextAnomalyCheck)
       }
 
+      const curSlotCount = getActiveSlotCount(simState)
       if (researchSpeedMult > 0) {
-        for (let i = 0; i < Math.min(slotCount, slots.length); i++) {
+        for (let i = 0; i < Math.min(curSlotCount, slots.length); i++) {
           const s = slots[i]
           if (s.nodeId && s.timerRemaining > 0) {
             dt = Math.min(dt, s.timerRemaining / researchSpeedMult)
@@ -635,8 +685,9 @@ export function calculateOfflineProgress(
 
     // Advance research slots and resolve any completions
     if (researchSpeedMult > 0) {
+      const curSlotCount = getActiveSlotCount(simState)
       const progressed = dt * researchSpeedMult
-      for (let i = 0; i < Math.min(slotCount, slots.length); i++) {
+      for (let i = 0; i < Math.min(curSlotCount, slots.length); i++) {
         const s = slots[i]
         if (!s.nodeId) continue
         s.timerRemaining = Math.max(0, s.timerRemaining - progressed)
@@ -680,6 +731,7 @@ export function calculateOfflineProgress(
       }
     }
 
+    fillEmptyResearchSlots()
     remainingElapsed -= dt
   }
 
@@ -689,7 +741,8 @@ export function calculateOfflineProgress(
   )
 
   if (probeSim.totalResearchCut > 0 && !techDisabled) {
-    for (let i = 0; i < Math.min(slotCount, slots.length); i++) {
+    const finalSlotCount = getActiveSlotCount(simState)
+    for (let i = 0; i < Math.min(finalSlotCount, slots.length); i++) {
       const s = slots[i]
       if (!s.nodeId || s.timerRemaining <= 0) continue
       s.timerRemaining = Math.max(

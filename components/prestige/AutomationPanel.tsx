@@ -308,38 +308,28 @@ export default function AutomationPanel() {
             </span>
             <button
               type="button"
-              disabled={automation.autoDysonSwarm}
-              title={
-                automation.autoDysonSwarm
-                  ? 'Bypassed while Auto-Dyson Swarm is active to prevent prestige deadlock'
-                  : undefined
-              }
+              title="HOLD always pauses Auto-Prestige while Dyson is active; SMART holds when Dyson can finish within 5 minutes."
               onClick={() =>
                 useGameStore.setState({
                   autoPrestigeHoldForDyson: !autoPrestigeHoldForDyson
                 })
               }
               className={[
-                'px-2 py-0.5 rounded border text-[10px] font-bold',
-                automation.autoDysonSwarm
-                  ? 'border-(--border-default) bg-(--bg-elevated)/40 text-(--text-secondary)/50 cursor-not-allowed'
-                  : autoPrestigeHoldForDyson
-                    ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success) cursor-pointer'
-                    : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary) cursor-pointer'
+                'px-2 py-0.5 rounded border text-[10px] font-bold cursor-pointer',
+                autoPrestigeHoldForDyson
+                  ? 'border-(--status-success) bg-(--status-success)/15 text-(--status-success)'
+                  : 'border-(--border-default) bg-(--bg-elevated) text-(--text-secondary)'
               ].join(' ')}
             >
-              {automation.autoDysonSwarm
-                ? 'IGNORE (AUTO)'
-                : autoPrestigeHoldForDyson
-                  ? 'HOLD'
-                  : 'IGNORE'}
+              {autoPrestigeHoldForDyson ? 'HOLD' : 'SMART (≤5m)'}
             </button>
           </div>
           <p className="text-[10px] text-(--text-secondary)/75 leading-snug">
-            One-time Megaprojects always pause Auto-Prestige while active.
+            One-time Megaprojects always pause Auto-Prestige while active; SMART
+            holds Dyson when completion ETA is under 5m.
             {activeMegaprojectId &&
               (activeMegaprojectId !== 'dyson_swarm' ||
-                (autoPrestigeHoldForDyson && !automation.autoDysonSwarm)) && (
+                autoPrestigeHoldForDyson) && (
                 <span className="text-amber-300 font-bold ml-1">
                   (Currently paused for active Megaproject)
                 </span>

@@ -408,7 +408,13 @@ describe('productionEngine', () => {
         prestigeUpgradesDisabled: true
       })
     })
-    expect(computeARBonus(suspended)).toBe(1)
+    expect(computeARBonus(suspended)).toBe(2)
+
+    const suspendedNoEc4 = stateWith({
+      ...suspended,
+      challengeRecords: {}
+    })
+    expect(computeARBonus(suspendedNoEc4)).toBe(1)
   })
 
   it('honours AC1, AC6, maxGeneratorTier and onlyGeneratorType constraints', () => {

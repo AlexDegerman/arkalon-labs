@@ -31,7 +31,49 @@ import { RESEARCH_NODE_MAP } from '@/constants/research'
 let lastSaveErrorAlertMs = 0
 
 const SAVE_KEY = 'arkalon_labs_save'
+const LAST_SAVE_KEY = 'arkalon_labs_last_save_time'
+const PLAYER_ID_KEY = 'arkalon_labs_player_id'
 const SAVE_VERSION = 2
+
+let activePlayerId: string | null = null
+
+function getSaveKey(): string {
+  return activePlayerId ? `${SAVE_KEY}_${activePlayerId}` : SAVE_KEY
+}
+
+function getLastSaveKey(): string {
+  return activePlayerId ? `${LAST_SAVE_KEY}_${activePlayerId}` : LAST_SAVE_KEY
+}
+
+export function setSavePlayerId(coreId: string | null): void {
+  activePlayerId = coreId
+}
+
+export function initPlayerLocalStorage(coreId: string): void {
+  activePlayerId = coreId
+  try {
+    const prevOwner = localStorage.getItem(PLAYER_ID_KEY)
+    const scopedKey = getSaveKey()
+    const scopedTimeKey = getLastSaveKey()
+    const legacySave = localStorage.getItem(SAVE_KEY)
+    const legacyTime = localStorage.getItem(LAST_SAVE_KEY)
+
+    if (
+      (!prevOwner || prevOwner === coreId) &&
+      legacySave &&
+      !localStorage.getItem(scopedKey)
+    ) {
+      localStorage.setItem(scopedKey, legacySave)
+      if (legacyTime) localStorage.setItem(scopedTimeKey, legacyTime)
+    }
+    if (legacySave !== null) localStorage.removeItem(SAVE_KEY)
+    if (legacyTime !== null) localStorage.removeItem(LAST_SAVE_KEY)
+
+    localStorage.setItem(PLAYER_ID_KEY, coreId)
+  } catch {
+    // Storage unavailable
+  }
+}
 
 // Serialized save shape (all bigints as strings)
 export interface SerializedSave {
@@ -673,10 +715,23 @@ export function deserialiseState(raw: unknown): GameState {
     ...initial,
     researchPoints: parseBigInt(s.researchPoints, initial.researchPoints),
     lifetimePoints: parseBigInt(s.lifetimePoints, initial.lifetimePoints),
-    arkalonResonance:
-      parseNum(s.arkalonResonance, 0) + (hadLegacyArBulk ? 500_000 : 0),
-    chronalFractures: parseNum(s.chronalFractures, 0),
-    omniSpars: parseNum(s.omniSpars, 0),
+    arkalonResonance: Math.min(
+      Number.MAX_SAFE_INTEGER,
+      Math.max(
+        0,
+        Math.floor(
+          parseNum(s.arkalonResonance, 0) + (hadLegacyArBulk ? 500_000 : 0)
+        )
+      )
+    ),
+    chronalFractures: Math.min(
+      Number.MAX_SAFE_INTEGER,
+      Math.max(0, Math.floor(parseNum(s.chronalFractures, 0)))
+    ),
+    omniSpars: Math.min(
+      Number.MAX_SAFE_INTEGER,
+      Math.max(0, Math.floor(parseNum(s.omniSpars, 0)))
+    ),
     artifactDust: Math.min(
       Number.MAX_SAFE_INTEGER,
       Math.max(0, Math.floor(parseNum(s.artifactDust, 0)))
@@ -786,7 +841,7 @@ export function deserialiseState(raw: unknown): GameState {
 export function saveToLocalStorage(state: GameState): void {
   try {
     const serialized = serialiseState(state)
-    localStorage.setItem(SAVE_KEY, JSON.stringify(serialized))
+    localStorage.setItem(getSaveKey(), JSON.stringify(serialized))
     setLastSaveTime(serialized.lastSavedTime)
   } catch {
     const now = Date.now()
@@ -808,7 +863,7 @@ export function saveToLocalStorage(state: GameState): void {
 // Returns null if no save found or if save is corrupt
 export function loadFromLocalStorage(): GameState | null {
   try {
-    const raw = localStorage.getItem(SAVE_KEY)
+    const raw = localStorage.getItem(getSaveKey())
     if (!raw) return null
     const parsed = JSON.parse(raw)
     return deserialiseState(parsed)
@@ -876,19 +931,17 @@ export function importSave(base64: string): GameState | null {
 // Hard reset: clears localStorage save
 export function clearLocalStorageSave(): void {
   try {
-    localStorage.removeItem(SAVE_KEY)
-    localStorage.removeItem(LAST_SAVE_KEY)
+    localStorage.removeItem(getSaveKey())
+    localStorage.removeItem(getLastSaveKey())
   } catch {
     // Storage unavailable
   }
 }
 
 // Returns the last save timestamp from localStorage without full deserialization
-const LAST_SAVE_KEY = 'arkalon_labs_last_save_time'
-
 export function getLastSaveTime(): number {
   try {
-    const raw = localStorage.getItem(LAST_SAVE_KEY)
+    const raw = localStorage.getItem(getLastSaveKey())
     if (!raw) return 0
     const parsed = parseInt(raw, 10)
     return Number.isFinite(parsed) ? parsed : 0
@@ -899,7 +952,7 @@ export function getLastSaveTime(): number {
 
 export function setLastSaveTime(ms: number): void {
   try {
-    localStorage.setItem(LAST_SAVE_KEY, String(ms))
+    localStorage.setItem(getLastSaveKey(), String(ms))
   } catch {
     // Storage full or blocked
   }
